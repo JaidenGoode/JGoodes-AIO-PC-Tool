@@ -57,6 +57,25 @@ function expandPath(p: string): string {
   return p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p;
 }
 
+function getFirefoxCacheDirs(localDir: string, roamingDir: string): string[] {
+  const dirs: string[] = [];
+  for (const base of [localDir, roamingDir]) {
+    const profilesDir = path.join(base, "Mozilla", "Firefox", "Profiles");
+    try {
+      if (fs.existsSync(profilesDir)) {
+        const entries = fs.readdirSync(profilesDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            dirs.push(path.join(profilesDir, entry.name, "cache2"));
+            dirs.push(path.join(profilesDir, entry.name, "thumbnails"));
+          }
+        }
+      }
+    } catch {}
+  }
+  return dirs;
+}
+
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -168,7 +187,7 @@ function getCleanCategories(): CleanCategory[] {
           path.join(local, "Google", "Chrome", "User Data", "Default", "Code Cache"),
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Cache", "Cache_Data"),
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Code Cache"),
-          path.join(roaming, "Mozilla", "Firefox", "Profiles"),
+          ...getFirefoxCacheDirs(local, roaming),
         ],
       },
       {
@@ -191,11 +210,10 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "logs",
         name: "Log Files",
-        description: "Windows system and CBS log files",
+        description: "Windows system CBS and DISM log files",
         paths: [
           "C:\\Windows\\Logs\\CBS",
           "C:\\Windows\\Logs\\DISM",
-          path.join(local, "Microsoft", "Windows", "PowerShell", "StartupProfileData-NonInteractive"),
         ],
       },
     ];
@@ -472,6 +490,12 @@ try {
         const cat = CLEAN_CATEGORIES.find((c) => c.id === id);
         if (!cat) continue;
         let freed = 0;
+
+        const isWupdate = id === "wupdate" && process.platform === "win32";
+        if (isWupdate) {
+          await runCmd("net stop wuauserv 2>nul", 8000).catch(() => {});
+        }
+
         for (const p of cat.paths) {
           const expanded = expandPath(p);
           try {
@@ -479,6 +503,11 @@ try {
             freed += await deleteContents(expanded);
           } catch {}
         }
+
+        if (isWupdate) {
+          await runCmd("net start wuauserv 2>nul", 8000).catch(() => {});
+        }
+
         totalFreed += freed;
         cleaned.push(cat.name);
       }
@@ -639,7 +668,7 @@ Write-Host "Restore point created successfully."`;
         "flush-dns": { name: "Flush DNS Cache", command: "ipconfig /flushdns", description: "Clears the local DNS resolver cache." },
         "release-ip": { name: "Release IP Address", command: "ipconfig /release", description: "Releases the current IP address from DHCP." },
         "renew-ip": { name: "Renew IP Address", command: "ipconfig /renew", description: "Requests a new IP address from DHCP." },
-        "restart-explorer": { name: "Restart Explorer", command: "taskkill /f /im explorer.exe && start explorer.exe", description: "Restarts Windows Explorer process." },
+        "restart-explorer": { name: "Restart Explorer", command: `powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command "Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; Start-Process explorer"`, description: "Restarts Windows Explorer (taskbar and desktop)." },
         "disk-cleanup": { name: "Disk Cleanup", command: "cleanmgr", description: "Runs Windows built-in Disk Cleanup utility." },
         "storage-sense-on": { name: "Enable Storage Sense", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSenseGlobal" /t REG_DWORD /d 1 /f', description: "Enables Storage Sense automatic cleanup." },
         "storage-sense-off": { name: "Disable Storage Sense", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSenseGlobal" /t REG_DWORD /d 0 /f', description: "Disables Storage Sense automatic cleanup." },
@@ -659,7 +688,7 @@ Write-Host "Restore point created successfully."`;
       }
 
       const TERMINAL_ACTIONS = new Set([
-        "sfc", "dism", "checkdisk", "network-reset", "restart-explorer",
+        "sfc", "dism", "checkdisk", "network-reset",
       ]);
       const GUI_ACTIONS = new Set(["open-system-restore", "disk-cleanup"]);
 

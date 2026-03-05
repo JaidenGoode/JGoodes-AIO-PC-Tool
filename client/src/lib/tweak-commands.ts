@@ -14,8 +14,13 @@ export const TWEAK_COMMANDS: Record<string, TweakCommand> = {
     requiresRestart: true,
     enable: `# Remove OneDrive
 taskkill /f /im OneDrive.exe 2>nul
-"%SystemRoot%\\SysWOW64\\OneDriveSetup.exe" /uninstall 2>nul
-"%SystemRoot%\\System32\\OneDriveSetup.exe" /uninstall 2>nul
+Start-Sleep -Milliseconds 500
+$oneDrivePaths = @(
+  "$env:SystemRoot\\SysWOW64\\OneDriveSetup.exe",
+  "$env:SystemRoot\\System32\\OneDriveSetup.exe",
+  "$env:LOCALAPPDATA\\Microsoft\\OneDrive\\OneDriveSetup.exe"
+)
+foreach ($p in $oneDrivePaths) { if (Test-Path $p) { & $p /uninstall 2>nul; break } }
 # Disable Consumer Features & Telemetry
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f
@@ -159,8 +164,7 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v Hi
   },
 
   "Optimize Visual Effects for Performance": {
-    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f
-SystemPropertiesPerformance.exe`,
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f`,
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 0 /f`,
   },
 
