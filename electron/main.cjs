@@ -1,46 +1,36 @@
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
-const { fork } = require("child_process");
 const http = require("http");
 
-let mainWindow = null;
-let serverProcess = null;
 const PORT = 57321;
+let mainWindow = null;
 
 function startServer() {
+  process.env.PORT = String(PORT);
+  process.env.NODE_ENV = "production";
+
   const serverPath = path.join(__dirname, "..", "dist", "index.cjs");
-  serverProcess = fork(serverPath, [], {
-    env: {
-      ...process.env,
-      NODE_ENV: "production",
-      PORT: String(PORT),
-      ELECTRON: "1",
-    },
-    silent: false,
-  });
-
-  serverProcess.on("error", (err) => {
-    console.error("[electron] Server process error:", err);
-  });
-
-  serverProcess.on("exit", (code) => {
-    console.log("[electron] Server exited with code:", code);
-  });
+  try {
+    require(serverPath);
+    console.log("[electron] Server module loaded on port", PORT);
+  } catch (err) {
+    console.error("[electron] Failed to load server:", err);
+  }
 }
 
 function waitForServer(callback, tries = 0) {
-  const req = http.get(`http://localhost:${PORT}/`, (res) => {
+  const req = http.get(`http://127.0.0.1:${PORT}/`, () => {
     callback();
   });
   req.on("error", () => {
     if (tries < 60) {
       setTimeout(() => waitForServer(callback, tries + 1), 500);
     } else {
-      console.error("[electron] Server never became ready");
+      console.error("[electron] Server never became ready — opening anyway");
       callback();
     }
   });
-  req.setTimeout(500, () => {
+  req.setTimeout(400, () => {
     req.destroy();
     if (tries < 60) {
       setTimeout(() => waitForServer(callback, tries + 1), 500);
@@ -68,11 +58,12 @@ function createWindow() {
     show: false,
   });
 
-  mainWindow.loadURL(`http://localhost:${PORT}`);
+  mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
   mainWindow.setMenuBarVisibility(false);
 
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
+    mainWindow.focus();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -93,10 +84,6 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (serverProcess) {
-    serverProcess.kill();
-    serverProcess = null;
-  }
   app.quit();
 });
 
