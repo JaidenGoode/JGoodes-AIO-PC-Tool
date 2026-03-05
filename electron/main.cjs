@@ -75,6 +75,7 @@ function createWindow() {
     height: 820,
     minWidth: 920,
     minHeight: 600,
+    title: "JGoode's A.I.O PC Tool",
     backgroundColor: "#0a0a0a",
     icon: iconPath,
     webPreferences: {
