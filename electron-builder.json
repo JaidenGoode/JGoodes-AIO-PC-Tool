@@ -2,6 +2,7 @@
   "appId": "com.jaidengoode.aio-pc-tool",
   "productName": "JGoode AIO PC Tool",
   "copyright": "Copyright © 2025 JaidenGoode",
+  "electronVersion": "33.4.11",
   "asar": true,
   "asarUnpack": [
     "dist/public/**/*"
