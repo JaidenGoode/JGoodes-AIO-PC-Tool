@@ -25,24 +25,23 @@ jobs:
         working-directory: desktop
         run: dotnet restore
 
-      - name: Build (Release)
-        working-directory: desktop
-        run: dotnet build -c Release --no-restore
-
-      - name: Publish — Self-contained single-file .exe
+      - name: Publish — Self-contained folder
         working-directory: desktop
         run: |
           dotnet publish -c Release -r win-x64 --self-contained true `
-            -p:PublishSingleFile=true `
-            -p:EnableCompressionInSingleFile=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:PublishSingleFile=false `
+            -p:PublishReadyToRun=true `
             -o ../publish/win-x64
+
+      - name: Zip the publish folder
+        run: |
+          Compress-Archive -Path publish/win-x64/* -DestinationPath publish/JGoodeAIO-Windows.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: JGoodeAIO-Windows
-          path: publish/win-x64/JGoodeAIO.exe
+          path: publish/JGoodeAIO-Windows.zip
           retention-days: 30
 
       - name: Create Release (on tag)
@@ -53,18 +52,20 @@ jobs:
           body: |
             ## JGoode A.I.O PC Tool ${{ github.ref_name }}
 
-            ### Download
-            Download `JGoodeAIO.exe` below — no installation required, just run it.
+            ### How to run
+            1. Download `JGoodeAIO-Windows.zip` below
+            2. Extract the zip anywhere (Desktop, C:\JGoodeAIO, etc.)
+            3. Right-click `JGoodeAIO.exe` → **Run as administrator**
 
-            > **Run as Administrator** for tweaks to apply correctly.
+            > No .NET installation required — everything is included.
 
             ### What's included
-            - 47 PowerShell system tweaks
+            - 47 PowerShell system tweaks (privacy, performance, gaming, debloat)
             - Live CPU / RAM / GPU / Disk monitoring
-            - System cleaner (temp files, DNS, network reset)
+            - System cleaner (temp files, DNS flush, network reset)
             - 13 accent colors + dark/light mode
             - GitHub settings sync
             - Self-contained — no .NET runtime required
-          files: publish/win-x64/JGoodeAIO.exe
+          files: publish/JGoodeAIO-Windows.zip
           draft: false
           prerelease: false
