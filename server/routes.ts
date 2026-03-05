@@ -719,7 +719,7 @@ export async function registerRoutes(
       const ROOT_FILES = [
         "package.json", "tsconfig.json", "vite.config.ts", "tailwind.config.ts",
         "postcss.config.js", "drizzle.config.ts", "components.json", "replit.md", ".gitignore",
-        "electron-builder.json",
+        "electron-builder.json", "BUILD_EXE.bat",
       ];
 
       const MAX_FILE_SIZE = 512 * 1024;
