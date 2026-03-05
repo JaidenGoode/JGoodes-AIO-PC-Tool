@@ -1,0 +1,555 @@
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Trash2, Zap, Package, FileText, Image as ImageIcon,
+  Globe, HardDrive, RotateCcw, ScanLine, Sparkles,
+  CheckSquare, Square, Loader2, CheckCircle2, AlertCircle, X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { scanCleaner, cleanCategories } from "@/lib/api";
+import type { ScanCategory, ScanResult, CleanResult } from "@/lib/api";
+import { cn } from "@/lib/utils";
+
+type PageState = "idle" | "scanning" | "scanned" | "cleaning" | "done";
+
+const CAT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  temp: Trash2,
+  npm: Package,
+  logs: FileText,
+  cache: Zap,
+  thumbnails: ImageIcon,
+  browser: Globe,
+  trash: RotateCcw,
+  systemcache: HardDrive,
+};
+
+function UsageBar({ pct, color = "bg-primary" }: { pct: number; color?: string }) {
+  return (
+    <div className="h-1.5 w-full rounded-full bg-secondary/60 overflow-hidden">
+      <div
+        className={cn("h-full rounded-full transition-all duration-500", color)}
+        style={{ width: `${Math.min(100, pct)}%` }}
+      />
+    </div>
+  );
+}
+
+export default function CleanerPage() {
+  const { toast } = useToast();
+  const [state, setState] = useState<PageState>("idle");
+  const [scanData, setScanData] = useState<ScanResult | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [cleanResult, setCleanResult] = useState<CleanResult | null>(null);
+  const [cleanProgress, setCleanProgress] = useState(0);
+  const [scanProgress, setScanProgress] = useState(0);
+
+  const scanMutation = useMutation({
+    mutationFn: () => {
+      setScanProgress(0);
+      const interval = setInterval(() => {
+        setScanProgress((p) => {
+          if (p >= 90) { clearInterval(interval); return 90; }
+          return p + Math.random() * 12;
+        });
+      }, 200);
+      return scanCleaner().finally(() => {
+        clearInterval(interval);
+        setScanProgress(100);
+      });
+    },
+    onSuccess: (data) => {
+      setScanData(data);
+      const foundIds = new Set(
+        data.categories.filter((c) => c.found).map((c) => c.id)
+      );
+      setSelected(foundIds);
+      setState("scanned");
+    },
+    onError: () => {
+      setState("idle");
+      toast({ variant: "destructive", title: "Scan Failed", description: "Could not scan for junk files." });
+    },
+  });
+
+  const cleanMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      setCleanProgress(0);
+      const interval = setInterval(() => {
+        setCleanProgress((p) => {
+          if (p >= 85) { clearInterval(interval); return 85; }
+          return p + Math.random() * 8;
+        });
+      }, 150);
+      const result = await cleanCategories(ids);
+      clearInterval(interval);
+      setCleanProgress(100);
+      return result;
+    },
+    onSuccess: (data) => {
+      setCleanResult(data);
+      setState("done");
+    },
+    onError: () => {
+      setState("scanned");
+      toast({ variant: "destructive", title: "Clean Failed", description: "An error occurred while cleaning." });
+    },
+  });
+
+  const handleScan = () => {
+    setState("scanning");
+    scanMutation.mutate();
+  };
+
+  const handleClean = () => {
+    if (selected.size === 0) return;
+    setState("cleaning");
+    cleanMutation.mutate([...selected]);
+  };
+
+  const handleReset = () => {
+    setState("idle");
+    setScanData(null);
+    setSelected(new Set());
+    setCleanResult(null);
+    setCleanProgress(0);
+    setScanProgress(0);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (!scanData) return;
+    setSelected(new Set(scanData.categories.filter((c) => c.found).map((c) => c.id)));
+  };
+
+  const deselectAll = () => setSelected(new Set());
+
+  const selectedSize = scanData
+    ? scanData.categories
+        .filter((c) => selected.has(c.id))
+        .reduce((s, c) => s + c.size, 0)
+    : 0;
+
+  function fmtSizeLocal(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+    return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+  }
+
+  return (
+    <div className="space-y-5 pb-8 max-w-4xl mx-auto">
+
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
+        <div>
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
+            PC <span className="text-primary">Cleaner</span>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Scan, select and remove junk files safely — no important files affected
+          </p>
+        </div>
+        {(state === "scanned" || state === "done") && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleReset}
+            className="h-8 text-xs border-border/60 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3 w-3 mr-1.5" />
+            Reset
+          </Button>
+        )}
+      </motion.div>
+
+      {/* IDLE — big scan card */}
+      <AnimatePresence mode="wait">
+        {state === "idle" && (
+          <motion.div
+            key="idle"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+          >
+            {/* Hero scan panel */}
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 text-center">
+              <div
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 60% 60% at 50% 50%, hsl(var(--primary)) 0%, transparent 100%)",
+                }}
+              />
+              <div className="relative space-y-5">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <ScanLine className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">Ready to Scan</h2>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                    Click Scan Now to analyse your system for temporary files, cache, logs and other safe-to-remove junk.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleScan}
+                  data-testid="button-scan-now"
+                  className="h-10 px-8 bg-primary text-white font-bold text-sm shadow-lg"
+                  style={{ boxShadow: "0 0 24px hsl(var(--primary) / 0.3)" }}
+                >
+                  <ScanLine className="mr-2 h-4 w-4" />
+                  Scan Now
+                </Button>
+              </div>
+            </div>
+
+            {/* Category preview cards */}
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {[
+                { icon: Trash2, label: "Temp Files", sub: "System & app temp" },
+                { icon: Globe, label: "Browser Cache", sub: "Web browser data" },
+                { icon: Package, label: "Package Cache", sub: "npm, yarn, pip" },
+                { icon: FileText, label: "Log Files", sub: "System logs" },
+              ].map(({ icon: Icon, label, sub }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2.5 p-3 rounded-xl border border-border/60 bg-secondary/20"
+                >
+                  <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-foreground/80 leading-none">{label}</p>
+                    <p className="text-[10px] text-muted-foreground/50 mt-0.5 truncate">{sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* SCANNING */}
+        {state === "scanning" && (
+          <motion.div
+            key="scanning"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="rounded-2xl border border-primary/20 bg-card p-10 text-center space-y-6 relative overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-[0.04]"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 80% 80% at 50% 50%, hsl(var(--primary)) 0%, transparent 100%)",
+                }}
+              />
+              <div className="relative space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center">
+                  <ScanLine className="h-8 w-8 text-primary animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-foreground">Scanning Your System...</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Analysing temp files, cache and log directories
+                  </p>
+                </div>
+                <div className="max-w-xs mx-auto space-y-2">
+                  <div className="flex justify-between text-xs font-mono text-muted-foreground/60">
+                    <span>Scanning</span>
+                    <span className="text-primary">{Math.round(scanProgress)}%</span>
+                  </div>
+                  <Progress
+                    value={scanProgress}
+                    className="h-1.5 bg-secondary [&>div]:bg-primary [&>div]:transition-all [&>div]:duration-200"
+                  />
+                </div>
+                <div className="flex justify-center gap-1.5">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* SCANNED — results with checkboxes */}
+        {state === "scanned" && scanData && (
+          <motion.div
+            key="scanned"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="space-y-4"
+          >
+            {/* Summary bar */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-primary/20 bg-primary/5">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-lg bg-primary/15">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    Found{" "}
+                    <span className="text-primary">{scanData.totalSizeHuman}</span>{" "}
+                    of junk
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {scanData.totalCount.toLocaleString()} files across {scanData.categories.filter((c) => c.found).length} categories
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={selectAll}
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                  data-testid="button-select-all"
+                >
+                  <CheckSquare className="h-3 w-3 mr-1" />
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={deselectAll}
+                  className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                  data-testid="button-deselect-all"
+                >
+                  <Square className="h-3 w-3 mr-1" />
+                  None
+                </Button>
+              </div>
+            </div>
+
+            {/* Category list */}
+            <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border/60">
+              {scanData.categories.map((cat, i) => {
+                const Icon = CAT_ICONS[cat.id] || Trash2;
+                const isSelected = selected.has(cat.id);
+                const pct = scanData.totalSize > 0 ? (cat.size / scanData.totalSize) * 100 : 0;
+                return (
+                  <motion.div
+                    key={cat.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    className={cn(
+                      "flex items-center gap-4 px-4 py-3.5 transition-all duration-150 cursor-pointer group",
+                      isSelected && cat.found
+                        ? "bg-primary/5"
+                        : "hover:bg-secondary/30",
+                      !cat.found && "opacity-40"
+                    )}
+                    onClick={() => cat.found && toggleSelect(cat.id)}
+                    data-testid={`row-cleaner-${cat.id}`}
+                  >
+                    <Checkbox
+                      checked={isSelected && cat.found}
+                      disabled={!cat.found}
+                      onCheckedChange={() => cat.found && toggleSelect(cat.id)}
+                      className="shrink-0 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      data-testid={`checkbox-cleaner-${cat.id}`}
+                    />
+                    <div className={cn(
+                      "p-1.5 rounded-lg shrink-0 transition-colors",
+                      isSelected && cat.found ? "bg-primary/15" : "bg-secondary/50"
+                    )}>
+                      <Icon className={cn(
+                        "h-3.5 w-3.5 transition-colors",
+                        isSelected && cat.found ? "text-primary" : "text-muted-foreground/60"
+                      )} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[13px] font-semibold text-foreground leading-none">{cat.name}</span>
+                        {!cat.found && (
+                          <span className="text-[10px] text-muted-foreground/40 font-mono">Nothing found</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{cat.description}</p>
+                      {cat.found && (
+                        <div className="mt-1.5">
+                          <UsageBar pct={pct} color={isSelected ? "bg-primary" : "bg-secondary"} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0 ml-2">
+                      <p className={cn(
+                        "text-[13px] font-bold font-mono",
+                        isSelected && cat.found ? "text-primary" : "text-muted-foreground/50"
+                      )}>
+                        {cat.found ? cat.sizeHuman : "—"}
+                      </p>
+                      {cat.found && (
+                        <p className="text-[10px] text-muted-foreground/40 mt-0.5 font-mono">
+                          {cat.fileCount.toLocaleString()} files
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Clean button */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="text-xs text-muted-foreground">
+                {selected.size > 0 ? (
+                  <>
+                    <span className="text-primary font-bold">{selected.size}</span>{" "}
+                    {selected.size === 1 ? "category" : "categories"} selected —{" "}
+                    <span className="text-foreground font-semibold">{fmtSizeLocal(selectedSize)}</span> will be freed
+                  </>
+                ) : (
+                  "Select at least one category to clean"
+                )}
+              </div>
+              <Button
+                onClick={handleClean}
+                disabled={selected.size === 0}
+                data-testid="button-clean-selected"
+                className="h-9 px-6 bg-primary text-white font-bold text-sm disabled:opacity-30"
+                style={selected.size > 0 ? { boxShadow: "0 0 20px hsl(var(--primary) / 0.25)" } : {}}
+              >
+                <Sparkles className="mr-2 h-3.5 w-3.5" />
+                Clean Selected
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* CLEANING */}
+        {state === "cleaning" && (
+          <motion.div
+            key="cleaning"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="rounded-2xl border border-primary/20 bg-card p-10 text-center space-y-6 relative overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-[0.04]"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 80% 80% at 50% 50%, hsl(var(--primary)) 0%, transparent 100%)",
+                }}
+              />
+              <div className="relative space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-foreground">Cleaning in Progress...</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Removing {selected.size} {selected.size === 1 ? "category" : "categories"} of junk
+                  </p>
+                </div>
+                <div className="max-w-xs mx-auto space-y-2">
+                  <div className="flex justify-between text-xs font-mono text-muted-foreground/60">
+                    <span>Deleting files</span>
+                    <span className="text-primary">{Math.round(cleanProgress)}%</span>
+                  </div>
+                  <Progress
+                    value={cleanProgress}
+                    className="h-1.5 bg-secondary [&>div]:bg-primary [&>div]:transition-all [&>div]:duration-200"
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* DONE */}
+        {state === "done" && cleanResult && (
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="rounded-2xl border border-green-500/20 bg-card p-10 text-center space-y-6 relative overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 60% 60% at 50% 50%, rgb(34,197,94) 0%, transparent 100%)",
+                }}
+              />
+              <div className="relative space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                  <CheckCircle2 className="h-8 w-8 text-green-400" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-foreground">All Clean!</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Successfully freed{" "}
+                    <span className="text-green-400 font-bold">{cleanResult.freedHuman}</span>
+                    {" "}from {cleanResult.cleaned.length} {cleanResult.cleaned.length === 1 ? "category" : "categories"}
+                  </p>
+                </div>
+                {cleanResult.cleaned.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1.5">
+                    {cleanResult.cleaned.map((name) => (
+                      <span
+                        key={name}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-green-500/10 text-green-400 border border-green-500/20"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-center gap-2 pt-2">
+                  <Button
+                    onClick={handleReset}
+                    variant="outline"
+                    className="h-8 px-5 text-xs border-border/60"
+                    data-testid="button-done-reset"
+                  >
+                    Scan Again
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Info notice */}
+      {state === "idle" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="flex items-start gap-2.5 p-3 rounded-lg border border-border/40 bg-secondary/20"
+        >
+          <AlertCircle className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
+          <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+            All categories are safe to clean. No personal files, documents, photos or important system files
+            are touched. Only temporary, cache and log files are removed.
+          </p>
+        </motion.div>
+      )}
+    </div>
+  );
+}
