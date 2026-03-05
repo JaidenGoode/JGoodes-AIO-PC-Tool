@@ -399,19 +399,21 @@ reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MediaRouterCastAllowAllIPs
 
   "Debloat Opera GX": {
     enable: `reg add "HKCU\\Software\\Opera Software" /v "Last Speed Dial Sync" /t REG_SZ /d "" /f
-# Opera GX: Disable hardware acceleration via settings file
+# Opera GX: Disable hardware acceleration via settings file (UTF-8 safe)
 $operaGxPath = "$env:APPDATA\\Opera Software\\Opera GX Stable\\Preferences"
 if (Test-Path $operaGxPath) {
-    $pref = Get-Content $operaGxPath | ConvertFrom-Json
-    $pref.hardware_acceleration_mode_previous = $false
-    $pref | ConvertTo-Json -Depth 100 | Set-Content $operaGxPath
+    $pref = Get-Content $operaGxPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (-not $pref.system) { $pref | Add-Member -Force -NotePropertyName "system" -NotePropertyValue ([PSCustomObject]@{}) }
+    $pref.system | Add-Member -Force -NotePropertyName "hardware_acceleration_mode_previous" -NotePropertyValue $false
+    $pref | ConvertTo-Json -Depth 100 | Set-Content $operaGxPath -Encoding UTF8
 }`,
-    disable: `# Re-enable Opera GX hardware acceleration
+    disable: `# Re-enable Opera GX hardware acceleration (UTF-8 safe)
 $operaGxPath = "$env:APPDATA\\Opera Software\\Opera GX Stable\\Preferences"
 if (Test-Path $operaGxPath) {
-    $pref = Get-Content $operaGxPath | ConvertFrom-Json
-    $pref.hardware_acceleration_mode_previous = $true
-    $pref | ConvertTo-Json -Depth 100 | Set-Content $operaGxPath
+    $pref = Get-Content $operaGxPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (-not $pref.system) { $pref | Add-Member -Force -NotePropertyName "system" -NotePropertyValue ([PSCustomObject]@{}) }
+    $pref.system | Add-Member -Force -NotePropertyName "hardware_acceleration_mode_previous" -NotePropertyValue $true
+    $pref | ConvertTo-Json -Depth 100 | Set-Content $operaGxPath -Encoding UTF8
 }`,
   },
 
@@ -421,10 +423,10 @@ if (Test-Path $operaGxPath) {
 # Disable Discord overlay via config file
 $discordCfg = "$env:APPDATA\\discord\\settings.json"
 if (Test-Path $discordCfg) {
-    $cfg = Get-Content $discordCfg | ConvertFrom-Json
+    $cfg = Get-Content $discordCfg -Raw -Encoding UTF8 | ConvertFrom-Json
     $cfg | Add-Member -Force -NotePropertyName "enableHardwareAcceleration" -NotePropertyValue $false
     $cfg | Add-Member -Force -NotePropertyName "IS_MAXIMIZED" -NotePropertyValue $false
-    $cfg | ConvertTo-Json | Set-Content $discordCfg
+    $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
 }`,
     disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe" /f 2>nul`,
   },

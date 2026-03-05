@@ -57,25 +57,6 @@ function expandPath(p: string): string {
   return p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p;
 }
 
-function getFirefoxCacheDirs(localDir: string, roamingDir: string): string[] {
-  const dirs: string[] = [];
-  for (const base of [localDir, roamingDir]) {
-    const profilesDir = path.join(base, "Mozilla", "Firefox", "Profiles");
-    try {
-      if (fs.existsSync(profilesDir)) {
-        const entries = fs.readdirSync(profilesDir, { withFileTypes: true });
-        for (const entry of entries) {
-          if (entry.isDirectory()) {
-            dirs.push(path.join(profilesDir, entry.name, "cache2"));
-            dirs.push(path.join(profilesDir, entry.name, "thumbnails"));
-          }
-        }
-      }
-    } catch {}
-  }
-  return dirs;
-}
-
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -181,13 +162,15 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "browser",
         name: "Browser Cache",
-        description: "Chrome, Edge and Firefox browser cache files",
+        description: "Chrome, Edge and Opera GX browser cache files",
         paths: [
           path.join(local, "Google", "Chrome", "User Data", "Default", "Cache", "Cache_Data"),
           path.join(local, "Google", "Chrome", "User Data", "Default", "Code Cache"),
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Cache", "Cache_Data"),
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Code Cache"),
-          ...getFirefoxCacheDirs(local, roaming),
+          path.join(roaming, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
+          path.join(roaming, "Opera Software", "Opera GX Stable", "Code Cache"),
+          path.join(roaming, "Opera Software", "Opera GX Stable", "GPUCache"),
         ],
       },
       {
@@ -509,7 +492,7 @@ try {
         }
 
         totalFreed += freed;
-        cleaned.push(cat.name);
+        if (freed > 0) cleaned.push(cat.name);
       }
 
       res.json({
@@ -675,9 +658,9 @@ Write-Host "Restore point created successfully."`;
         "fast-startup-on": { name: "Enable Fast Startup", command: 'powercfg /h on && reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 1 /f', description: "Enables Fast Startup (hybrid boot)." },
         "fast-startup-off": { name: "Disable Fast Startup", command: 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f', description: "Disables Fast Startup for clean shutdowns." },
         "windows-update-default": { name: "Windows Update Default", command: 'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /f 2>nul & echo Default Windows Update restored', description: "Restores default Windows Update behavior." },
-        "windows-update-security": { name: "Windows Update Security Only", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f', description: "Security updates only." },
-        "location-on": { name: "Enable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 0 /f && sc config lfsvc start= auto && net start lfsvc', description: "Re-enables Windows Location Services." },
-        "location-off": { name: "Disable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 1 /f && sc config lfsvc start= disabled && net stop lfsvc', description: "Completely disables Windows Location Services." },
+        "windows-update-security": { name: "Windows Update Security Only", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 3 /f && reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f', description: "Restricts Windows Update to notify-before-install mode (security updates applied manually)." },
+        "location-on": { name: "Enable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 0 /f & sc config lfsvc start= auto & net start lfsvc 2>nul & echo Location Services enabled.', description: "Re-enables Windows Location Services." },
+        "location-off": { name: "Disable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 1 /f & sc config lfsvc start= disabled & net stop lfsvc 2>nul & echo Location Services disabled.', description: "Completely disables Windows Location Services." },
         "open-system-restore": { name: "Open System Restore", command: "rstrui.exe", description: "Opens the Windows System Restore wizard." },
       };
 

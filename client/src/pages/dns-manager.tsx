@@ -84,7 +84,7 @@ export default function DNSManager() {
     onSuccess: (data) => {
       toast({
         title: "DNS Updated",
-        description: `Switched to ${data.provider}. Run as Administrator to apply system-wide.`,
+        description: `Switched to ${data.provider} — applied to all active network adapters.`,
       });
     },
     onError: (e: Error) => {
