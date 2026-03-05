@@ -1,14 +1,71 @@
-      - name: Setup Python for node-gyp
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+name: Build Desktop App (Windows Installer)
 
-      - name: Install setuptools (distutils compatibility)
-        run: |
-          python -m pip install --upgrade pip setuptools
-          python -c "import distutils; print('distutils available')"
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
+      - name: Build app (Vite + esbuild)
+        run: npm run build
+
+      - name: Install Electron and electron-builder
+        run: npm install --no-save electron@33 electron-builder@25
+
+      - name: Build Windows installer
+        run: npx electron-builder --win --x64
         env:
-          npm_config_python: ${{ env.pythonLocation }}\python.exe
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List release output
+        run: Get-ChildItem release -Recurse -ErrorAction SilentlyContinue
+        shell: pwsh
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JGoodeAIO-Installer
+          path: release/*.exe
+          retention-days: 30
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "JGoode A.I.O PC Tool ${{ github.ref_name }}"
+          body: |
+            ## JGoode A.I.O PC Tool ${{ github.ref_name }}
+
+            ### How to install
+            1. Download **`JGoodeAIO-Setup.exe`** below
+            2. Run it (click **Yes** when Windows asks for admin permission)
+            3. Follow the installer — everything sets up automatically
+            4. Launch from your **Desktop shortcut** or Start Menu
+
+            ### Features
+            - 47 PowerShell system tweaks (privacy, performance, gaming, debloat)
+            - Live CPU / RAM / GPU / Disk monitoring
+            - System cleaner (temp files, prefetch, update cache, error reports, crash dumps)
+            - 13 accent colors + dark/light mode
+            - GitHub settings sync
+            - Self-contained — no separate installs needed
+          files: release/*.exe
+          draft: false
+          prerelease: false
