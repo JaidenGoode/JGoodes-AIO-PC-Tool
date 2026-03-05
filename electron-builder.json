@@ -1,0 +1,25 @@
+{
+  "appId": "com.jaidengoode.aio-pc-tool",
+  "productName": "JGoode AIO PC Tool",
+  "copyright": "Copyright © 2025 JaidenGoode",
+  "main": "electron/main.cjs",
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "win": {
+    "target": [{ "target": "nsis", "arch": ["x64"] }],
+    "icon": "electron/icon.png",
+    "requestedExecutionLevel": "requireAdministrator"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "JGoode AIO PC Tool",
+    "installerIcon": "electron/icon.png",
+    "uninstallerIcon": "electron/icon.png",
+    "installerHeaderIcon": "electron/icon.png"
+  }
+}
