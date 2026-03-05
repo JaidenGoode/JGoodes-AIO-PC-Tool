@@ -3,18 +3,7 @@ import fs from "fs";
 import path from "path";
 
 export function serveStatic(app: Express) {
-  let distPath: string;
-
-  if (process.env.ELECTRON_IS_PACKAGED === "true" && process.env.ELECTRON_RESOURCES_PATH) {
-    distPath = path.join(
-      process.env.ELECTRON_RESOURCES_PATH,
-      "app.asar.unpacked",
-      "dist",
-      "public"
-    );
-  } else {
-    distPath = path.resolve(__dirname, "public");
-  }
+  const distPath = path.resolve(__dirname, "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
