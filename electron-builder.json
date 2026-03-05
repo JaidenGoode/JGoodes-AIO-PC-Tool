@@ -3,6 +3,10 @@
   "productName": "JGoode AIO PC Tool",
   "copyright": "Copyright © 2025 JaidenGoode",
   "main": "electron/main.cjs",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
   "files": [
     "dist/**/*",
     "electron/**/*"
