@@ -35,14 +35,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List dist output
-        run: Get-ChildItem dist -Recurse -Name | Select-Object -First 30
+      - name: List release output
+        run: Get-ChildItem release -Recurse -Name | Select-Object -First 30
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: JGoodeAIO-Installer
-          path: dist/*.exe
+          path: release/*.exe
           retention-days: 30
 
       - name: Create Release (on tag)
@@ -55,8 +55,8 @@ jobs:
 
             ### How to install
             1. Download **`JGoode AIO PC Tool Setup*.exe`** below
-            2. Run it — Windows will ask for admin permission, click **Yes**
-            3. Follow the installer, launch from Desktop shortcut
+            2. Run it — click **Yes** when Windows asks for admin permission
+            3. Follow the installer, then launch from your Desktop shortcut
 
             ### Features
             - 47 PowerShell system tweaks (privacy, performance, gaming, debloat)
@@ -64,6 +64,6 @@ jobs:
             - System cleaner (temp files, DNS flush, network reset)
             - 13 accent colors + dark/light mode
             - GitHub settings sync
-          files: dist/*.exe
+          files: release/*.exe
           draft: false
           prerelease: false
