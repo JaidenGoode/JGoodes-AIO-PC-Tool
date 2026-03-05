@@ -8,6 +8,8 @@ let mainWindow = null;
 function startServer() {
   process.env.PORT = String(PORT);
   process.env.NODE_ENV = "production";
+  process.env.ELECTRON_IS_PACKAGED = app.isPackaged ? "true" : "false";
+  process.env.ELECTRON_RESOURCES_PATH = process.resourcesPath || "";
 
   const serverPath = path.join(__dirname, "..", "dist", "index.cjs");
   try {
