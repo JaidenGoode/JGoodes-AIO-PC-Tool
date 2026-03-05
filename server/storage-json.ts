@@ -1,13 +1,14 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import path from "path";
 import os from "os";
-import type { IStorage } from "./storage";
+import type { IStorage, CleaningHistoryEntry } from "./storage";
 import type { Tweak, InsertTweak, UpdateTweakRequest } from "@shared/schema";
 
 interface StoreData {
   tweaks: Tweak[];
   settings: Record<string, string>;
   nextId: number;
+  cleaningHistory: CleaningHistoryEntry[];
 }
 
 function getStorePath(): string {
@@ -20,12 +21,13 @@ function getStorePath(): string {
 function loadStore(): StoreData {
   const storePath = getStorePath();
   if (!existsSync(storePath)) {
-    return { tweaks: [], settings: {}, nextId: 1 };
+    return { tweaks: [], settings: {}, nextId: 1, cleaningHistory: [] };
   }
   try {
-    return JSON.parse(readFileSync(storePath, "utf-8"));
+    const raw = JSON.parse(readFileSync(storePath, "utf-8"));
+    return { cleaningHistory: [], ...raw };
   } catch {
-    return { tweaks: [], settings: {}, nextId: 1 };
+    return { tweaks: [], settings: {}, nextId: 1, cleaningHistory: [] };
   }
 }
 
@@ -84,5 +86,17 @@ export class JsonStorage implements IStorage {
 
   getAllSettings(): Promise<Record<string, string>> {
     return Promise.resolve(loadStore().settings);
+  }
+
+  getCleaningHistory(): Promise<CleaningHistoryEntry[]> {
+    return Promise.resolve(loadStore().cleaningHistory);
+  }
+
+  addCleaningHistory(entry: CleaningHistoryEntry): Promise<void> {
+    const store = loadStore();
+    store.cleaningHistory.unshift(entry);
+    if (store.cleaningHistory.length > 50) store.cleaningHistory.length = 50;
+    saveStore(store);
+    return Promise.resolve();
   }
 }

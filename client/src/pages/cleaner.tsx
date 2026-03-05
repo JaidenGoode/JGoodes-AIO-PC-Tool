@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2, Zap, Package, FileText, Image as ImageIcon,
   Globe, HardDrive, RotateCcw, ScanLine, Sparkles,
-  CheckSquare, Square, Loader2, CheckCircle2, AlertCircle, X,
-  Cpu, RefreshCw, Database, Layers, Archive,
+  CheckSquare, Square, Loader2, CheckCircle2, AlertCircle,
+  Cpu, RefreshCw, Database, Layers, Archive, History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { scanCleaner, cleanCategories } from "@/lib/api";
+import {
+  scanCleaner, cleanCategories, getCleaningHistory, addCleaningHistory,
+} from "@/lib/api";
 import type { ScanCategory, ScanResult, CleanResult } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -34,25 +36,53 @@ const CAT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   recycle: Archive,
 };
 
-function UsageBar({ pct, color = "bg-primary" }: { pct: number; color?: string }) {
+function UsageBar({ pct, active = true }: { pct: number; active?: boolean }) {
   return (
-    <div className="h-1.5 w-full rounded-full bg-secondary/60 overflow-hidden">
+    <div className="h-2 w-full rounded-full bg-secondary/60 overflow-hidden">
       <div
-        className={cn("h-full rounded-full transition-all duration-500", color)}
+        className={cn(
+          "h-full rounded-full transition-all duration-500",
+          active ? "progress-gradient-fill" : "bg-secondary/50"
+        )}
         style={{ width: `${Math.min(100, pct)}%` }}
       />
     </div>
   );
 }
 
+function fmtSizeLocal(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+}
+
+function formatHistoryDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (sameDay) return `Today at ${time}`;
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return `Yesterday at ${time}`;
+  return d.toLocaleDateString([], { month: "short", day: "numeric" }) + ` at ${time}`;
+}
+
 export default function CleanerPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [state, setState] = useState<PageState>("idle");
   const [scanData, setScanData] = useState<ScanResult | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [cleanResult, setCleanResult] = useState<CleanResult | null>(null);
   const [cleanProgress, setCleanProgress] = useState(0);
   const [scanProgress, setScanProgress] = useState(0);
+
+  const { data: cleanHistory } = useQuery({
+    queryKey: ["/api/cleaner/history"],
+    queryFn: getCleaningHistory,
+  });
 
   const scanMutation = useMutation({
     mutationFn: () => {
@@ -99,6 +129,15 @@ export default function CleanerPage() {
     onSuccess: (data) => {
       setCleanResult(data);
       setState("done");
+      if (data.freed > 0) {
+        addCleaningHistory({
+          freed: data.freed,
+          freedHuman: data.freedHuman,
+          count: data.cleaned.length,
+        })
+          .then(() => queryClient.invalidateQueries({ queryKey: ["/api/cleaner/history"] }))
+          .catch(() => {});
+      }
     },
     onError: () => {
       setState("scanned");
@@ -114,7 +153,7 @@ export default function CleanerPage() {
   const handleClean = () => {
     if (selected.size === 0) return;
     setState("cleaning");
-    cleanMutation.mutate([...selected]);
+    cleanMutation.mutate(Array.from(selected));
   };
 
   const handleReset = () => {
@@ -148,12 +187,7 @@ export default function CleanerPage() {
         .reduce((s, c) => s + c.size, 0)
     : 0;
 
-  function fmtSizeLocal(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
-    return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
-  }
+  const hasHistory = cleanHistory && cleanHistory.entries.length > 0;
 
   return (
     <div className="space-y-5 pb-8 max-w-4xl mx-auto">
@@ -172,27 +206,25 @@ export default function CleanerPage() {
             Scan, select and remove junk files safely — no important files affected
           </p>
         </div>
-        {(state === "scanned" || state === "done") && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleReset}
-            className="h-8 text-xs border-border/60 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-3 w-3 mr-1.5" />
-            Reset
-          </Button>
+        {hasHistory && (
+          <div className="text-right">
+            <p className="text-[10px] text-muted-foreground/40 uppercase tracking-wider font-semibold">Total freed</p>
+            <p className="text-lg font-black text-primary font-mono leading-tight">
+              {cleanHistory.totalFreedHuman}
+            </p>
+          </div>
         )}
       </motion.div>
 
-      {/* IDLE — big scan card */}
       <AnimatePresence mode="wait">
+        {/* IDLE */}
         {state === "idle" && (
           <motion.div
             key="idle"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
+            className="space-y-4"
           >
             {/* Hero scan panel */}
             <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-8 text-center">
@@ -226,7 +258,7 @@ export default function CleanerPage() {
             </div>
 
             {/* Category preview cards */}
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {[
                 { icon: Trash2, label: "Temp Files", sub: "System & app temp" },
                 { icon: Globe, label: "Browser Cache", sub: "Web browser data" },
@@ -245,6 +277,72 @@ export default function CleanerPage() {
                 </div>
               ))}
             </div>
+
+            {/* Cleaning History */}
+            {hasHistory && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="rounded-xl border border-border bg-card overflow-hidden"
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-primary/10">
+                      <History className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="text-[12px] font-bold text-foreground">Cleaning History</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-muted-foreground/50">Total freed since install: </span>
+                    <span className="text-[11px] font-bold text-primary font-mono">{cleanHistory.totalFreedHuman}</span>
+                  </div>
+                </div>
+                <div className="divide-y divide-border/30">
+                  {cleanHistory.entries.slice(0, 6).map((entry, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between px-4 py-2.5 hover:bg-secondary/20 transition-colors"
+                      data-testid={`row-history-${i}`}
+                    >
+                      <div>
+                        <p className="text-[11px] text-foreground/70 font-medium">
+                          {formatHistoryDate(entry.date)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/40 mt-0.5">
+                          {entry.count} {entry.count === 1 ? "category" : "categories"} cleaned
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[13px] font-black font-mono text-green-400">{entry.freedHuman}</p>
+                        <p className="text-[9px] text-muted-foreground/30 mt-0.5">freed</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {cleanHistory.entries.length > 6 && (
+                  <div className="px-4 py-2 text-center border-t border-border/30">
+                    <span className="text-[10px] text-muted-foreground/40">
+                      +{cleanHistory.entries.length - 6} more sessions
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Info notice */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-start gap-2.5 p-3 rounded-lg border border-border/40 bg-secondary/20"
+            >
+              <AlertCircle className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+                All categories are safe to clean. No personal files, documents, photos or important system files
+                are touched. Only temporary, cache and log files are removed.
+              </p>
+            </motion.div>
           </motion.div>
         )}
 
@@ -396,7 +494,7 @@ export default function CleanerPage() {
                       <p className="text-[11px] text-muted-foreground mt-0.5">{cat.description}</p>
                       {cat.found && (
                         <div className="mt-1.5">
-                          <UsageBar pct={pct} color={isSelected ? "bg-primary" : "bg-secondary"} />
+                          <UsageBar pct={pct} active={isSelected} />
                         </div>
                       )}
                     </div>
@@ -526,14 +624,20 @@ export default function CleanerPage() {
                     ))}
                   </div>
                 )}
+                {cleanHistory && cleanHistory.entries.length > 0 && (
+                  <div className="mx-auto px-5 py-3 rounded-xl bg-secondary/40 border border-border/50 inline-block">
+                    <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider font-semibold mb-0.5">All time freed</p>
+                    <p className="text-2xl font-black text-primary font-mono">{cleanHistory.totalFreedHuman}</p>
+                  </div>
+                )}
                 <div className="flex justify-center gap-2 pt-2">
                   <Button
                     onClick={handleReset}
-                    variant="outline"
-                    className="h-8 px-5 text-xs border-border/60"
-                    data-testid="button-done-reset"
+                    className="h-9 px-6 bg-green-600 hover:bg-green-600/90 text-white font-bold text-sm"
+                    data-testid="button-done-complete"
                   >
-                    Scan Again
+                    <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+                    Complete
                   </Button>
                 </div>
               </div>
@@ -541,22 +645,6 @@ export default function CleanerPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Info notice */}
-      {state === "idle" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-start gap-2.5 p-3 rounded-lg border border-border/40 bg-secondary/20"
-        >
-          <AlertCircle className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
-          <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-            All categories are safe to clean. No personal files, documents, photos or important system files
-            are touched. Only temporary, cache and log files are removed.
-          </p>
-        </motion.div>
-      )}
     </div>
   );
 }

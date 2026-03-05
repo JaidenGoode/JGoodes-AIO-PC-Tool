@@ -1,0 +1,25 @@
+// Maps a tweak title to the title of the tweak it conflicts with.
+// Conflicts mean: both being active simultaneously causes redundancy or
+// functional interference (e.g. writing to the same registry key).
+
+export const TWEAK_CONFLICTS: Record<string, string> = {
+  // IPv6 tweaks write to the same DisabledComponents registry key with
+  // different values — 255 (full disable) vs 32 (prefer IPv4). Enabling
+  // both results in one overwriting the other.
+  "Disable IPv6":           "Prefer IPv4 over IPv6",
+  "Prefer IPv4 over IPv6":  "Disable IPv6",
+
+  // Debloat Windows already disables Cortana via Group Policy.
+  // Having both active applies the same registry keys twice.
+  "Debloat Windows":        "Disable Cortana",
+  "Disable Cortana":        "Debloat Windows",
+
+  // Game Mode depends on Xbox infrastructure. Disabling Xbox Core Services
+  // while Game Mode is on may cause Game Mode to silently fail.
+  "Enable Game Mode":             "Disable Xbox Core Services",
+  "Disable Xbox Core Services":   "Enable Game Mode",
+};
+
+export function getConflict(title: string): string | null {
+  return TWEAK_CONFLICTS[title] ?? null;
+}

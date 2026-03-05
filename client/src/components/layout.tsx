@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils";
 
 interface LayoutProps { children: ReactNode; }
 
+function openCommandPalette() {
+  window.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
+  );
+}
+
 export function Layout({ children }: LayoutProps) {
   const { accentHue, setAccentHue, toggleMode, mode } = useTheme();
   const style = { "--sidebar-width": "15rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties;
@@ -19,9 +25,16 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Header */}
           <header
-            className="flex h-11 shrink-0 items-center justify-between gap-3 px-4 border-b border-border/50 bg-background/90 sticky top-0 z-50"
-            style={{ backdropFilter: "blur(16px)" }}
+            className="relative flex h-11 shrink-0 items-center justify-between gap-3 px-4 bg-background/90 sticky top-0 z-50"
+            style={{ backdropFilter: "blur(20px)" }}
           >
+            {/* Gradient border bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-px"
+              style={{
+                background: "linear-gradient(90deg, transparent 0%, hsl(var(--border)) 20%, hsl(var(--primary)/0.35) 50%, hsl(var(--border)) 80%, transparent 100%)"
+              }}
+            />
+
             <div className="flex items-center gap-2.5">
               <SidebarTrigger
                 data-testid="button-sidebar-toggle"
@@ -42,6 +55,20 @@ export function Layout({ children }: LayoutProps) {
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Ctrl+K command palette trigger */}
+              <button
+                data-testid="button-command-palette"
+                onClick={openCommandPalette}
+                className="hidden md:flex items-center gap-1.5 text-[10px] text-muted-foreground/30 bg-secondary/30 border border-border/20 px-2.5 py-1.5 rounded-lg hover:text-muted-foreground/60 hover:border-border/40 hover:bg-secondary/50 transition-all duration-150 font-mono"
+              >
+                <span>Search</span>
+                <div className="flex items-center gap-0.5 ml-0.5">
+                  <kbd className="text-[8px] px-1 py-0.5 rounded border border-border/30 bg-secondary/50">Ctrl</kbd>
+                  <span className="text-[8px] opacity-40">+</span>
+                  <kbd className="text-[8px] px-1 py-0.5 rounded border border-border/30 bg-secondary/50">K</kbd>
+                </div>
+              </button>
+
               {/* Color swatches */}
               <div className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-secondary/40 border border-border/30">
                 {THEME_COLORS.map((color) => (
@@ -96,7 +123,10 @@ export function Layout({ children }: LayoutProps) {
           </main>
 
           {/* Status bar */}
-          <div className="flex items-center justify-between h-6 px-4 border-t border-border/30 bg-secondary/15 shrink-0">
+          <div className="relative flex items-center justify-between h-6 px-4 bg-secondary/10 shrink-0">
+            <div className="absolute inset-x-0 top-0 h-px"
+              style={{ background: "linear-gradient(90deg, transparent 0%, hsl(var(--border)/0.6) 30%, hsl(var(--border)/0.6) 70%, transparent 100%)" }}
+            />
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-muted-foreground/40 font-mono">v2.5.0</span>
               <span className="text-[10px] text-muted-foreground/20">|</span>

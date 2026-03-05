@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Cpu, MemoryStick, Monitor, HardDrive, Wrench,
@@ -30,36 +30,36 @@ function LiveBar({
   value,
   unit = "%",
   sublabel,
-  color,
 }: {
   label: string;
   value: number | null;
   unit?: string;
   sublabel?: string;
-  color?: string;
 }) {
   const pct = value ?? 0;
-  const barColor = color || "bg-primary";
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <div>
-          <span className="text-[11px] font-semibold text-foreground/80">{label}</span>
-          {sublabel && (
-            <span className="text-[10px] text-muted-foreground/50 ml-1.5">{sublabel}</span>
-          )}
+    <div className="space-y-1">
+      <div className="flex items-center gap-2.5">
+        <span className="text-[11px] font-bold text-foreground/70 w-9 shrink-0 uppercase tracking-wide">
+          {label}
+        </span>
+        <div className="flex-1 h-2.5 rounded-full bg-secondary/60 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700 progress-gradient-fill"
+            style={{ width: `${Math.min(100, pct)}%` }}
+          />
         </div>
-        <span className={cn("text-[13px] font-bold font-mono tabular-nums", value === null ? "text-muted-foreground/30" : "text-foreground")}>
+        <span className={cn(
+          "text-[12px] font-black font-mono tabular-nums w-11 text-right shrink-0",
+          value === null ? "text-muted-foreground/30" : "text-foreground"
+        )}>
           {value === null ? "N/A" : `${value}${unit}`}
         </span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-secondary/60 overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-700", barColor)}
-          style={{ width: `${Math.min(100, pct)}%` }}
-        />
-      </div>
+      {sublabel && (
+        <p className="text-[9.5px] text-muted-foreground/35 pl-11 leading-none">{sublabel}</p>
+      )}
     </div>
   );
 }
@@ -68,6 +68,133 @@ function TempDot({ temp }: { temp: number | null }) {
   if (!temp) return <span className="text-muted-foreground/30 font-mono text-xs">N/A</span>;
   const color = temp < 55 ? "text-green-400" : temp < 75 ? "text-amber-400" : "text-primary";
   return <span className={cn("font-bold font-mono text-xs tabular-nums", color)}>{temp}°C</span>;
+}
+
+const RING_R = 42;
+const RING_C = 2 * Math.PI * RING_R;
+
+function HealthRing({ score, grade, gradeColor }: { score: number; grade: string; gradeColor: string }) {
+  const offset = RING_C * (1 - Math.min(score, 100) / 100);
+  return (
+    <div className="relative w-28 h-28 shrink-0">
+      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+        <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--secondary))" strokeWidth="7" />
+        <circle
+          cx="50" cy="50" r={RING_R} fill="none"
+          stroke={gradeColor}
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={RING_C}
+          strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)", filter: `drop-shadow(0 0 6px ${gradeColor}55)` }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-black tabular-nums leading-none" style={{ color: gradeColor }}>
+          {score}
+        </span>
+        <span className="text-[10px] font-bold text-muted-foreground/50 mt-0.5">/ 100</span>
+      </div>
+    </div>
+  );
+}
+
+function HealthScoreCard({
+  activeTweaks, totalTweaks, usage,
+}: {
+  activeTweaks: number;
+  totalTweaks: number;
+  usage: any;
+}) {
+  const { score, grade, gradeColor, factors } = useMemo(() => {
+    const tweakPct   = totalTweaks > 0 ? (activeTweaks / totalTweaks) * 100 : 0;
+    const ramFree    = usage ? 100 - (usage.ram?.usage ?? 50) : 50;
+    const diskFree   = usage ? 100 - (usage.disk?.usage ?? 50) : 50;
+    const cpuFree    = usage ? 100 - (usage.cpu?.usage ?? 50) : 50;
+
+    const sc = Math.round(tweakPct * 0.50 + ramFree * 0.20 + diskFree * 0.15 + cpuFree * 0.15);
+
+    const g  = sc >= 85 ? "A" : sc >= 70 ? "B" : sc >= 55 ? "C" : sc >= 40 ? "D" : "F";
+    const gc =
+      sc >= 85 ? "#4ade80"
+      : sc >= 70 ? "#60a5fa"
+      : sc >= 55 ? "#fbbf24"
+      : sc >= 40 ? "#fb923c"
+      : "hsl(var(--primary))";
+
+    return {
+      score: Math.min(sc, 100),
+      grade: g,
+      gradeColor: gc,
+      factors: [
+        { label: "Tweaks",    pct: tweakPct, weight: "50%", barOpacity: 1.00 },
+        { label: "RAM free",  pct: ramFree,  weight: "20%", barOpacity: 0.72 },
+        { label: "Disk free", pct: diskFree, weight: "15%", barOpacity: 0.52 },
+        { label: "CPU idle",  pct: cpuFree,  weight: "15%", barOpacity: 0.38 },
+      ],
+    };
+  }, [activeTweaks, totalTweaks, usage]);
+
+  const gradeDesc: Record<string, string> = {
+    A: "Excellent — fully optimized",
+    B: "Good — minor improvements possible",
+    C: "Fair — several tweaks available",
+    D: "Below average — optimize recommended",
+    F: "Poor — many improvements possible",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.08 }}
+      className="p-4 rounded-xl border border-border bg-card card-premium"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-1.5 rounded-lg bg-primary/10">
+          <Activity className="h-3.5 w-3.5 text-primary" />
+        </div>
+        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+          System Health Score
+        </span>
+        <span
+          className="ml-auto text-[11px] font-black px-2 py-0.5 rounded-md"
+          style={{ color: gradeColor, background: `${gradeColor}18`, border: `1px solid ${gradeColor}35` }}
+        >
+          Grade {grade}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-5">
+        <HealthRing score={score} grade={grade} gradeColor={gradeColor} />
+
+        <div className="flex-1 min-w-0 space-y-2">
+          <p className="text-[11px] text-muted-foreground/60 leading-snug mb-3">
+            {gradeDesc[grade]}
+          </p>
+          {factors.map((f) => (
+            <div key={f.label} className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground/60">{f.label}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] text-muted-foreground/30 font-mono">{f.weight}</span>
+                  <span className="text-[10px] font-bold font-mono tabular-nums text-primary">
+                    {Math.round(f.pct)}%
+                  </span>
+                </div>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-secondary/60 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 progress-gradient-fill"
+                  style={{ width: `${Math.min(100, f.pct)}%`, opacity: f.barOpacity }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 export default function Dashboard() {
@@ -156,6 +283,13 @@ export default function Dashboard() {
           </Link>
         </motion.div>
       )}
+
+      {/* System Health Score */}
+      <HealthScoreCard
+        activeTweaks={activeTweaks}
+        totalTweaks={totalTweaks}
+        usage={usage}
+      />
 
       {/* System Info */}
       <div>
@@ -284,20 +418,38 @@ export default function Dashboard() {
               Temperatures
             </span>
           </div>
-          <div className="space-y-0 divide-y divide-border/40">
+          <div className="space-y-3">
             {[
-              { label: "CPU Temperature", temp: temps?.cpu?.current ?? null, icon: Cpu },
-              { label: "GPU Temperature", temp: temps?.gpu?.current ?? null, icon: Monitor },
-              { label: "CPU Maximum",     temp: temps?.cpu?.max ?? null,     icon: Thermometer },
-            ].map(({ label, temp, icon: Icon }) => (
-              <div key={label} className="flex items-center justify-between py-2.5">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                  <span className="text-[11px] text-muted-foreground">{label}</span>
+              { label: "CPU Temp",  temp: temps?.cpu?.current ?? null, icon: Cpu },
+              { label: "GPU Temp",  temp: temps?.gpu?.current ?? null, icon: Monitor },
+              { label: "CPU Peak",  temp: temps?.cpu?.max ?? null,     icon: Thermometer },
+            ].map(({ label, temp, icon: Icon }) => {
+              const pct   = temp ? Math.min((temp / 110) * 100, 100) : 0;
+              const barBg = temp
+                ? temp < 55
+                  ? "linear-gradient(90deg,#16a34a80,#22c55e)"
+                  : temp < 75
+                    ? "linear-gradient(90deg,#d9770680,#f59e0b)"
+                    : "linear-gradient(90deg,hsl(var(--primary)/0.6),hsl(var(--primary)))"
+                : undefined;
+              return (
+                <div key={label} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                      <span className="text-[11px] text-muted-foreground">{label}</span>
+                    </div>
+                    <TempDot temp={temp} />
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-secondary/50 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${pct}%`, background: barBg }}
+                    />
+                  </div>
                 </div>
-                <TempDot temp={temp} />
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-4 pt-3 border-t border-border/40">
             {(temps?.cpu?.current || temps?.gpu?.current) ? (

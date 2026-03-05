@@ -474,6 +474,116 @@ if ($result) { $result }`;
     }
   });
 
+  // ── Tweaks: Detect from System ─────────────────────────────────────────────
+  app.post("/api/tweaks/detect", async (_req, res) => {
+    if (process.platform !== "win32") {
+      return res.json({ active: 0, total: 0, results: {} });
+    }
+    try {
+      // String.raw preserves single backslashes — needed for PS registry paths
+      const psScript = String.raw`
+function creg($p,$n,$v){try{$r=(Get-ItemProperty -Path $p -Name $n -EA Stop)."$n";if($r -eq $v){1}else{0}}catch{0}}
+function csvc($n){try{if((Get-Service -Name $n -EA Stop).StartType -eq 'Disabled'){1}else{0}}catch{0}}
+$d=@{}
+$d['Debloat Windows']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsConsumerFeatures' 1)
+$d['Disable Telemetry & Data Collection']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection' 'AllowTelemetry' 0)
+$d['Disable Advertising ID']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' 'Enabled' 0)
+$d['Disable Activity History & Timeline']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0)
+$d['Disable Customer Experience Improvement Program']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows' 'CEIPEnable' 0)
+$d['Disable Windows Error Reporting']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting' 'Disabled' 1)
+$d['Disable Clipboard History & Cloud Sync']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'AllowClipboardHistory' 0)
+$d['Disable Start Menu Suggestions & Tips']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SystemPaneSuggestionsEnabled' 0)
+$d['Maximum Performance Power Plan']=if(((powercfg /getactivescheme 2>$null)-join ' ') -match 'e9a42b02'){1}else{0}
+$d['Disable SuperFetch / SysMain']=(csvc 'SysMain')
+$d['Disable NTFS Access Timestamps']=try{if(((fsutil behavior query disablelastaccess)-join ' ') -match 'DisableLastAccess\s*=\s*[13]'){1}else{0}}catch{0}
+$d['Disable Windows Performance Counters']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib' 'Disable Performance Counters' 4)
+$d['Disable Windows File Indexing']=(csvc 'WSearch')
+$d['Disable Multiplane Overlay (MPO)']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'OverlayTestMode' 5)
+$d['Disable Hibernation']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power' 'HiberbootEnabled' 0)
+$d['Disable Background Apps (Legacy)']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' 'LetAppsRunInBackground' 2)
+$d['Optimize Visual Effects for Performance']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' 'VisualFXSetting' 2)
+$d['Disable Cortana']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' 'AllowCortana' 0)
+$d['Disable Mouse Acceleration']=(creg 'HKCU:\Control Panel\Mouse' 'MouseSpeed' '0')
+$d['Keep All CPU Cores Active (Unpark Cores)']=try{$q=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null)-join ' ');if($q -match '0x00000064'){1}else{0}}catch{0}
+$d['Minimum Priority for Background Processes']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'Win32PrioritySeparation' 38)
+$d['Disable GameBar']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0)
+$d['Disable GameBar Background Recording']=(creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0)
+$d['Optimize for Windowed & Borderless Games']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'ForceEffectMode' 2)
+$d['Enable Game Mode']=(creg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnabled' 1)
+$d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers' 'HwSchMode' 2)
+$d['Instant Menu Response (Zero Delay)']=(creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0')
+$d['Disable Full Screen Optimizations']=(creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2)
+$d['System Responsiveness & Network Throttling']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 10)
+$d['GPU & CPU Priority for Games']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'GPU Priority' 8)
+$d['Fortnite Process High Priority']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 3)
+$d['Disable Dynamic Tick']=try{$bcd=(bcdedit /enum 2>$null)-join ' ';if($bcd -match 'disabledynamictick\s+Yes'){1}else{0}}catch{0}
+$d["Disable Nagle's Algorithm"]=try{$all=Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA Stop;$f=0;foreach($i in $all){try{if((Get-ItemProperty $i.PSPath 'TcpAckFrequency' -EA Stop).TcpAckFrequency -eq 1){$f=1;break}}catch{}};$f}catch{0}
+$d['Disable Xbox Core Services']=(csvc 'XboxGipSvc')
+$d['Disable IPv6']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' 255)
+$d['Prefer IPv4 over IPv6']=try{$v=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' -EA Stop).DisabledComponents;if($v -eq 32){1}else{0}}catch{0}
+$d['Enable SSD TRIM Optimization']=try{$tr=(fsutil behavior query DisableDeleteNotify)-join ' ';if($tr -match '= 0'){1}else{0}}catch{0}
+$d['Disable Web Search in Windows Search']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0)
+$d['Disable Windows TCP Auto-Tuning']=try{$tcp=(netsh int tcp show global 2>$null)-join ' ';if($tcp -match 'Auto-Tuning.+disabled'){1}else{0}}catch{0}
+$d['Disable Startup Program Delay']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0)
+$d['Disable Windows Automatic Maintenance']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance' 'MaintenanceDisabled' 1)
+$d['Disable Power Throttling']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling' 'PowerThrottlingOff' 1)
+$d['Debloat Microsoft Edge']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'HubsSidebarEnabled' 0)
+$d['Debloat Google Chrome']=(creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'BackgroundModeEnabled' 0)
+$d['Optimize Discord for Gaming']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Discord.exe\PerfOptions' 'CpuPriorityClass' 2)
+$d | ConvertTo-Json -Compress`;
+
+      const raw = await runPowerShell(psScript, 35000).catch(() => "{}");
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      const results: Record<string, number> = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+
+      const allTweaks = await storage.getTweaks();
+      let activeCount = 0;
+
+      for (const tweak of allTweaks) {
+        const val = results[tweak.title];
+        if (val !== undefined) {
+          const isActive = val === 1;
+          if (isActive) activeCount++;
+          if (tweak.isActive !== isActive) {
+            await storage.updateTweak(tweak.id, { isActive });
+          }
+        }
+      }
+
+      res.json({ active: activeCount, total: Object.keys(results).length, results });
+    } catch (err) {
+      res.status(500).json({ message: "Detection failed", error: String(err) });
+    }
+  });
+
+  // ── Tweaks: Bulk Update ─────────────────────────────────────────────────────
+  app.post("/api/tweaks/bulk", async (req, res) => {
+    try {
+      const { titles, isActive } = z
+        .object({ titles: z.array(z.string()), isActive: z.boolean() })
+        .parse(req.body);
+
+      const allTweaks = await storage.getTweaks();
+      const toUpdate =
+        titles.length === 0
+          ? allTweaks
+          : allTweaks.filter((t) => titles.includes(t.title));
+
+      let updated = 0;
+      for (const tweak of toUpdate) {
+        if (tweak.isActive !== isActive) {
+          await storage.updateTweak(tweak.id, { isActive });
+          updated++;
+        }
+      }
+      res.json({ updated });
+    } catch (err) {
+      if (err instanceof z.ZodError)
+        return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // ── Cleaner: Scan ──────────────────────────────────────────────────────────
   app.get("/api/cleaner/scan", async (_req, res) => {
     try {
@@ -596,6 +706,33 @@ try {
       if (err instanceof z.ZodError)
         return res.status(400).json({ message: err.errors[0].message });
       res.status(500).json({ message: "Clean failed", error: String(err) });
+    }
+  });
+
+  // ── Cleaner: History ───────────────────────────────────────────────────────
+  app.get("/api/cleaner/history", async (_req, res) => {
+    try {
+      const entries = await storage.getCleaningHistory();
+      const totalFreed = entries.reduce((sum, e) => sum + e.freed, 0);
+      const totalFreedHuman = fmtSize(totalFreed);
+      res.json({ entries, totalFreed, totalFreedHuman });
+    } catch {
+      res.status(500).json({ message: "Failed to get history" });
+    }
+  });
+
+  app.post("/api/cleaner/history", async (req, res) => {
+    try {
+      const { freed, freedHuman, count } = z
+        .object({ freed: z.number(), freedHuman: z.string(), count: z.number() })
+        .parse(req.body);
+      const entry = { date: new Date().toISOString(), freed, freedHuman, count };
+      await storage.addCleaningHistory(entry);
+      res.json({ ok: true });
+    } catch (err) {
+      if (err instanceof z.ZodError)
+        return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Failed to add history" });
     }
   });
 

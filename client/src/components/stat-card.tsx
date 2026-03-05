@@ -33,10 +33,10 @@ export function StatCard({
     >
       <div
         className={cn(
-          "h-full flex flex-col p-4 rounded-xl border transition-all duration-200 group cursor-default",
+          "card-premium h-full flex flex-col p-4 rounded-xl border transition-all duration-200 group cursor-default",
           accent
-            ? "bg-primary/6 border-primary/20 hover:border-primary/35"
-            : "bg-card border-border hover:border-primary/20"
+            ? "bg-primary/6 border-primary/20 hover:border-primary/40 glow-primary-sm"
+            : "bg-card border-border hover:border-primary/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
         )}
       >
         {/* Icon + label row */}
@@ -52,7 +52,7 @@ export function StatCard({
               {icon}
             </div>
           </div>
-          <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.12em]">
+          <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.14em]">
             {title}
           </span>
         </div>
@@ -72,7 +72,7 @@ export function StatCard({
             </div>
             {secondaryValue && (
               <div
-                className="text-[11px] text-muted-foreground/60 mt-0.5 truncate"
+                className="text-[11px] text-muted-foreground/55 mt-0.5 truncate"
                 title={typeof secondaryValue === "string" ? secondaryValue : undefined}
               >
                 {secondaryValue}

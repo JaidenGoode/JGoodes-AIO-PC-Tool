@@ -480,3 +480,42 @@ export function generatePowerShellScript(
 
   return lines.join("\n");
 }
+
+export function generateUndoScript(
+  tweaks: Array<{ title: string; isActive: boolean }>
+): string {
+  const active = tweaks.filter((t) => t.isActive);
+  const reversible = active.filter(
+    (t) => TWEAK_COMMANDS[t.title]?.disable
+  );
+  if (reversible.length === 0) return "";
+
+  const lines: string[] = [
+    "#Requires -RunAsAdministrator",
+    "# JGoode A.I.O PC Tool - UNDO Script",
+    "# Reverts all currently active tweaks back to Windows defaults.",
+    `# Generated: ${new Date().toLocaleString()}`,
+    `# Tweaks to revert: ${reversible.length}`,
+    "",
+    "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force",
+    'Write-Host "JGoode A.I.O PC Tool - Reverting tweaks..." -ForegroundColor Cyan',
+    "",
+  ];
+
+  for (const tweak of reversible) {
+    const cmd = TWEAK_COMMANDS[tweak.title];
+    if (!cmd?.disable) continue;
+    lines.push(`# ── Undo: ${tweak.title} ──`);
+    lines.push(`Write-Host "Reverting: ${tweak.title}" -ForegroundColor Yellow`);
+    lines.push(cmd.disable);
+    lines.push("");
+  }
+
+  lines.push('Write-Host "" ');
+  lines.push(`Write-Host "Done! ${reversible.length} tweaks reverted to defaults." -ForegroundColor Green`);
+  lines.push('Write-Host "RESTART RECOMMENDED for all changes to take effect." -ForegroundColor Red');
+  lines.push('Write-Host "Press any key to exit..." -ForegroundColor Gray');
+  lines.push("$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')");
+
+  return lines.join("\n");
+}

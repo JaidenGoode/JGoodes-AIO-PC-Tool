@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CommandPalette } from "@/components/command-palette";
 
 import Dashboard from "@/pages/dashboard";
 import Tweaks from "@/pages/tweaks";
@@ -40,6 +41,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
+          <CommandPalette />
           <Router />
         </TooltipProvider>
       </QueryClientProvider>

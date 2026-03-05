@@ -49,9 +49,34 @@ export type SystemUsage = {
   disk: { usage: number; readMb: number; writeMb: number };
 };
 
+export type BulkUpdateResult = { updated: number };
+
+export type CleaningHistoryEntry = {
+  date: string;
+  freed: number;
+  freedHuman: string;
+  count: number;
+};
+
+export type CleaningHistory = {
+  entries: CleaningHistoryEntry[];
+  totalFreed: number;
+  totalFreedHuman: string;
+};
+
 export const getTweaks = (): Promise<Tweak[]> => fetchApi("/api/tweaks");
 export const updateTweak = (id: number, isActive: boolean): Promise<Tweak> =>
   fetchApi(`/api/tweaks/${id}`, "PATCH", { isActive });
+
+export const bulkUpdateTweaks = (
+  titles: string[],
+  isActive: boolean
+): Promise<BulkUpdateResult> =>
+  fetchApi("/api/tweaks/bulk", "POST", { titles, isActive });
+
+export type DetectResult = { active: number; total: number; results: Record<string, number> };
+export const detectTweaks = (): Promise<DetectResult> =>
+  fetchApi("/api/tweaks/detect", "POST");
 
 export const getSystemInfo = (): Promise<unknown> => fetchApi("/api/system/info");
 export const getSystemUsage = (): Promise<SystemUsage> => fetchApi("/api/system/usage");
@@ -60,6 +85,11 @@ export const getTemps = (): Promise<unknown> => fetchApi("/api/system/temps");
 export const scanCleaner = (): Promise<ScanResult> => fetchApi("/api/cleaner/scan");
 export const cleanCategories = (ids: string[]): Promise<CleanResult> =>
   fetchApi("/api/cleaner/clean", "POST", { ids });
+
+export const getCleaningHistory = (): Promise<CleaningHistory> =>
+  fetchApi("/api/cleaner/history");
+export const addCleaningHistory = (entry: Omit<CleaningHistoryEntry, "date">): Promise<void> =>
+  fetchApi("/api/cleaner/history", "POST", entry);
 
 export const getDns = (): Promise<unknown> => fetchApi("/api/dns/current");
 export const setDns = (provider: string): Promise<unknown> =>

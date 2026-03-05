@@ -1,6 +1,9 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const path = require("path");
 const http = require("http");
+const { spawn } = require("child_process");
+const fs = require("fs");
+const os = require("os");
 
 const PORT = 57321;
 let mainWindow = null;
@@ -26,9 +29,6 @@ function startServer() {
   }
 }
 
-// Waits for the Express server to accept connections.
-// Uses a single shared `done` flag so the callback fires EXACTLY once,
-// even if a response and a timeout race against each other.
 function waitForServer(callback) {
   let done = false;
 
@@ -57,7 +57,6 @@ function waitForServer(callback) {
       }
     });
 
-    // On timeout, destroy the request — the error event above handles retry.
     req.setTimeout(500, () => req.destroy());
   }
 
@@ -132,3 +131,55 @@ ipcMain.on("window-maximize", () => {
   else mainWindow?.maximize();
 });
 ipcMain.on("window-close", () => mainWindow?.close());
+
+// ── Run PowerShell Script (in-app execution) ──────────────────────────────────
+ipcMain.handle("run-ps-script", async (event, scriptContent) => {
+  const tmpFile = path.join(os.tmpdir(), `jgoode-tweak-${Date.now()}.ps1`);
+
+  try {
+    fs.writeFileSync(tmpFile, scriptContent, "utf-8");
+  } catch (err) {
+    event.sender.send("ps-output", { type: "stderr", text: `Failed to write script: ${err.message}\n` });
+    event.sender.send("ps-output", { type: "done", code: 1 });
+    return { success: false, code: 1 };
+  }
+
+  return new Promise((resolve) => {
+    const ps = spawn("powershell.exe", [
+      "-NoProfile",
+      "-ExecutionPolicy", "Bypass",
+      "-File", tmpFile,
+    ], { windowsHide: true });
+
+    ps.stdout.on("data", (data) => {
+      const text = data.toString();
+      if (event.sender && !event.sender.isDestroyed()) {
+        event.sender.send("ps-output", { type: "stdout", text });
+      }
+    });
+
+    ps.stderr.on("data", (data) => {
+      const text = data.toString();
+      if (event.sender && !event.sender.isDestroyed()) {
+        event.sender.send("ps-output", { type: "stderr", text });
+      }
+    });
+
+    ps.on("close", (code) => {
+      try { fs.unlinkSync(tmpFile); } catch {}
+      if (event.sender && !event.sender.isDestroyed()) {
+        event.sender.send("ps-output", { type: "done", code: code ?? 0 });
+      }
+      resolve({ success: code === 0, code: code ?? 0 });
+    });
+
+    ps.on("error", (err) => {
+      try { fs.unlinkSync(tmpFile); } catch {}
+      if (event.sender && !event.sender.isDestroyed()) {
+        event.sender.send("ps-output", { type: "stderr", text: `${err.message}\n` });
+        event.sender.send("ps-output", { type: "done", code: 1 });
+      }
+      resolve({ success: false, code: 1 });
+    });
+  });
+});
