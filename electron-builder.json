@@ -6,7 +6,10 @@
   "npmRebuild": false,
   "asar": false,
   "extraMetadata": {
-    "main": "electron/main.cjs"
+    "main": "electron/main.cjs",
+    "version": "2.5.0",
+    "description": "JGoode A.I.O PC Tool — All-in-one Windows optimizer with tweaks, cleaner, DNS manager, restore points and live system monitoring.",
+    "author": "JaidenGoode"
   },
   "directories": {
     "output": "release"
