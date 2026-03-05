@@ -1,4 +1,4 @@
-name: Build Desktop App (Windows Installer)
+name: Build Desktop App (Windows .exe)
 
 on:
   push:
@@ -25,42 +25,24 @@ jobs:
         working-directory: desktop
         run: dotnet restore
 
-      - name: Convert PNG icon to ICO (ImageMagick)
-        run: |
-          magick "desktop\Assets\icon.png" -resize 256x256 "desktop\Assets\icon.ico"
-          Write-Host "Icon converted successfully"
+      - name: Build (Release)
+        working-directory: desktop
+        run: dotnet build -c Release --no-restore
 
-      - name: Publish self-contained app
+      - name: Publish — Self-contained single-file .exe
         working-directory: desktop
         run: |
           dotnet publish -c Release -r win-x64 --self-contained true `
-            -p:PublishSingleFile=false `
-            -p:PublishReadyToRun=false `
-            -p:ApplicationIcon=Assets\icon.ico `
+            -p:PublishSingleFile=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
             -o ../publish/win-x64
-
-      - name: Download Visual C++ 2022 x64 Redistributable
-        run: |
-          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" `
-            -OutFile "publish\vc_redist.x64.exe" -UseBasicParsing
-          Write-Host "Downloaded VC++ redistributable: $((Get-Item publish\vc_redist.x64.exe).Length) bytes"
-
-      - name: Install Inno Setup
-        run: choco install innosetup --yes --no-progress
-
-      - name: Compile installer
-        run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "desktop\installer.iss"
-          Write-Host "Installer compiled successfully"
-
-      - name: List installer output
-        run: Get-ChildItem installer-output -Recurse
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: JGoodeAIO-Installer
-          path: installer-output/JGoodeAIO-Setup.exe
+          name: JGoodeAIO-Windows
+          path: publish/win-x64/JGoodeAIO.exe
           retention-days: 30
 
       - name: Create Release (on tag)
@@ -71,21 +53,18 @@ jobs:
           body: |
             ## JGoode A.I.O PC Tool ${{ github.ref_name }}
 
-            ### How to install
-            1. Download **`JGoodeAIO-Setup.exe`** below
-            2. Run it (click **Yes** if Windows asks for admin permission)
-            3. Follow the installer — it sets up everything automatically
-            4. Launch from your **Desktop shortcut** or Start Menu
+            ### Download
+            Download `JGoodeAIO.exe` below — no installation required, just run it.
 
-            > The installer includes all required runtimes. No separate downloads needed.
+            > **Run as Administrator** for tweaks to apply correctly.
 
-            ### Features
-            - 47 PowerShell system tweaks (privacy, performance, gaming, debloat)
+            ### What's included
+            - 47 PowerShell system tweaks
             - Live CPU / RAM / GPU / Disk monitoring
-            - System cleaner (temp files, DNS flush, network reset)
+            - System cleaner (temp files, DNS, network reset)
             - 13 accent colors + dark/light mode
             - GitHub settings sync
-            - Self-contained — no .NET or VC++ runtime installation required
-          files: installer-output/JGoodeAIO-Setup.exe
+            - Self-contained — no .NET runtime required
+          files: publish/win-x64/JGoodeAIO.exe
           draft: false
           prerelease: false
