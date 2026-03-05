@@ -8,3 +8,9 @@ vite.config.ts.*
 .env.*.local
 .local/
 attached_assets/
+
+# .NET / Avalonia Desktop
+desktop/bin/
+desktop/obj/
+publish/
+*.pdb

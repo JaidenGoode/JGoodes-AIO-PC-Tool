@@ -60,3 +60,50 @@ A modern, professional web-based Windows PC optimization tool — a full redesig
 - Temperature sensors require admin privileges or hardware support — may show N/A on some systems
 - The cleaner scans the server filesystem (Linux/Windows temp directories based on OS)
 - All PowerShell commands require Administrator privileges to run on Windows
+
+## Desktop App (Avalonia .NET 8 Native Windows App)
+
+A complete native Windows desktop app in `desktop/` — an exact clone of the web app.
+
+### Tech Stack
+- **Framework**: Avalonia UI 11.1.3 + .NET 8
+- **MVVM**: CommunityToolkit.Mvvm 8.3.2
+- **Icons**: Material.Icons.Avalonia 2.1.0
+- **JSON**: Newtonsoft.Json 13.0.3
+- **Hardware**: System.Diagnostics.PerformanceCounter (Windows), P/Invoke GlobalMemoryStatusEx
+
+### Desktop Project Structure
+```
+desktop/
+├── JGoodeAIO.csproj         # .NET 8 Avalonia project
+├── Program.cs               # Entry point
+├── App.axaml/cs             # App + theme initialization
+├── MainWindow.axaml/cs      # Frameless window + sidebar + nav highlight logic
+├── Assets/Styles.axaml      # All global styles + dark theme color resources
+├── Models/Tweak.cs          # Tweak + AppSettings models
+├── ViewModels/              # MVVM ViewModels for each page
+├── Views/                   # AXAML UserControls for each page
+├── Services/
+│   ├── ThemeService.cs      # 13 accent colors + dark/light mode at runtime
+│   ├── StorageService.cs    # JSON persistence at AppData\Roaming\JGoodeAIO
+│   ├── HardwareService.cs   # CPU/RAM/Disk monitoring + PerformanceCounter
+│   └── PowerShellService.cs # PowerShell execution + .ps1 export
+└── Data/TweakDefinitions.cs # All 47 tweak definitions
+```
+
+### Desktop Features
+- Frameless custom window with drag-to-move titlebar
+- Sidebar with 5 pages: Dashboard, Tweaks, Cleaner, Settings, GitHub
+- Dashboard: live CPU/RAM/GPU/Disk bars updating every 4 seconds
+- Tweaks: all 47 tweaks with ToggleSwitch, search, category filter, export .ps1
+- Cleaner: temp/prefetch/thumbnail/WU cache scan + clean + DNS flush + network reset
+- Settings: 13 accent color circles, dark/light toggle, font size slider
+- GitHub: token verify + push settings.json to GitHub repo
+- Theme system mirrors web app: 13 colors persist to AppData JSON
+
+### Build / Release
+`.github/workflows/build-desktop.yml` — triggers on push to main or `v*` tags:
+- `dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true`
+- Uploads `JGoodeAIO.exe` as GitHub Release artifact
+- On `v*` tag: creates a GitHub Release with download link
+- Output: ~40-50MB self-contained exe (no .NET runtime needed)
