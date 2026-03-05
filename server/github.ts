@@ -1,6 +1,13 @@
 import { ReplitConnectors } from "@replit/connectors-sdk";
 
-const connectors = new ReplitConnectors();
+let connectors: ReplitConnectors | null = null;
+try {
+  connectors = new ReplitConnectors();
+} catch {
+  connectors = null;
+}
+
+const DESKTOP_ERROR = "GitHub sync requires the Replit-hosted version of this app. In the desktop app, use the GitHub page to copy your files manually.";
 
 export interface GitHubRepo {
   id: number;
@@ -19,6 +26,7 @@ export interface GitHubUser {
 }
 
 async function ghProxy(endpoint: string, options: RequestInit = {}) {
+  if (!connectors) throw new Error(DESKTOP_ERROR);
   return connectors.proxy("github", endpoint, options);
 }
 
