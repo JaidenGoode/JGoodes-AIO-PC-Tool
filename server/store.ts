@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { getUncachableStripeClient } from "./stripeClient";
 
-const PRICE_CENTS = 500;
+const PRICE_CENTS = 600;
 const PRODUCT_NAME = "JGoode's A.I.O PC Tool";
 
 // This URL always resolves to the most recently published GitHub Release asset.
@@ -20,9 +20,9 @@ function shell(title: string, body: string): string {
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>${title}</title>
-  <meta name="description" content="100 Windows tweaks, system cleaner, DNS manager, live monitoring and more. One-time purchase, $5."/>
+  <meta name="description" content="100 Windows tweaks, system cleaner, DNS manager, live monitoring and more. One-time purchase, $6."/>
   <meta property="og:title" content="JGoode's A.I.O PC Tool — Ultimate Windows Optimizer"/>
-  <meta property="og:description" content="100 PowerShell tweaks, advanced cleaner, live hardware monitoring and more. One-time $5."/>
+  <meta property="og:description" content="100 PowerShell tweaks, advanced cleaner, live hardware monitoring and more. One-time $6."/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -306,7 +306,7 @@ function landingPage(): string {
   ];
 
   const steps = [
-    { n: "1", title: "Purchase", desc: "One-time $5 payment via Stripe. Secure checkout, no subscription, no hidden fees." },
+    { n: "1", title: "Purchase", desc: "One-time $6 payment via Stripe. Secure checkout, no subscription, no hidden fees." },
     { n: "2", title: "Download", desc: "Get the installer immediately after payment. A single .exe file — no account needed." },
     { n: "3", title: "Optimize", desc: "Run as Administrator, detect your system state, apply tweaks and watch your PC fly." },
   ];
@@ -329,7 +329,7 @@ function landingPage(): string {
     <span class="logo-dot"></span>
     JGoode's A.I.O PC Tool
   </a>
-  <a class="nav-buy" href="#pricing">Buy — $5</a>
+  <a class="nav-buy" href="#pricing">Buy — $6</a>
 </nav>
 
 <div class="hero">
@@ -339,7 +339,7 @@ function landingPage(): string {
   <p class="hero-sub">100 one-click tweaks. Advanced cleaner. Live monitoring. DNS control. Everything your PC needs — in one sleek tool.</p>
   <a class="hero-cta" href="#pricing">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-    Get It for $5 — One Time
+    Get It for $6 — One Time
   </a>
   <p class="hero-note">No subscription &nbsp;·&nbsp; No account required &nbsp;·&nbsp; Instant download &nbsp;·&nbsp; Windows 10/11</p>
 </div>
@@ -387,7 +387,7 @@ function landingPage(): string {
   <div style="text-align:center;margin-bottom:2.5rem;">
     <div class="section-tag" style="display:inline-flex;">Pricing</div>
     <h2>One price. Everything included.</h2>
-    <p class="section-sub" style="margin:0 auto;">No tiers, no subscription, no upsell. $5 gets you every feature, every future update.</p>
+    <p class="section-sub" style="margin:0 auto;">No tiers, no subscription, no upsell. $6 gets you every feature, every future update.</p>
   </div>
   <div class="pricing-wrap">
     <div class="pricing-card">
@@ -399,7 +399,7 @@ function landingPage(): string {
       </ul>
       <form method="POST" action="/store/checkout">
         <button type="submit" class="buy-btn">
-          Buy Now — $5
+          Buy Now — $6
         </button>
       </form>
       <div class="secure-note">🔒 Secure checkout powered by Stripe &nbsp;·&nbsp; Card, Apple Pay, Google Pay</div>
