@@ -604,6 +604,72 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "More simultaneous connections to web servers. Some servers may rate-limit excessive connections."
   },
 
+  // ── NETWORK ───────────────────────────────────────────────────────────────
+  {
+    title: "Disable NetBIOS over TCP/IP",
+    description: "Disables the legacy NetBIOS over TCP/IP protocol on all network adapters. NetBIOS is a 1980s-era LAN protocol still running on every Windows PC by default, generating unnecessary broadcast traffic and exposing NetBIOS name resolution to the network. Home and gaming PCs have no use for it.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Some very old file/printer sharing tools that rely on NetBIOS names may stop working. No effect on modern SMB2/SMB3 file sharing or internet connectivity."
+  },
+  {
+    title: "Disable SMBv1 Protocol",
+    description: "Disables the legacy SMBv1 file-sharing protocol and removes the SMBv1 Windows feature. SMBv1 is a 1990s-era protocol that is exploited by ransomware (WannaCry, NotPetya) and has been replaced by SMBv2/SMBv3 since Windows Vista. Modern file sharing, NAS drives, and network printers all use SMBv2+.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Very old NAS devices or printers that only support SMBv1 (pre-2006 firmware) will stop being accessible. All modern devices use SMBv2+ and are unaffected."
+  },
+  {
+    title: "Disable Large Send Offload (LSO)",
+    description: "Disables Large Send Offload on the network adapter. LSO batches multiple TCP segments together before sending, which increases throughput but adds latency. For online gaming and real-time applications where low latency matters more than raw throughput, disabling LSO reduces ping variance.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Large file upload throughput may be marginally reduced. Latency and ping consistency improve — net benefit for gaming."
+  },
+  {
+    title: "Enable Receive Side Scaling (RSS)",
+    description: "Enables Receive Side Scaling which distributes incoming network packet processing across multiple CPU cores instead of all being handled by a single core. Prevents network bottlenecks on high-speed connections and reduces CPU latency spikes during heavy online gaming or streaming.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "No negative effects. Improves multi-core utilization for network workloads."
+  },
+  {
+    title: "Disable Delivery Optimization Service",
+    description: "Disables the Windows Update Delivery Optimization service which uploads Windows updates from your PC to other people's computers over the internet as a P2P distribution network. This uses your upload bandwidth without asking permission. Disabling it stops this behavior entirely.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Your PC will no longer serve Windows update files to other PCs. Your own Windows updates are unaffected — they still download from Microsoft directly."
+  },
+  {
+    title: "Disable Windows Connect Now (wcncsvc)",
+    description: "Disables the Windows Connect Now service used for pairing with wireless devices and network routers using the WCN protocol (primarily for WPS setup). This service listens on the network and is unnecessary on configured home networks.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Cannot use Windows Connect Now to automatically configure wireless devices. Normal Wi-Fi connection and internet access unaffected."
+  },
+  {
+    title: "Disable LLMNR Protocol",
+    description: "Disables Link-Local Multicast Name Resolution, a name-resolution protocol that broadcasts queries on the local network when DNS fails. LLMNR is exploited by LLMNR poisoning attacks (a common network attack on Windows). Home PCs do not need it — DNS handles all name resolution.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Local network hostname resolution falls back to DNS only. No effect on internet access or normal file sharing."
+  },
+  {
+    title: "Disable mDNS Multicast",
+    description: "Disables Windows mDNS (Multicast DNS) which broadcasts discovery packets on the local network for finding printers and devices. While useful for some setups, it generates constant background network traffic and can expose the PC's presence on the network.",
+    category: "network",
+    isActive: false,
+    warning: "Do NOT disable if you use mDNS-based device discovery (Apple Bonjour, AirPrint, Chromecast, etc.) on your local network.",
+    featureBreaks: "mDNS device discovery disabled. AirPrint, Chromecast, and Bonjour-based printers may not be discoverable automatically."
+  },
+
   // ── SERVICES (Windows Service Optimization) ───────────────────────────────
   {
     title: "Disable BranchCache (PeerDistSvc)",
@@ -716,5 +782,53 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: null,
     featureBreaks: "Peer networking identity management disabled. No effect on normal networking."
+  },
+  {
+    title: "Disable Print Spooler (Spooler)",
+    description: "Stops and disables the Windows Print Spooler service. The Print Spooler runs permanently in the background even on systems with no printer attached. It has been the target of multiple critical Windows exploits (PrintNightmare, CVE-2021-34527). Disabling it frees RAM and closes a significant attack surface.",
+    category: "services",
+    isActive: false,
+    warning: "Do NOT disable if you use a printer. The Print Spooler is required for all local and network printing. Only apply on systems that never print.",
+    featureBreaks: "All printing disabled — local and network printers. Re-enable via Services.msc (Spooler) if a printer is needed."
+  },
+  {
+    title: "Disable Fax Service (Fax)",
+    description: "Disables the Windows Fax and Scan service. No modern consumer or gaming PC uses fax functionality. This service consumes resources for zero benefit on virtually all home systems.",
+    category: "services",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows Fax and Scan application will not function. No effect on any modern workflow."
+  },
+  {
+    title: "Disable Distributed Link Tracking (TrkWks)",
+    description: "Disables the Distributed Link Tracking Client which maintains file shortcut links across a network domain. It generates periodic network traffic to communicate with the tracking server. On home and gaming PCs with no Active Directory domain, this service provides zero benefit.",
+    category: "services",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Shortcut links to files on remote network locations may break if the file is moved. No effect on local shortcuts."
+  },
+  {
+    title: "Disable Program Compatibility Assistant (PcaSvc)",
+    description: "Disables the Program Compatibility Assistant which monitors programs for compatibility problems and suggests compatibility settings. On a stable gaming PC with known software, this monitoring adds background CPU overhead with no benefit.",
+    category: "services",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows will not automatically detect or suggest compatibility fixes for older programs. Manual compatibility settings still work via right-click properties."
+  },
+  {
+    title: "Disable Touch Keyboard Service (TabletInputService)",
+    description: "Disables the Touch Keyboard and Handwriting Panel service used for on-screen keyboard input on tablets and touchscreen devices. Desktop PC users with a physical keyboard gain nothing from this service running in the background.",
+    category: "services",
+    isActive: false,
+    warning: "Do NOT disable if you use a touchscreen, tablet mode, or handwriting input on your device.",
+    featureBreaks: "On-screen touch keyboard, handwriting recognition panel disabled. No effect on physical keyboard input."
+  },
+  {
+    title: "Disable Windows Insider Service (wisvc)",
+    description: "Disables the Windows Insider Service responsible for delivering and managing Windows Preview builds. If you are not enrolled in the Windows Insider Program, this service runs unnecessarily. Disabling it frees background resources.",
+    category: "services",
+    isActive: false,
+    warning: "Do NOT disable if you are enrolled in the Windows Insider Program (receiving Preview builds).",
+    featureBreaks: "Windows Insider Preview builds will not be delivered. No effect if you are on a stable Windows release."
   },
 ];

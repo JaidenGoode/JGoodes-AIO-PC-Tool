@@ -676,6 +676,44 @@ $d['Disable Peer Name Resolution (PNRPsvc)']=csvc 'PNRPsvc'
 $d['Disable Peer Networking (p2psvc)']=csvc 'p2psvc'
 $d['Disable Peer Networking Identity (p2pimsvc)']=csvc 'p2pimsvc'
 
+# Network
+$d['Disable Delivery Optimization Service']=csvc 'DoSvc'
+$d['Disable Windows Connect Now (wcncsvc)']=csvc 'wcncsvc'
+$d['Disable LLMNR Protocol']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' 'EnableMulticast' 0
+$d['Disable mDNS Multicast']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'EnableMDNS' 0
+
+# NetBIOS: check all IP-enabled adapters via WMI
+try{
+  $nbOff=1
+  $nbAdapters=Get-WmiObject Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True' -EA Stop
+  foreach($nb in $nbAdapters){if($nb.TcpipNetbiosOptions -ne 2){$nbOff=0;break}}
+  $d['Disable NetBIOS over TCP/IP']=$nbOff
+}catch{$d['Disable NetBIOS over TCP/IP']=0}
+
+# SMBv1: check server config
+try{$smb=(Get-SmbServerConfiguration -EA Stop).EnableSMB1Protocol;$d['Disable SMBv1 Protocol']=if($smb -eq $false){1}else{0}}catch{$d['Disable SMBv1 Protocol']=0}
+
+# LSO: check if disabled on at least one physical adapter
+try{
+  $lsoOff=0
+  $lsoAdapters=Get-NetAdapter -Physical -EA Stop
+  foreach($la in $lsoAdapters){
+    try{$lsoState=Get-NetAdapterLso -Name $la.Name -EA Stop;if($lsoState.IPv4 -eq 'Disabled' -and $lsoState.IPv6 -eq 'Disabled'){$lsoOff=1;break}}catch{}
+  }
+  $d['Disable Large Send Offload (LSO)']=$lsoOff
+}catch{$d['Disable Large Send Offload (LSO)']=0}
+
+# RSS: check via netsh
+try{$rssOut=(netsh int tcp show global 2>$null) -join ' ';$d['Enable Receive Side Scaling (RSS)']=if($rssOut -match 'Receive-Side Scaling.+enabled'){1}else{0}}catch{$d['Enable Receive Side Scaling (RSS)']=0}
+
+# More services
+$d['Disable Print Spooler (Spooler)']=csvc 'Spooler'
+$d['Disable Fax Service (Fax)']=csvc 'Fax'
+$d['Disable Distributed Link Tracking (TrkWks)']=csvc 'TrkWks'
+$d['Disable Program Compatibility Assistant (PcaSvc)']=csvc 'PcaSvc'
+$d['Disable Touch Keyboard Service (TabletInputService)']=csvc 'TabletInputService'
+$d['Disable Windows Insider Service (wisvc)']=csvc 'wisvc'
+
 $d | ConvertTo-Json -Compress`;
 
       // Run PS script — retry once if output is empty/missing

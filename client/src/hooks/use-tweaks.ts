@@ -32,7 +32,8 @@ export function useUpdateTweak() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tweaks"] });
-      triggerDetect(500);
+      triggerDetect(600);
+      triggerDetect(8000);
     },
   });
 }

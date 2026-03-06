@@ -4,7 +4,7 @@ import {
   Search, Wrench, Shield, Zap, SlidersHorizontal,
   AlertTriangle, Ghost, Gamepad2, Globe, CheckCircle2,
   Download, Copy, Check, Terminal, Loader2, ScanSearch,
-  Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Cog,
+  Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Cog, Network,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ declare global {
   }
 }
 
-const CATEGORIES = ["all", "debloat", "privacy", "performance", "gaming", "system", "browser", "services"] as const;
+const CATEGORIES = ["all", "debloat", "privacy", "performance", "gaming", "system", "browser", "network", "services"] as const;
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   performance: Zap,
@@ -50,6 +50,7 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   debloat: Ghost,
   gaming: Gamepad2,
   browser: Globe,
+  network: Network,
   services: Cog,
   all: Wrench,
 };
@@ -61,6 +62,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   debloat: "text-orange-400",
   gaming: "text-green-400",
   browser: "text-cyan-400",
+  network: "text-teal-400",
   services: "text-rose-400",
   all: "text-primary",
 };
@@ -182,6 +184,7 @@ export default function Tweaks() {
           old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old
         );
         bulkMutation.mutate({ titles, isActive: true });
+        triggerDetect(800);
       }, 120000);
 
       cleanupRef.current = window.electronAPI.onScriptOutput((data) => {
@@ -201,12 +204,15 @@ export default function Tweaks() {
           cleanupRef.current?.();
           cleanupRef.current = null;
           setSelectedIds(new Set());
-          // Immediately mark tweaks as optimized in the UI cache
+          // Immediately mark tweaks as optimized in the UI cache so badges update right away
           queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
             old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old
           );
           bulkMutation.mutate({ titles, isActive: true });
-          triggerDetect(2000);
+          // First scan at 800ms — catches registry changes immediately
+          triggerDetect(800);
+          // Second confirm scan at 9s — catches service state changes that take time to settle
+          triggerDetect(9000);
           // Auto-close dialog after success so user sees the optimized badges
           if (data.code === 0) {
             setTimeout(() => {

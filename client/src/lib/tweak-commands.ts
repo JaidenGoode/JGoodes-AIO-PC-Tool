@@ -1021,6 +1021,127 @@ if (Test-Path $discordCfg) {
 }`,
     disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe" /f 2>nul`,
   },
+
+  // ── NETWORK ────────────────────────────────────────────────────────────────
+  "Disable NetBIOS over TCP/IP": {
+    requiresAdmin: true,
+    enable: `# Disable NetBIOS over TCP/IP on all adapters via WMI (0=EnableViaDhcp, 1=Enabled, 2=Disabled)
+$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" -ErrorAction SilentlyContinue
+foreach ($a in $adapters) { $a.SetTCPIPNetBIOS(2) 2>$null }
+# Also set registry fallback for new adapters
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters\\Interfaces" /f 2>nul`,
+    disable: `$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" -ErrorAction SilentlyContinue
+foreach ($a in $adapters) { $a.SetTCPIPNetBIOS(0) 2>$null }`,
+  },
+
+  "Disable SMBv1 Protocol": {
+    requiresAdmin: true,
+    enable: `Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force -ErrorAction SilentlyContinue
+Set-SmbClientConfiguration -EnableBandwidthThrottling 0 -EnableLargeMtu 1 -Force -ErrorAction SilentlyContinue
+Disable-WindowsOptionalFeature -Online -FeatureName smb1protocol -NoRestart -ErrorAction SilentlyContinue
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /t REG_DWORD /d 0 /f`,
+    disable: `Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force -ErrorAction SilentlyContinue
+reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /f 2>nul`,
+    requiresRestart: true,
+  },
+
+  "Disable Large Send Offload (LSO)": {
+    requiresAdmin: true,
+    enable: `# Disable LSO v1 and v2 on all physical adapters
+Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
+  $name = $_.Name
+  Disable-NetAdapterLso -Name $name -ErrorAction SilentlyContinue
+  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv4)" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
+  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv6)" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
+}`,
+    disable: `Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
+  $name = $_.Name
+  Enable-NetAdapterLso -Name $name -ErrorAction SilentlyContinue
+  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv4)" -DisplayValue "Enabled" -ErrorAction SilentlyContinue
+  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv6)" -DisplayValue "Enabled" -ErrorAction SilentlyContinue
+}`,
+  },
+
+  "Enable Receive Side Scaling (RSS)": {
+    requiresAdmin: true,
+    enable: `netsh int tcp set global rss=enabled 2>nul
+Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
+  Enable-NetAdapterRss -Name $_.Name -ErrorAction SilentlyContinue
+}`,
+    disable: `netsh int tcp set global rss=disabled 2>nul`,
+  },
+
+  "Disable Delivery Optimization Service": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name DoSvc -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name DoSvc -Force -ErrorAction SilentlyContinue
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 0 /f`,
+    disable: `Set-Service -Name DoSvc -StartupType Automatic -ErrorAction SilentlyContinue
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /f 2>nul`,
+  },
+
+  "Disable Windows Connect Now (wcncsvc)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name wcncsvc -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name wcncsvc -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name wcncsvc -StartupType Manual -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable LLMNR Protocol": {
+    requiresAdmin: true,
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" /v EnableMulticast /t REG_DWORD /d 0 /f`,
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" /v EnableMulticast /f 2>nul`,
+  },
+
+  "Disable mDNS Multicast": {
+    requiresAdmin: true,
+    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /t REG_DWORD /d 0 /f`,
+    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /f 2>nul`,
+  },
+
+  // ── SERVICES (additional) ──────────────────────────────────────────────────
+  "Disable Print Spooler (Spooler)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name Spooler -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name Spooler -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name Spooler -StartupType Automatic -ErrorAction SilentlyContinue
+Start-Service -Name Spooler -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable Fax Service (Fax)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name Fax -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name Fax -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name Fax -StartupType Manual -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable Distributed Link Tracking (TrkWks)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name TrkWks -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name TrkWks -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name TrkWks -StartupType Automatic -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable Program Compatibility Assistant (PcaSvc)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name PcaSvc -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name PcaSvc -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name PcaSvc -StartupType Manual -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable Touch Keyboard Service (TabletInputService)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name TabletInputService -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name TabletInputService -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name TabletInputService -StartupType Manual -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable Windows Insider Service (wisvc)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name wisvc -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name wisvc -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name wisvc -StartupType Manual -ErrorAction SilentlyContinue`,
+  },
 };
 
 export function getTweakCommand(title: string): TweakCommand | null {

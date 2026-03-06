@@ -74,7 +74,7 @@ export const bulkUpdateTweaks = (
 ): Promise<BulkUpdateResult> =>
   fetchApi("/api/tweaks/bulk", "POST", { titles, isActive });
 
-export type DetectResult = { active: number; total: number; results: Record<string, number> };
+export type DetectResult = { active: number; total: number; results: Record<string, number>; fromCache?: boolean };
 export const detectTweaks = (): Promise<DetectResult> =>
   fetchApi("/api/tweaks/detect", "POST");
 

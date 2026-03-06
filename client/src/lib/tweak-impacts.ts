@@ -84,6 +84,24 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Unlock Reserved Network Bandwidth":             "High",
   "Increase Browser Connection Limits":            "Medium",
 
+  // Network
+  "Disable NetBIOS over TCP/IP":                   "Medium",
+  "Disable SMBv1 Protocol":                        "Medium",
+  "Disable Large Send Offload (LSO)":              "Medium",
+  "Enable Receive Side Scaling (RSS)":             "Medium",
+  "Disable Delivery Optimization Service":         "High",
+  "Disable Windows Connect Now (wcncsvc)":         "Low",
+  "Disable LLMNR Protocol":                        "Medium",
+  "Disable mDNS Multicast":                        "Low",
+
+  // Services (additional)
+  "Disable Print Spooler (Spooler)":               "Medium",
+  "Disable Fax Service (Fax)":                     "Low",
+  "Disable Distributed Link Tracking (TrkWks)":   "Low",
+  "Disable Program Compatibility Assistant (PcaSvc)": "Low",
+  "Disable Touch Keyboard Service (TabletInputService)": "Low",
+  "Disable Windows Insider Service (wisvc)":       "Low",
+
   // Services
   "Disable BranchCache (PeerDistSvc)":             "Low",
   "Disable iSCSI Initiator (MSiSCSI)":             "Low",

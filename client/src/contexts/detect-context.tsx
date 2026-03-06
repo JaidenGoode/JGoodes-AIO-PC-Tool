@@ -1,6 +1,7 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { detectTweaks } from "@/lib/api";
+import type { Tweak } from "@shared/schema";
 
 interface DetectContextValue {
   triggerDetect: (delayMs?: number) => void;
@@ -31,10 +32,26 @@ export function DetectProvider({ children }: { children: ReactNode }) {
     setIsDetecting(true);
     try {
       const result = await detectTweaks();
-      console.log("[detect] Detection complete:", result.active, "active of", result.total, "scanned");
-      await queryClient.invalidateQueries({ queryKey: ["/api/tweaks"] });
+      console.log("[detect] Complete:", result.active, "/", result.total, result.fromCache ? "(from cache)" : "");
+
+      if (result.results && Object.keys(result.results).length > 0) {
+        // Instantly apply PS detection results to the cached tweaks list — no extra HTTP round-trip
+        const current = queryClient.getQueryData<Tweak[]>(["/api/tweaks"]);
+        if (current) {
+          const updated = current.map(t =>
+            result.results[t.title] !== undefined
+              ? { ...t, isActive: result.results[t.title] === 1 }
+              : t
+          );
+          queryClient.setQueryData<Tweak[]>(["/api/tweaks"], updated);
+        }
+      }
+      // Background invalidation keeps server state in sync
+      queryClient.invalidateQueries({ queryKey: ["/api/tweaks"] });
     } catch (err) {
-      console.error("[detect] Detection failed:", err);
+      console.error("[detect] Failed:", err);
+      // On failure, still invalidate so stale data gets refreshed
+      queryClient.invalidateQueries({ queryKey: ["/api/tweaks"] });
     } finally {
       isRunningRef.current = false;
       setIsDetecting(false);
