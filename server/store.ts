@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from "express";
+import { getUncachableStripeClient } from "./stripeClient";
 
 const PRICE_CENTS = 500;
 const PRODUCT_NAME = "JGoode's A.I.O PC Tool";
@@ -459,8 +460,8 @@ export function registerStoreRoutes(app: Express): void {
 
   // Create Stripe checkout session
   app.post("/store/checkout", async (_req: Request, res: Response) => {
-    const key = process.env.STRIPE_SECRET_KEY;
-    if (!key) {
+    const stripe = await getUncachableStripeClient();
+    if (!stripe) {
       return res.status(503).send(shell("Unavailable", `
         <div class="center-page"><div class="result-card">
           <div class="result-icon fail">!</div>
@@ -471,9 +472,6 @@ export function registerStoreRoutes(app: Express): void {
     }
 
     try {
-      const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(key, { apiVersion: "2025-01-27.acacia" });
-
       const host = _req.headers.host || "localhost:5000";
       const protocol = _req.headers["x-forwarded-proto"] || "http";
       const base = `${protocol}://${host}`;
@@ -509,20 +507,16 @@ export function registerStoreRoutes(app: Express): void {
     }
   });
 
-  // Success page — verify payment and show download
+  // Success page — verify payment then show download
   app.get("/store/success", async (req: Request, res: Response) => {
-    const key = process.env.STRIPE_SECRET_KEY;
     const sessionId = req.query.session_id as string;
-
-    if (!key || !sessionId) {
-      return res.send(successPage(DOWNLOAD_URL));
-    }
+    if (!sessionId) return res.send(successPage(DOWNLOAD_URL));
 
     try {
-      const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(key, { apiVersion: "2025-01-27.acacia" });
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const stripe = await getUncachableStripeClient();
+      if (!stripe) return res.send(successPage(DOWNLOAD_URL));
 
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
       if (session.payment_status === "paid") {
         return res.send(successPage(DOWNLOAD_URL));
       }
@@ -540,25 +534,12 @@ export function registerStoreRoutes(app: Express): void {
 
   // Stripe webhook for reliability
   app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
-    const key = process.env.STRIPE_SECRET_KEY;
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!key) return res.json({ received: true });
-
     try {
-      const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(key, { apiVersion: "2025-01-27.acacia" });
-
-      if (webhookSecret) {
-        const sig = req.headers["stripe-signature"] as string;
-        stripe.webhooks.constructEvent(req.rawBody as Buffer, sig, webhookSecret);
-      }
-
       const event = req.body;
-      if (event.type === "checkout.session.completed") {
+      if (event?.type === "checkout.session.completed") {
         const session = event.data.object;
         console.log(`[store] Payment complete: ${session.id} — ${session.customer_email || "no email"}`);
       }
-
       res.json({ received: true });
     } catch (err: any) {
       console.error("[store] Webhook error:", err.message);
