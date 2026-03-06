@@ -178,6 +178,9 @@ export default function Tweaks() {
         setSelectedIds(new Set());
         cleanupRef.current?.();
         cleanupRef.current = null;
+        queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
+          old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old
+        );
         bulkMutation.mutate({ titles, isActive: true });
       }, 120000);
 
@@ -198,8 +201,19 @@ export default function Tweaks() {
           cleanupRef.current?.();
           cleanupRef.current = null;
           setSelectedIds(new Set());
+          // Immediately mark tweaks as optimized in the UI cache
+          queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
+            old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old
+          );
           bulkMutation.mutate({ titles, isActive: true });
-          triggerDetect(1500);
+          triggerDetect(2000);
+          // Auto-close dialog after success so user sees the optimized badges
+          if (data.code === 0) {
+            setTimeout(() => {
+              setShowRunDialog(false);
+              setScriptOutput([]);
+            }, 2500);
+          }
         } else if (data.text) {
           setScriptOutput((prev) => [...prev, { type: data.type, text: data.text! }]);
         }
@@ -218,8 +232,12 @@ export default function Tweaks() {
       }
     } else {
       try {
-        await bulkMutation.mutateAsync({ titles, isActive: true });
+        // Immediately mark tweaks as optimized in the UI cache
+        queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
+          old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old
+        );
         setSelectedIds(new Set());
+        await bulkMutation.mutateAsync({ titles, isActive: true });
         toast({ title: "Tweaks optimized", description: `${selectedTweaks.length} tweaks marked as optimized. Export the .ps1 script and run on Windows to apply.` });
       } catch {
         toast({ title: "Operation failed", description: "Could not update tweaks.", variant: "destructive" });
@@ -254,6 +272,8 @@ export default function Tweaks() {
     setScriptOutput([]);
     setIsRunning(false);
     setApplyingAll(false);
+    setSelectedIds(new Set());
+    triggerDetect(500);
   };
 
   const exportScript = () => {
