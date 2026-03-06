@@ -38,6 +38,9 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Instant Menu Response (Zero Delay)":            "Medium",
   "Disable NTFS Access Timestamps":                "Medium",
 
+  "Disable Windows Copilot & AI Features":          "Medium",
+  "Disable Lock Screen Suggestions & Ads":          "Medium",
+
   // Low — subtle, background improvements
   "Disable IPv6":                                  "Low",
   "Prefer IPv4 over IPv6":                         "Low",
@@ -53,6 +56,8 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Debloat Google Chrome":                         "Low",
   "Debloat Opera GX":                              "Low",
   "Optimize Discord for Gaming":                   "Low",
+  "Disable Remote Assistance":                     "Low",
+  "Disable Phone Link & Mobile Sync":              "Low",
 };
 
 export function getImpact(title: string): ImpactLevel | null {
