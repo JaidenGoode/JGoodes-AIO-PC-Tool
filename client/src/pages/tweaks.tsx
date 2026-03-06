@@ -33,6 +33,8 @@ declare global {
       minimize: () => void;
       maximize: () => void;
       close: () => void;
+      isMaximized: () => Promise<boolean>;
+      onMaximizeChange: (callback: (v: boolean) => void) => () => void;
       runScript: (script: string) => Promise<{ success: boolean; code: number }>;
       onScriptOutput: (callback: (data: { type: string; text?: string; code?: number }) => void) => () => void;
     };

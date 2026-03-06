@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Minus, Square, X, Maximize2 } from "lucide-react";
 import { useTheme, THEME_COLORS } from "./theme-provider";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,53 @@ interface LayoutProps { children: ReactNode; }
 function openCommandPalette() {
   window.dispatchEvent(
     new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })
+  );
+}
+
+const isElectron = typeof window !== "undefined" && !!window.electronAPI;
+
+function WindowControls() {
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    if (!isElectron) return;
+    window.electronAPI?.isMaximized?.().then((v) => setIsMaximized(!!v));
+    const unsub = window.electronAPI?.onMaximizeChange?.((v) => setIsMaximized(v));
+    return () => { unsub?.(); };
+  }, []);
+
+  if (!isElectron) return null;
+
+  return (
+    <div className="flex items-center shrink-0" style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+      <button
+        data-testid="button-window-minimize"
+        onClick={() => window.electronAPI?.minimize()}
+        title="Minimize"
+        className="flex items-center justify-center w-10 h-9 text-muted-foreground/50 hover:text-foreground hover:bg-secondary/70 transition-all duration-100"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <button
+        data-testid="button-window-maximize"
+        onClick={() => window.electronAPI?.maximize()}
+        title={isMaximized ? "Restore" : "Maximize"}
+        className="flex items-center justify-center w-10 h-9 text-muted-foreground/50 hover:text-foreground hover:bg-secondary/70 transition-all duration-100"
+      >
+        {isMaximized
+          ? <Square className="h-2.5 w-2.5" style={{ transform: "translate(-1px,1px)" }} />
+          : <Maximize2 className="h-3 w-3" />
+        }
+      </button>
+      <button
+        data-testid="button-window-close"
+        onClick={() => window.electronAPI?.close()}
+        title="Close"
+        className="flex items-center justify-center w-10 h-9 text-muted-foreground/50 hover:text-white hover:bg-red-600 transition-all duration-100"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
   );
 }
 
@@ -23,10 +70,13 @@ export function Layout({ children }: LayoutProps) {
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
-          {/* Header */}
+          {/* Header — draggable in Electron, normal in browser */}
           <header
-            className="relative flex h-11 shrink-0 items-center justify-between gap-3 px-4 bg-background/90 sticky top-0 z-50"
-            style={{ backdropFilter: "blur(20px)" }}
+            className="relative flex h-11 shrink-0 items-center justify-between bg-background/90 sticky top-0 z-50"
+            style={{
+              backdropFilter: "blur(20px)",
+              ...(isElectron ? { WebkitAppRegion: "drag" } as React.CSSProperties : {}),
+            }}
           >
             {/* Gradient border bottom */}
             <div className="absolute inset-x-0 bottom-0 h-px"
@@ -35,7 +85,11 @@ export function Layout({ children }: LayoutProps) {
               }}
             />
 
-            <div className="flex items-center gap-2.5">
+            {/* Left side — no-drag so buttons work */}
+            <div
+              className="flex items-center gap-2.5 px-4"
+              style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : {}}
+            >
               <SidebarTrigger
                 data-testid="button-sidebar-toggle"
                 className="text-muted-foreground/50 hover:text-foreground hover:bg-secondary/60 rounded-md p-1.5 h-7 w-7 transition-all duration-150"
@@ -54,7 +108,11 @@ export function Layout({ children }: LayoutProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            {/* Right side — no-drag so buttons work */}
+            <div
+              className="flex items-center gap-1.5 px-2"
+              style={isElectron ? { WebkitAppRegion: "no-drag" } as React.CSSProperties : {}}
+            >
               {/* Ctrl+K command palette trigger */}
               <button
                 data-testid="button-command-palette"
@@ -112,6 +170,9 @@ export function Layout({ children }: LayoutProps) {
                 <ShieldCheck className="h-3 w-3 text-primary hidden sm:block" />
                 <span className="hidden sm:inline font-semibold tracking-wide text-primary/70">ACTIVE</span>
               </div>
+
+              {/* Window controls — Electron only, flush right */}
+              <WindowControls />
             </div>
           </header>
 

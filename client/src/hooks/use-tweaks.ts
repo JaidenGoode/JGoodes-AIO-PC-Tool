@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTweaks, updateTweak } from "@/lib/api";
+import { useDetect } from "@/contexts/detect-context";
 import type { Tweak } from "@shared/schema";
 
 export function useTweaks() {
@@ -11,6 +12,7 @@ export function useTweaks() {
 
 export function useUpdateTweak() {
   const queryClient = useQueryClient();
+  const { triggerDetect } = useDetect();
 
   return useMutation({
     mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
@@ -30,6 +32,7 @@ export function useUpdateTweak() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tweaks"] });
+      triggerDetect(500);
     },
   });
 }

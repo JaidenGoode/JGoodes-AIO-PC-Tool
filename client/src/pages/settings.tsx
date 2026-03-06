@@ -1,16 +1,13 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { queryClient } from "@/lib/queryClient";
-import { getSettings, saveSettings, checkUpdate, openUrl } from "@/lib/api";
+import { checkUpdate, openUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Loader2, Github, Palette, Bell, CheckCircle2, XCircle, Monitor, Sun, Moon } from "lucide-react";
+import { Loader2, Github, Palette, CheckCircle2, XCircle, Sun, Moon } from "lucide-react";
 import { useTheme, THEME_COLORS } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
-type Settings = { theme: string; trayIcon: boolean; analytics: boolean };
 type UpdateInfo = {
   currentVersion: string; latestVersion: string; isUpToDate: boolean;
   releaseUrl: string; releaseName: string; publishedAt: string | null;
@@ -41,33 +38,11 @@ export default function SettingsPage() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const { data: settings, isLoading } = useQuery<Settings>({
-    queryKey: ["/api/settings"],
-    queryFn: getSettings as () => Promise<Settings>,
-  });
-
-  const mutation = useMutation({
-    mutationFn: (newSettings: Partial<Settings>) => saveSettings(newSettings),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
-      toast({ title: "Saved", description: "Settings updated." });
-    },
-    onError: (e: Error) => toast({ variant: "destructive", title: "Error", description: e.message }),
-  });
-
   const checkUpdateMutation = useMutation({
     mutationFn: () => checkUpdate() as Promise<UpdateInfo>,
     onSuccess: (data) => { setUpdateInfo(data); setUpdateError(null); },
     onError: (e: Error) => { setUpdateError(e.message); setUpdateInfo(null); },
   });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-2xl space-y-8 pb-8">
@@ -167,32 +142,6 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
-        </div>
-      </Section>
-
-      {/* Preferences */}
-      <Section title="Preferences" icon={Bell} delay={0.08}>
-        <div className="space-y-3">
-          {[
-            { key: "trayIcon", label: "System Tray Icon", desc: "Show icon in the Windows system tray" },
-            { key: "analytics", label: "Anonymous Analytics", desc: "Help improve the app with usage data" },
-          ].map(({ key, label, desc }) => (
-            <div
-              key={key}
-              className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-secondary/20"
-            >
-              <div>
-                <p className="text-[13px] font-semibold text-foreground">{label}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{desc}</p>
-              </div>
-              <Switch
-                checked={settings?.[key as keyof Settings] as boolean ?? false}
-                onCheckedChange={(val) => mutation.mutate({ [key]: val })}
-                className="data-[state=checked]:bg-primary shrink-0"
-                data-testid={`switch-${key}`}
-              />
-            </div>
-          ))}
         </div>
       </Section>
 
