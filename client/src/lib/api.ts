@@ -106,6 +106,6 @@ export const saveSettings = (data: Record<string, unknown>): Promise<unknown> =>
   fetchApi("/api/settings", "POST", data);
 
 export const checkUpdate = (): Promise<unknown> => fetchApi("/api/check-update");
-export const getAppVersion = (): Promise<string> => Promise.resolve("2.5.0");
+export const getAppVersion = (): Promise<string> => Promise.resolve("3.0.0");
 export const openUrl = (url: string): Promise<void> =>
   Promise.resolve(void window.open(url, "_blank", "noreferrer"));

@@ -5,6 +5,8 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 
+app.name = "JGoode's A.I.O PC Tool";
+
 const PORT = 57321;
 let mainWindow = null;
 let windowCreated = false;

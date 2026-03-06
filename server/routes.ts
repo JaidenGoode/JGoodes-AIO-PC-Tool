@@ -13,11 +13,20 @@ import { exec, spawn } from "child_process";
 // ── PowerShell / cmd helpers ──────────────────────────────────────────────────
 function runPowerShell(script: string, timeoutMs = 20000): Promise<string> {
   return new Promise((resolve) => {
-    const encoded = Buffer.from(script, "utf16le").toString("base64");
+    const tmpFile = path.join(os.tmpdir(), `jgoode-ps-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ps1`);
+    try {
+      fs.writeFileSync(tmpFile, script, "utf-8");
+    } catch {
+      resolve("");
+      return;
+    }
     exec(
-      `powershell.exe -NonInteractive -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encoded}`,
-      { timeout: timeoutMs },
-      (_err, stdout, stderr) => resolve((stdout || stderr || "").trim())
+      `powershell.exe -NonInteractive -NoProfile -ExecutionPolicy Bypass -File "${tmpFile}"`,
+      { timeout: timeoutMs, windowsHide: true },
+      (_err: any, stdout: any, stderr: any) => {
+        try { fs.unlinkSync(tmpFile); } catch {}
+        resolve((stdout || stderr || "").trim());
+      }
     );
   });
 }
@@ -133,6 +142,8 @@ interface CleanCategory {
   name: string;
   description: string;
   paths: string[];
+  globDir?: string;
+  globPattern?: string;
 }
 
 function getCleanCategories(): CleanCategory[] {
@@ -188,10 +199,10 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "thumbnails",
         name: "Thumbnail Cache",
-        description: "Windows Explorer thumbnail cache database",
-        paths: [
-          path.join(local, "Microsoft", "Windows", "Explorer"),
-        ],
+        description: "Windows Explorer thumbnail cache files (thumbcache_*.db)",
+        paths: [],
+        globDir: path.join(local, "Microsoft", "Windows", "Explorer"),
+        globPattern: "thumbcache_*.db",
       },
       {
         id: "dumpfiles",
@@ -492,67 +503,131 @@ if ($result) { $result }`;
       return res.json({ active: 0, total: 0, results: {} });
     }
     try {
-      // String.raw preserves single backslashes — needed for PS registry paths
       const psScript = String.raw`
-function creg($p,$n,$v){try{$r=(Get-ItemProperty -Path $p -Name $n -EA Stop)."$n";if($r -eq $v){1}else{0}}catch{0}}
-function csvc($n){try{if((Get-Service -Name $n -EA Stop).StartType -eq 'Disabled'){1}else{0}}catch{0}}
-$d=@{}
-$d['Debloat Windows']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsConsumerFeatures' 1)
-$d['Disable Telemetry & Data Collection']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection' 'AllowTelemetry' 0)
-$d['Disable Advertising ID']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' 'Enabled' 0)
-$d['Disable Activity History & Timeline']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0)
-$d['Disable Customer Experience Improvement Program']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows' 'CEIPEnable' 0)
-$d['Disable Windows Error Reporting']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting' 'Disabled' 1)
-$d['Disable Clipboard History & Cloud Sync']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'AllowClipboardHistory' 0)
-$d['Disable Start Menu Suggestions & Tips']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SystemPaneSuggestionsEnabled' 0)
-$d['Maximum Performance Power Plan']=if(((powercfg /getactivescheme 2>$null)-join ' ') -match 'e9a42b02'){1}else{0}
-$d['Disable SuperFetch / SysMain']=(csvc 'SysMain')
-$d['Disable NTFS Access Timestamps']=try{if(((fsutil behavior query disablelastaccess)-join ' ') -match 'DisableLastAccess\s*=\s*[13]'){1}else{0}}catch{0}
-$d['Disable Windows Performance Counters']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib' 'Disable Performance Counters' 4)
-$d['Disable Windows File Indexing']=(csvc 'WSearch')
-$d['Disable Multiplane Overlay (MPO)']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'OverlayTestMode' 5)
-$d['Disable Hibernation']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power' 'HiberbootEnabled' 0)
-$d['Disable Background Apps (Legacy)']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' 'LetAppsRunInBackground' 2)
-$d['Optimize Visual Effects for Performance']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' 'VisualFXSetting' 2)
-$d['Disable Cortana']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' 'AllowCortana' 0)
-$d['Disable Mouse Acceleration']=(creg 'HKCU:\Control Panel\Mouse' 'MouseSpeed' '0')
-$d['Keep All CPU Cores Active (Unpark Cores)']=try{$q=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null)-join ' ');if($q -match '0x00000064'){1}else{0}}catch{0}
-$d['Minimum Priority for Background Processes']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'Win32PrioritySeparation' 38)
-$d['Disable GameBar']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0)
-$d['Disable GameBar Background Recording']=(creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0)
-$d['Optimize for Windowed & Borderless Games']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'ForceEffectMode' 2)
-$d['Enable Game Mode']=(creg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnabled' 1)
-$d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers' 'HwSchMode' 2)
-$d['Instant Menu Response (Zero Delay)']=(creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0')
-$d['Disable Full Screen Optimizations']=(creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2)
-$d['System Responsiveness & Network Throttling']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 10)
-$d['GPU & CPU Priority for Games']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'GPU Priority' 8)
-$d['Fortnite Process High Priority']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 3)
-$d['Disable Dynamic Tick']=try{$bcd=(bcdedit /enum 2>$null)-join ' ';if($bcd -match 'disabledynamictick\s+Yes'){1}else{0}}catch{0}
-$d["Disable Nagle's Algorithm"]=try{$all=Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA Stop;$f=0;foreach($i in $all){try{if((Get-ItemProperty $i.PSPath 'TcpAckFrequency' -EA Stop).TcpAckFrequency -eq 1){$f=1;break}}catch{}};$f}catch{0}
-$d['Disable Xbox Core Services']=(csvc 'XboxGipSvc')
-$d['Disable IPv6']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' 255)
-$d['Prefer IPv4 over IPv6']=try{$v=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' -EA Stop).DisabledComponents;if($v -eq 32){1}else{0}}catch{0}
-$d['Enable SSD TRIM Optimization']=try{$tr=(fsutil behavior query DisableDeleteNotify)-join ' ';if($tr -match '= 0'){1}else{0}}catch{0}
-$d['Disable Web Search in Windows Search']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0)
-$d['Disable Windows TCP Auto-Tuning']=try{$tcp=(netsh int tcp show global 2>$null)-join ' ';if($tcp -match 'Auto-Tuning.+disabled'){1}else{0}}catch{0}
-$d['Disable Startup Program Delay']=(creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0)
-$d['Disable Windows Automatic Maintenance']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance' 'MaintenanceDisabled' 1)
-$d['Disable Power Throttling']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling' 'PowerThrottlingOff' 1)
-$d['Debloat Microsoft Edge']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'HubsSidebarEnabled' 0)
-$d['Debloat Google Chrome']=(creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'BackgroundModeEnabled' 0)
-$d['Optimize Discord for Gaming']=(creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Discord.exe\PerfOptions' 'CpuPriorityClass' 2)
-$d['Disable Windows Copilot & AI Features']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1)
-$d['Disable Lock Screen Suggestions & Ads']=try{if((creg 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsSpotlightFeatures' 1) -eq 1){1}else{0}}catch{0}
-$d['Disable Remote Assistance']=(creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance' 'fAllowToGetHelp' 0)
-$d['Disable Phone Link & Mobile Sync']=(creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableCdp' 0)
-$d['Debloat Opera GX']=try{$p=(creg 'HKCU:\Software\Opera Software' 'Last Speed Dial Sync' '');if($p -eq 1){1}else{if(Test-Path 'HKCU:\Software\Opera Software'){1}else{0}}}catch{0}
-$d['Disable Network Power Saving']=try{$ok=1;foreach($a in (Get-NetAdapter -Physical -EA Stop)){try{$pm=Get-NetAdapterPowerManagement -Name $a.Name -EA Stop;if($pm.WakeOnMagicPacket -ne 'Disabled'){$ok=0;break}}catch{}};$ok}catch{0}
+$ErrorActionPreference = 'SilentlyContinue'
+function creg($p,$n,$v){
+  try{
+    $r=(Get-ItemProperty -Path $p -Name $n -ErrorAction Stop)."$n"
+    if($r -eq $v){return 1}else{return 0}
+  }catch{return 0}
+}
+function csvc($n){
+  try{
+    $s=Get-Service -Name $n -ErrorAction Stop
+    if($s.StartType -eq 'Disabled'){return 1}else{return 0}
+  }catch{return 0}
+}
+
+$d=[ordered]@{}
+
+# Privacy
+$d['Debloat Windows']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsConsumerFeatures' 1
+$d['Disable Telemetry & Data Collection']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection' 'AllowTelemetry' 0
+$d['Disable Advertising ID']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' 'Enabled' 0
+$d['Disable Activity History & Timeline']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0
+$d['Disable Customer Experience Improvement Program']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows' 'CEIPEnable' 0
+$d['Disable Windows Error Reporting']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting' 'Disabled' 1
+$d['Disable Clipboard History & Cloud Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'AllowClipboardHistory' 0
+$d['Disable Start Menu Suggestions & Tips']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SystemPaneSuggestionsEnabled' 0
+$d['Disable Windows Copilot & AI Features']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1
+$d['Disable Lock Screen Suggestions & Ads']=creg 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsSpotlightFeatures' 1
+
+# Performance
+try{$scheme=((powercfg /getactivescheme 2>$null) -join ' ');$d['Maximum Performance Power Plan']=if($scheme -match 'e9a42b02'){1}else{0}}catch{$d['Maximum Performance Power Plan']=0}
+$d['Disable SuperFetch / SysMain']=csvc 'SysMain'
+try{$fsu=((fsutil behavior query disablelastaccess 2>$null) -join ' ');$d['Disable NTFS Access Timestamps']=if($fsu -match 'DisableLastAccess\s*=\s*[13]'){1}else{0}}catch{$d['Disable NTFS Access Timestamps']=0}
+$d['Disable Windows Performance Counters']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib' 'Disable Performance Counters' 4
+$d['Disable Windows File Indexing']=csvc 'WSearch'
+$d['Disable Multiplane Overlay (MPO)']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'OverlayTestMode' 5
+$d['Disable Hibernation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power' 'HiberbootEnabled' 0
+$d['Disable Background Apps (Legacy)']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' 'LetAppsRunInBackground' 2
+$d['Optimize Visual Effects for Performance']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' 'VisualFXSetting' 2
+$d['Disable Cortana']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' 'AllowCortana' 0
+
+# Gaming
+$d['Disable Mouse Acceleration']=creg 'HKCU:\Control Panel\Mouse' 'MouseSpeed' '0'
+try{$cpm=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null) -join ' ');$d['Keep All CPU Cores Active (Unpark Cores)']=if($cpm -match '0x00000064'){1}else{0}}catch{$d['Keep All CPU Cores Active (Unpark Cores)']=0}
+$d['Minimum Priority for Background Processes']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'Win32PrioritySeparation' 38
+$d['Disable GameBar']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
+$d['Disable GameBar Background Recording']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
+$d['Optimize for Windowed & Borderless Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'ForceEffectMode' 2
+$d['Enable Game Mode']=creg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnabled' 1
+$d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers' 'HwSchMode' 2
+$d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0'
+$d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
+$d['System Responsiveness & Network Throttling']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 10
+$d['GPU & CPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'GPU Priority' 8
+$d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 3
+try{$bcd=((bcdedit /enum 2>$null) -join ' ');$d['Disable Dynamic Tick']=if($bcd -match 'disabledynamictick\s+Yes'){1}else{0}}catch{$d['Disable Dynamic Tick']=0}
+try{$ifaces=Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA Stop;$nag=0;foreach($i in $ifaces){try{if((Get-ItemProperty $i.PSPath 'TcpAckFrequency' -EA Stop).TcpAckFrequency -eq 1){$nag=1;break}}catch{}};$d["Disable Nagle's Algorithm"]=$nag}catch{$d["Disable Nagle's Algorithm"]=0}
+$d['Disable Xbox Core Services']=csvc 'XboxGipSvc'
+
+# System / Network
+$d['Disable IPv6']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' 255
+try{$ipv6v=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' -EA Stop).DisabledComponents;$d['Prefer IPv4 over IPv6']=if($ipv6v -eq 32){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
+try{$trim=((fsutil behavior query DisableDeleteNotify 2>$null) -join ' ');$d['Enable SSD TRIM Optimization']=if($trim -match '= 0'){1}else{0}}catch{$d['Enable SSD TRIM Optimization']=0}
+$d['Disable Web Search in Windows Search']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0
+try{$tcp=((netsh int tcp show global 2>$null) -join ' ');$d['Disable Windows TCP Auto-Tuning']=if($tcp -match 'Auto-Tuning.+disabled'){1}else{0}}catch{$d['Disable Windows TCP Auto-Tuning']=0}
+$d['Disable Startup Program Delay']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0
+$d['Disable Windows Automatic Maintenance']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance' 'MaintenanceDisabled' 1
+$d['Disable Power Throttling']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling' 'PowerThrottlingOff' 1
+$d['Disable Remote Assistance']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance' 'fAllowToGetHelp' 0
+$d['Disable Phone Link & Mobile Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableCdp' 0
+
+# Browser
+$d['Debloat Microsoft Edge']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'HubsSidebarEnabled' 0
+$d['Debloat Google Chrome']=creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'BackgroundModeEnabled' 0
+$d['Optimize Discord for Gaming']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Discord.exe\PerfOptions' 'CpuPriorityClass' 2
+
+# Opera GX: check if hardware_acceleration_mode_previous is false in Preferences
+try{
+  $opPref="$env:APPDATA\Opera Software\Opera GX Stable\Preferences"
+  if(Test-Path $opPref){
+    $opJson=Get-Content $opPref -Raw -Encoding UTF8 | ConvertFrom-Json
+    if($opJson.system -and $opJson.system.hardware_acceleration_mode_previous -eq $false){$d['Debloat Opera GX']=1}else{$d['Debloat Opera GX']=0}
+  }else{$d['Debloat Opera GX']=0}
+}catch{$d['Debloat Opera GX']=0}
+
+# Network Power Saving
+try{
+  $adapters=Get-NetAdapter -Physical -EA Stop
+  $pmOk=1
+  foreach($a in $adapters){
+    try{
+      $pm=Get-NetAdapterPowerManagement -Name $a.Name -EA Stop
+      if($pm.WakeOnMagicPacket -ne 'Disabled'){$pmOk=0;break}
+    }catch{}
+  }
+  $d['Disable Network Power Saving']=$pmOk
+}catch{$d['Disable Network Power Saving']=0}
+
 $d | ConvertTo-Json -Compress`;
 
-      const raw = await runPowerShell(psScript, 35000).catch(() => "{}");
+      console.log("[detect] Running PowerShell detection script...");
+      const raw = await runPowerShell(psScript, 45000).catch((err) => {
+        console.error("[detect] PowerShell execution failed:", err);
+        return "{}";
+      });
+      console.log("[detect] Raw output length:", raw.length);
+      if (raw.length < 10) {
+        console.error("[detect] PowerShell returned empty/short output:", raw);
+      }
+
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      const results: Record<string, number> = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+      if (!jsonMatch) {
+        console.error("[detect] No JSON found in output. Raw:", raw.slice(0, 500));
+        return res.json({ active: 0, total: 0, results: {} });
+      }
+
+      let results: Record<string, number> = {};
+      try {
+        results = JSON.parse(jsonMatch[0]);
+      } catch (parseErr) {
+        console.error("[detect] JSON parse failed:", parseErr, "Raw:", jsonMatch[0].slice(0, 300));
+        return res.json({ active: 0, total: 0, results: {} });
+      }
+
+      console.log("[detect] Detected", Object.keys(results).length, "tweaks from system");
 
       const allTweaks = await storage.getTweaks();
       let activeCount = 0;
@@ -568,8 +643,10 @@ $d | ConvertTo-Json -Compress`;
         }
       }
 
+      console.log("[detect] Active tweaks:", activeCount, "of", Object.keys(results).length);
       res.json({ active: activeCount, total: Object.keys(results).length, results });
     } catch (err) {
+      console.error("[detect] Detection endpoint error:", err);
       res.status(500).json({ message: "Detection failed", error: String(err) });
     }
   });
@@ -623,6 +700,23 @@ try {
             const parts = psOut.trim().split(/\s+/);
             totalSize = Math.max(0, parseInt(parts[0]) || 0);
             totalCount = Math.max(0, parseInt(parts[1]) || 0);
+          } else if (cat.globDir && cat.globPattern) {
+            try {
+              await fs.promises.access(cat.globDir);
+              const entries = await fs.promises.readdir(cat.globDir);
+              const pattern = new RegExp("^" + cat.globPattern.replace(/\*/g, ".*") + "$", "i");
+              for (const entry of entries) {
+                if (pattern.test(entry)) {
+                  try {
+                    const stat = await fs.promises.stat(path.join(cat.globDir, entry));
+                    if (stat.isFile()) {
+                      totalSize += stat.size;
+                      totalCount++;
+                    }
+                  } catch {}
+                }
+              }
+            } catch {}
           } else {
             for (const p of cat.paths) {
               const expanded = expandPath(p);
@@ -684,7 +778,6 @@ try {
         }
 
         if (isRecycle) {
-          // Use Shell COM to measure size (file system access to $Recycle.Bin is blocked by Windows)
           const sizeOut = await runPowerShell(`
 try {
   $shell = New-Object -ComObject Shell.Application -EA Stop
@@ -696,6 +789,24 @@ try {
 } catch { 0 }`, 12000).catch(() => "0");
           freed = Math.max(0, parseInt(sizeOut.trim()) || 0);
           await runPowerShell(`Clear-RecycleBin -Force -ErrorAction SilentlyContinue`, 15000).catch(() => {});
+        } else if (cat.globDir && cat.globPattern) {
+          try {
+            await fs.promises.access(cat.globDir);
+            const entries = await fs.promises.readdir(cat.globDir);
+            const pattern = new RegExp("^" + cat.globPattern.replace(/\*/g, ".*") + "$", "i");
+            for (const entry of entries) {
+              if (pattern.test(entry)) {
+                const full = path.join(cat.globDir, entry);
+                try {
+                  const stat = await fs.promises.stat(full);
+                  if (stat.isFile()) {
+                    freed += stat.size;
+                    await fs.promises.rm(full, { force: true });
+                  }
+                } catch {}
+              }
+            }
+          } catch {}
         } else {
           for (const p of cat.paths) {
             const expanded = expandPath(p);
@@ -985,7 +1096,7 @@ Write-Host "Restore point created successfully."`;
         html_url: string;
         published_at: string;
       };
-      const currentVersion = "2.5.0";
+      const currentVersion = "3.0.0";
       const latestVersion = release.tag_name?.replace(/^v/, "") || currentVersion;
       res.json({
         currentVersion,
@@ -997,8 +1108,8 @@ Write-Host "Restore point created successfully."`;
       });
     } catch {
       res.json({
-        currentVersion: "2.5.0",
-        latestVersion: "2.5.0",
+        currentVersion: "3.0.0",
+        latestVersion: "3.0.0",
         isUpToDate: true,
         releaseUrl: "",
         releaseName: "",
@@ -1048,7 +1159,7 @@ Write-Host "Restore point created successfully."`;
       if (createNew && repoName) {
         const newRepo = await createRepo(
           repoName,
-          description || "JGoode A.I.O PC Tool — All-in-one Windows optimization suite with 47 PowerShell tweaks, live hardware monitoring, and full theme customization.",
+          description || "JGoode A.I.O PC Tool — All-in-one Windows optimization suite with 51 PowerShell tweaks, live hardware monitoring, and full theme customization.",
           isPrivate || false
         );
         targetOwner = newRepo.full_name.split("/")[0];

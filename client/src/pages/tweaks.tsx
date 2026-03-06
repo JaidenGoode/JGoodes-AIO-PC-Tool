@@ -1,15 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Wrench, Shield, Zap, SlidersHorizontal,
   AlertTriangle, Ghost, Gamepad2, Globe, CheckCircle2,
   Download, Copy, Check, Terminal, ScanSearch, Loader2,
-  Play, X, Trash2, RotateCcw, AlertOctagon, Info, ChevronRight,
+  Play, X, RotateCcw, AlertOctagon, Info, Square, CheckSquare,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useTweaks, useUpdateTweak } from "@/hooks/use-tweaks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -93,14 +91,14 @@ export default function Tweaks() {
   const updateTweak = useUpdateTweak();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { triggerDetect, isDetecting } = useDetect();
+  const { triggerDetect, isDetecting, hasInitialDetect } = useDetect();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [, setLocation] = useLocation();
   const [showRestorePrompt, setShowRestorePrompt] = useState(() => !localStorage.getItem("restore_prompt_shown"));
   const [viewingCmd, setViewingCmd] = useState<{ title: string; cmd: string } | null>(null);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [applyingTweaks, setApplyingTweaks] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [applyingAll, setApplyingAll] = useState(false);
   const [showRunDialog, setShowRunDialog] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [scriptOutput, setScriptOutput] = useState<Array<{ type: string; text: string }>>([]);
@@ -125,116 +123,97 @@ export default function Tweaks() {
     if (wantsRestore) setLocation("/restore");
   };
 
-  const applyPreset = async (preset: typeof TWEAK_PRESETS[number]) => {
-    const titles = preset.id === "all" ? [] : preset.titles;
-    const count = preset.id === "all"
-      ? tweaks?.length || 0
-      : preset.titles.length;
-    await bulkMutation.mutateAsync({ titles, isActive: true });
-    toast({
-      title: `${preset.name} preset applied`,
-      description: `Enabled up to ${count} tweaks.`,
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
-  };
+  }, []);
 
-  const handleSelectAll = async () => {
-    await bulkMutation.mutateAsync({ titles: [], isActive: true });
-    toast({ title: "All tweaks enabled", description: `${tweaks?.length || 0} tweaks set to active.` });
-  };
+  const selectAllUnoptimized = useCallback(() => {
+    if (!tweaks) return;
+    const unoptimized = tweaks.filter(t => !t.isActive).map(t => t.id);
+    setSelectedIds(new Set(unoptimized));
+  }, [tweaks]);
 
-  const handleClearAll = async () => {
-    setShowClearConfirm(false);
-    await bulkMutation.mutateAsync({ titles: [], isActive: false });
-    toast({ title: "All tweaks cleared", description: "All tweaks have been disabled." });
-  };
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
 
-  const handleToggleTweak = async (tweak: { id: number; title: string; isActive: boolean }) => {
-    const newState = !tweak.isActive;
-    const cmd = getTweakCommand(tweak.title);
+  const handleOptimizeSelected = async () => {
+    if (!tweaks || selectedIds.size === 0) return;
 
-    updateTweak.mutate({ id: tweak.id, isActive: newState });
-
-    if (!cmd || !window.electronAPI?.runScript) {
-      triggerDetect(800);
+    const selectedTweaks = tweaks.filter(t => selectedIds.has(t.id) && !t.isActive);
+    if (selectedTweaks.length === 0) {
+      toast({ title: "Nothing to optimize", description: "Selected tweaks are already applied.", variant: "destructive" });
       return;
     }
 
-    const script = newState ? cmd.enable : cmd.disable;
-    if (!script) {
-      triggerDetect(800);
-      return;
-    }
+    if (window.electronAPI?.runScript) {
+      const tempTweaks = selectedTweaks.map(t => ({ title: t.title, isActive: true }));
+      const script = generatePowerShellScript(tempTweaks);
+      if (!script) return;
 
-    setApplyingTweaks(prev => new Set(prev).add(tweak.id));
+      setScriptOutput([{ type: "info", text: `# JGoode's A.I.O PC Tool — Optimizing ${selectedTweaks.length} tweaks\n# Running as Administrator...\n` }]);
+      setIsRunning(true);
+      setApplyingAll(true);
+      setShowRunDialog(true);
 
-    try {
-      const result = await window.electronAPI.runScript(script);
-      if (result.success || result.code === 0) {
-        toast({
-          title: newState ? `✓ ${tweak.title}` : `✓ Reverted: ${tweak.title}`,
-          description: newState ? "Tweak applied successfully." : "Tweak disabled and reverted.",
-        });
-      } else {
-        toast({
-          title: `${tweak.title}`,
-          description: "Script ran but returned a non-zero exit code. Try running as Administrator.",
-          variant: "destructive",
-        });
-      }
-    } catch {
-      toast({
-        title: `Failed: ${tweak.title}`,
-        description: "Could not run the script. Make sure the app is running as Administrator.",
-        variant: "destructive",
+      cleanupRef.current = window.electronAPI.onScriptOutput((data) => {
+        if (data.type === "done") {
+          setIsRunning(false);
+          setApplyingAll(false);
+          setScriptOutput((prev) => [
+            ...prev,
+            {
+              type: data.code === 0 ? "success" : "stderr",
+              text: data.code === 0
+                ? `\n\u2713 ${selectedTweaks.length} tweaks optimized successfully.`
+                : `\n\u2717 Script exited with code ${data.code}.`,
+            },
+          ]);
+          cleanupRef.current?.();
+          cleanupRef.current = null;
+          setSelectedIds(new Set());
+          triggerDetect(500);
+        } else if (data.text) {
+          setScriptOutput((prev) => [...prev, { type: data.type, text: data.text! }]);
+        }
       });
-    } finally {
-      setApplyingTweaks(prev => {
-        const next = new Set(prev);
-        next.delete(tweak.id);
-        return next;
-      });
-      triggerDetect(500);
-    }
-  };
 
-  const handleRunInApp = async () => {
-    if (!tweaks || !window.electronAPI?.runScript) return;
-    const script = generatePowerShellScript(tweaks);
-    if (!script) {
-      toast({ title: "No active tweaks", description: "Enable some tweaks first.", variant: "destructive" });
-      return;
-    }
-    setScriptOutput([{ type: "info", text: "# JGoode's A.I.O PC Tool — Applying tweaks via PowerShell\n# Running as current process. For full effect, run app as Administrator.\n" }]);
-    setIsRunning(true);
-    setShowRunDialog(true);
-
-    cleanupRef.current = window.electronAPI.onScriptOutput((data) => {
-      if (data.type === "done") {
+      try {
+        await window.electronAPI.runScript(script);
+      } catch (err) {
         setIsRunning(false);
-        setScriptOutput((prev) => [
-          ...prev,
-          {
-            type: data.code === 0 ? "success" : "stderr",
-            text: data.code === 0
-              ? "\n\u2713 Script completed successfully."
-              : `\n\u2717 Script exited with code ${data.code}.`,
-          },
-        ]);
+        setApplyingAll(false);
+        setScriptOutput((prev) => [...prev, { type: "stderr", text: String(err) }]);
         cleanupRef.current?.();
         cleanupRef.current = null;
-      } else if (data.text) {
-        setScriptOutput((prev) => [...prev, { type: data.type, text: data.text! }]);
       }
-    });
-
-    try {
-      await window.electronAPI.runScript(script);
-    } catch (err) {
-      setIsRunning(false);
-      setScriptOutput((prev) => [...prev, { type: "stderr", text: String(err) }]);
-      cleanupRef.current?.();
-      cleanupRef.current = null;
+    } else {
+      await bulkMutation.mutateAsync({ titles: selectedTweaks.map(t => t.title), isActive: true });
+      setSelectedIds(new Set());
+      toast({ title: "Tweaks marked", description: `${selectedTweaks.length} tweaks marked as active. Export .ps1 to apply on Windows.` });
     }
+  };
+
+  const applyPreset = async (preset: typeof TWEAK_PRESETS[number]) => {
+    if (!tweaks) return;
+    const presetTweaks = preset.id === "all"
+      ? tweaks.filter(t => !t.isActive)
+      : tweaks.filter(t => preset.titles.includes(t.title) && !t.isActive);
+    const ids = new Set(presetTweaks.map(t => t.id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.add(id));
+      return next;
+    });
+    toast({
+      title: `${preset.name} preset selected`,
+      description: `${presetTweaks.length} un-optimized tweaks selected. Click "Optimize Selected" to apply.`,
+    });
   };
 
   const closeRunDialog = () => {
@@ -247,9 +226,12 @@ export default function Tweaks() {
 
   const exportScript = () => {
     if (!tweaks) return;
-    const script = generatePowerShellScript(tweaks);
+    const toExport = selectedIds.size > 0
+      ? tweaks.filter(t => selectedIds.has(t.id)).map(t => ({ ...t, isActive: true }))
+      : tweaks.filter(t => t.isActive).map(t => ({ ...t, isActive: true }));
+    const script = generatePowerShellScript(toExport);
     if (!script) {
-      toast({ title: "No active tweaks", description: "Enable some tweaks first, then export.", variant: "destructive" });
+      toast({ title: "No tweaks to export", description: "Select tweaks first, then export.", variant: "destructive" });
       return;
     }
     const blob = new Blob([script], { type: "text/plain" });
@@ -259,13 +241,14 @@ export default function Tweaks() {
     a.download = "JGoode-AIO-Tweaks.ps1";
     a.click();
     URL.revokeObjectURL(url);
+    toast({ title: "Script exported", description: `${toExport.length} tweaks exported as .ps1 file.` });
   };
 
   const exportUndoScript = () => {
     if (!tweaks) return;
     const script = generateUndoScript(tweaks);
     if (!script) {
-      toast({ title: "No tweaks to reverse", description: "Enable some tweaks first, then generate the undo script.", variant: "destructive" });
+      toast({ title: "No tweaks to reverse", description: "No optimized tweaks found.", variant: "destructive" });
       return;
     }
     const blob = new Blob([script], { type: "text/plain" });
@@ -275,7 +258,7 @@ export default function Tweaks() {
     a.download = "JGoode-AIO-Undo.ps1";
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: "Undo script downloaded", description: "Run as Administrator to revert all active tweaks." });
+    toast({ title: "Undo script downloaded", description: "Run as Administrator to revert all optimized tweaks." });
   };
 
   const filteredTweaks = tweaks?.filter((tweak) => {
@@ -286,8 +269,11 @@ export default function Tweaks() {
     return matchesSearch && matchesFilter;
   });
 
-  const activeTweakCount = tweaks?.filter((t) => t.isActive).length || 0;
+  const optimizedCount = tweaks?.filter((t) => t.isActive).length || 0;
+  const totalCount = tweaks?.length || 0;
+  const selectedCount = selectedIds.size;
   const isBulkPending = bulkMutation.isPending;
+  const optimizedPercent = totalCount > 0 ? Math.round((optimizedCount / totalCount) * 100) : 0;
 
   return (
     <div className="space-y-5 pb-8">
@@ -315,29 +301,6 @@ export default function Tweaks() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Clear All confirmation dialog */}
-      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-bold">Clear all tweaks?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground text-sm">
-              This will disable all {tweaks?.length || 0} tweaks. Your Windows registry is not changed — only the toggles in this app are reset.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-clear-all">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleClearAll}
-              className="bg-destructive hover:bg-destructive/90 text-white"
-              data-testid="button-confirm-clear-all"
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              Clear All
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Command viewer dialog */}
       <Dialog open={!!viewingCmd} onOpenChange={() => setViewingCmd(null)}>
         <DialogContent className="bg-card border-border max-w-2xl">
@@ -347,7 +310,7 @@ export default function Tweaks() {
               {viewingCmd?.title}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Run this in PowerShell as Administrator to apply this tweak to your Windows PC.
+              Run this in PowerShell as Administrator to apply this tweak.
             </DialogDescription>
           </DialogHeader>
           <div className="relative">
@@ -369,11 +332,11 @@ export default function Tweaks() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-sm font-bold">
               <Terminal className="h-4 w-4 text-primary" />
-              {isRunning ? "Running Tweaks..." : "Script Finished"}
+              {isRunning ? "Optimizing..." : "Optimization Complete"}
               {isRunning && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary ml-1" />}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              PowerShell output — requires Administrator to apply most tweaks.
+              PowerShell output — requires Administrator to apply tweaks.
             </DialogDescription>
           </DialogHeader>
           <div
@@ -394,11 +357,11 @@ export default function Tweaks() {
                 {line.text}
               </div>
             ))}
-            {isRunning && <div className="text-primary animate-pulse mt-1">▋</div>}
+            {isRunning && <div className="text-primary animate-pulse mt-1">&#9612;</div>}
           </div>
           <div className="flex items-center justify-between pt-0.5">
             <p className="text-[10px] text-muted-foreground/40">
-              {isRunning ? "Do not close — script is still running" : "Script execution complete"}
+              {isRunning ? "Do not close — optimization in progress" : "Optimization complete"}
             </p>
             <Button
               size="sm"
@@ -421,9 +384,15 @@ export default function Tweaks() {
             System <span className="text-primary">Tweaks</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Toggle to enable · Export as .ps1 script to apply on Windows
-            {activeTweakCount > 0 && (
-              <span className="ml-2 text-primary font-semibold">{activeTweakCount} active</span>
+            Auto-detected from your system
+            {hasInitialDetect && (
+              <span className="ml-1.5">
+                <span className="text-green-400 font-bold">{optimizedCount}</span>
+                <span className="text-muted-foreground/60">/{totalCount} optimized</span>
+                {selectedCount > 0 && (
+                  <span className="ml-2 text-primary font-bold">{selectedCount} selected</span>
+                )}
+              </span>
             )}
           </p>
         </div>
@@ -450,49 +419,45 @@ export default function Tweaks() {
               {isDetecting
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 : <ScanSearch className="h-3.5 w-3.5 text-primary" />}
-              {isDetecting ? "Detecting..." : "Re-scan"}
+              {isDetecting ? "Scanning..." : "Re-scan"}
             </Button>
-            {typeof window !== "undefined" && window.electronAPI?.runScript && activeTweakCount > 0 && (
+            {selectedCount > 0 && (
               <Button
                 size="sm"
-                onClick={handleRunInApp}
-                disabled={isRunning}
-                className="h-8 gap-1.5 text-xs font-semibold shrink-0 bg-primary hover:bg-primary/90 text-white"
-                data-testid="button-run-in-app"
-                title="Run active tweaks directly via PowerShell (requires Administrator)"
+                onClick={handleOptimizeSelected}
+                disabled={applyingAll || isRunning}
+                className="h-8 gap-1.5 text-xs font-bold shrink-0 bg-primary hover:bg-primary/90 text-white"
+                data-testid="button-optimize-selected"
+                title={`Apply ${selectedCount} selected tweaks`}
               >
-                <Play className="h-3.5 w-3.5" />
-                Run in App
+                {applyingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                Optimize Selected
+                <span className="px-1.5 py-0.5 rounded text-[9px] bg-white/20 font-bold">{selectedCount}</span>
               </Button>
             )}
             <Button
               size="sm"
               onClick={exportScript}
-              disabled={activeTweakCount === 0}
+              disabled={optimizedCount === 0 && selectedCount === 0}
               className={cn(
                 "h-8 gap-1.5 text-xs font-semibold shrink-0",
-                activeTweakCount > 0
+                (optimizedCount > 0 || selectedCount > 0)
                   ? "bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30"
                   : "bg-secondary text-muted-foreground cursor-not-allowed border border-border/40"
               )}
               data-testid="button-export-script"
-              title={activeTweakCount === 0 ? "Enable tweaks first, then export script" : `Export ${activeTweakCount} active tweaks as PowerShell script`}
+              title="Export tweaks as a .ps1 script"
             >
               <Download className="h-3.5 w-3.5" />
               Export .ps1
-              {activeTweakCount > 0 && (
-                <span className="ml-0.5 px-1 py-0.5 rounded text-[9px] bg-primary/20">
-                  {activeTweakCount}
-                </span>
-              )}
             </Button>
-            {activeTweakCount > 0 && (
+            {optimizedCount > 0 && (
               <Button
                 size="sm"
                 onClick={exportUndoScript}
                 className="h-8 gap-1.5 text-xs font-semibold shrink-0 bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground border border-border/60 hover:border-border"
                 data-testid="button-export-undo-script"
-                title="Download a script that reverts all currently active tweaks back to Windows defaults"
+                title="Download a script that reverts all optimized tweaks"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Undo Script
@@ -502,16 +467,48 @@ export default function Tweaks() {
           {isDetecting && (
             <div className="flex items-center gap-1 text-[10px] text-primary/60">
               <Loader2 className="h-2.5 w-2.5 animate-spin" />
-              Detecting system state...
+              Scanning system registry...
             </div>
           )}
         </div>
       </div>
 
+      {/* ── Optimization Progress Bar ────────────────────────────────────── */}
+      {hasInitialDetect && (
+        <div className="p-4 rounded-xl border border-border/40 bg-secondary/10">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-foreground">System Optimization</span>
+            <span className="text-xs font-bold text-primary">{optimizedPercent}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-secondary/60 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary"
+              initial={{ width: 0 }}
+              animate={{ width: `${optimizedPercent}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-[10px] text-muted-foreground/60">
+              {optimizedCount} of {totalCount} tweaks optimized
+            </span>
+            {optimizedCount < totalCount && (
+              <button
+                onClick={selectAllUnoptimized}
+                className="text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                data-testid="button-select-remaining"
+              >
+                Select remaining {totalCount - optimizedCount} tweaks
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Presets + Bulk Actions Bar ─────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border border-border/40 bg-secondary/15">
         <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider shrink-0">
-          Presets
+          Quick Select
         </span>
         {TWEAK_PRESETS.map((preset) => {
           const { Icon } = preset;
@@ -537,37 +534,35 @@ export default function Tweaks() {
         })}
         <div className="h-4 w-px bg-border/60 mx-0.5 shrink-0" />
         <button
-          onClick={handleSelectAll}
+          onClick={selectAllUnoptimized}
           disabled={isBulkPending}
           data-testid="button-select-all-tweaks"
-          title="Enable all tweaks"
+          title="Select all un-optimized tweaks"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-150 border-border/50 bg-secondary/40 text-muted-foreground hover:border-primary/30 hover:bg-primary/8 hover:text-primary disabled:opacity-50"
         >
-          {isBulkPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3" />}
+          <CheckSquare className="h-3 w-3" />
           Select All
         </button>
-        <button
-          onClick={() => setShowClearConfirm(true)}
-          disabled={isBulkPending || activeTweakCount === 0}
-          data-testid="button-clear-all-tweaks"
-          title="Disable all tweaks"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-150 border-border/50 bg-secondary/40 text-muted-foreground hover:border-red-500/30 hover:bg-red-500/8 hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Trash2 className="h-3 w-3" />
-          Clear All
-        </button>
+        {selectedCount > 0 && (
+          <button
+            onClick={clearSelection}
+            data-testid="button-clear-selection"
+            title="Clear selection"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-150 border-border/50 bg-secondary/40 text-muted-foreground hover:border-red-500/30 hover:bg-red-500/8 hover:text-red-400"
+          >
+            <X className="h-3 w-3" />
+            Clear ({selectedCount})
+          </button>
+        )}
       </div>
 
       {/* ── Info notice ────────────────────────────────────────────────────── */}
       <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-primary/15 bg-primary/4 text-xs text-muted-foreground/70">
         <Info className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
         <span>
-          Tweaks are <span className="text-foreground font-semibold">auto-detected</span> from your system registry on startup and after every change.
-          Use <span className="text-foreground font-semibold">Presets</span> to bulk-enable curated sets.
-          {typeof window !== "undefined" && window.electronAPI?.runScript
-            ? <> Toggle any switch to apply or revert instantly via PowerShell (requires Admin), or use <span className="text-foreground font-semibold">Run in App</span> to re-apply all active tweaks.</>
-            : <> Click <span className="text-foreground font-semibold">Export .ps1</span> to download a ready-to-run PowerShell script — run as Administrator.</>
-          }
+          Tweaks are <span className="text-foreground font-semibold">auto-detected</span> from your system on startup.
+          Already applied tweaks show as <span className="text-green-400 font-semibold">Optimized</span>.
+          Select un-optimized tweaks and click <span className="text-primary font-semibold">Optimize Selected</span> to apply them.
         </span>
       </div>
 
@@ -578,8 +573,8 @@ export default function Tweaks() {
           const total = cat === "all"
             ? tweaks?.length || 0
             : tweaks?.filter((t) => t.category.toLowerCase() === cat).length || 0;
-          const active = cat === "all"
-            ? activeTweakCount
+          const optimized = cat === "all"
+            ? optimizedCount
             : tweaks?.filter((t) => t.category.toLowerCase() === cat && t.isActive).length || 0;
           const isSelected = filter === cat;
           return (
@@ -600,9 +595,9 @@ export default function Tweaks() {
                 "text-[10px] px-1 rounded font-mono",
                 isSelected ? "text-primary/80" : "text-muted-foreground/40"
               )}>
-                {active > 0 ? (
+                {optimized > 0 ? (
                   <span>
-                    <span className={isSelected ? "text-primary" : "text-foreground/60"}>{active}</span>
+                    <span className={isSelected ? "text-green-400" : "text-green-400/60"}>{optimized}</span>
                     <span className="text-muted-foreground/30">/{total}</span>
                   </span>
                 ) : (
@@ -615,18 +610,21 @@ export default function Tweaks() {
       </div>
 
       {/* ── Tweaks grid ─────────────────────────────────────────────────── */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="p-4 rounded-xl border border-border bg-card space-y-3">
-              <div className="flex justify-between">
-                <Skeleton className="h-4 w-40 bg-secondary" />
-                <Skeleton className="h-5 w-10 rounded-full bg-secondary" />
-              </div>
-              <Skeleton className="h-12 w-full bg-secondary" />
-              <Skeleton className="h-4 w-20 bg-secondary" />
+      {(isLoading || !hasInitialDetect) ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="relative mb-6">
+            <div className="h-16 w-16 rounded-full border-2 border-primary/20 flex items-center justify-center">
+              <ScanSearch className="h-7 w-7 text-primary animate-pulse" />
             </div>
-          ))}
+            <div className="absolute inset-0 h-16 w-16 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+          </div>
+          <h3 className="text-base font-bold text-foreground mb-1">Scanning System</h3>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            Detecting applied tweaks from your Windows registry...
+          </p>
+          <p className="text-[10px] text-muted-foreground/40 mt-3">
+            This runs automatically every time the app opens
+          </p>
         </div>
       ) : filteredTweaks?.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -641,6 +639,19 @@ export default function Tweaks() {
               const Icon = CATEGORY_ICONS[tweak.category.toLowerCase()] || Wrench;
               const colorClass = CATEGORY_COLORS[tweak.category.toLowerCase()] || "text-primary";
               const cmd = getTweakCommand(tweak.title);
+              const isOptimized = tweak.isActive;
+              const isSelected = selectedIds.has(tweak.id);
+              const impact = getImpact(tweak.title);
+              const conflictTitle = getConflict(tweak.title);
+              const conflictIsActive = conflictTitle
+                ? tweaks?.find(t => t.title === conflictTitle)?.isActive
+                : false;
+              const impactStyle: Record<ImpactLevel, string> = {
+                High:   "text-green-400 bg-green-500/8 border-green-500/20",
+                Medium: "text-amber-400 bg-amber-500/8 border-amber-500/20",
+                Low:    "text-muted-foreground/60 bg-secondary/50 border-border/40",
+              };
+
               return (
                 <motion.div
                   key={tweak.id}
@@ -648,124 +659,125 @@ export default function Tweaks() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.2, delay: Math.min(i * 0.025, 0.3) }}
+                  transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.3) }}
                   className="h-full"
                 >
-                  {(() => {
-                    const impact = getImpact(tweak.title);
-                    const conflictTitle = getConflict(tweak.title);
-                    const conflictIsActive = conflictTitle
-                      ? tweaks?.find(t => t.title === conflictTitle)?.isActive
-                      : false;
-                    const impactStyle: Record<ImpactLevel, string> = {
-                      High:   "text-green-400 bg-green-500/8 border-green-500/20",
-                      Medium: "text-amber-400 bg-amber-500/8 border-amber-500/20",
-                      Low:    "text-muted-foreground/60 bg-secondary/50 border-border/40",
-                    };
-                    return (
-                      <div
-                        className={cn(
-                          "card-premium h-full flex flex-col p-4 rounded-xl border transition-all duration-200",
-                          tweak.isActive
-                            ? "bg-primary/5 border-primary/30 hover:border-primary/45"
-                            : "bg-card border-border hover:border-border/80"
-                        )}
-                        style={tweak.isActive ? {
-                          boxShadow: "0 0 20px hsl(var(--primary) / 0.12), 0 0 40px hsl(var(--primary) / 0.05), inset 0 1px 0 hsl(var(--primary) / 0.08)"
-                        } : undefined}
-                        data-testid={`card-tweak-${tweak.id}`}
-                      >
-                        <div className="flex justify-between items-start gap-3 mb-2.5">
-                          <h3 className={cn(
-                            "font-semibold text-[13px] leading-snug flex-1",
-                            tweak.isActive ? "text-foreground" : "text-foreground/80"
-                          )}>
-                            {tweak.title}
-                          </h3>
-                          <Switch
-                            checked={tweak.isActive}
-                            onCheckedChange={() => handleToggleTweak(tweak)}
-                            disabled={applyingTweaks.has(tweak.id)}
-                            className="data-[state=checked]:bg-primary shrink-0"
-                            data-testid={`switch-tweak-${tweak.id}`}
-                          />
+                  <div
+                    className={cn(
+                      "card-premium h-full flex flex-col p-4 rounded-xl border transition-all duration-200 cursor-pointer",
+                      isOptimized
+                        ? "bg-green-500/4 border-green-500/25 hover:border-green-500/40"
+                        : isSelected
+                          ? "bg-primary/6 border-primary/35 hover:border-primary/50"
+                          : "bg-card border-border hover:border-border/80"
+                    )}
+                    style={isOptimized ? {
+                      boxShadow: "0 0 15px hsl(142 71% 45% / 0.08), inset 0 1px 0 hsl(142 71% 45% / 0.06)"
+                    } : isSelected ? {
+                      boxShadow: "0 0 15px hsl(var(--primary) / 0.1), inset 0 1px 0 hsl(var(--primary) / 0.06)"
+                    } : undefined}
+                    onClick={() => !isOptimized && toggleSelect(tweak.id)}
+                    data-testid={`card-tweak-${tweak.id}`}
+                  >
+                    <div className="flex justify-between items-start gap-3 mb-2.5">
+                      <h3 className={cn(
+                        "font-semibold text-[13px] leading-snug flex-1",
+                        isOptimized ? "text-foreground" : "text-foreground/80"
+                      )}>
+                        {tweak.title}
+                      </h3>
+                      {isOptimized ? (
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/12 border border-green-500/25 shrink-0" data-testid={`badge-optimized-${tweak.id}`}>
+                          <CheckCircle2 className="h-3 w-3 text-green-400" />
+                          <span className="text-[10px] font-bold text-green-400">Optimized</span>
                         </div>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleSelect(tweak.id); }}
+                          className={cn(
+                            "flex items-center justify-center h-5 w-5 rounded border-2 transition-all duration-150 shrink-0",
+                            isSelected
+                              ? "bg-primary border-primary text-white"
+                              : "border-border/60 hover:border-primary/50"
+                          )}
+                          data-testid={`checkbox-tweak-${tweak.id}`}
+                        >
+                          {isSelected && <Check className="h-3 w-3" />}
+                        </button>
+                      )}
+                    </div>
 
-                        <p className="text-[11.5px] text-muted-foreground leading-relaxed flex-1">
-                          {tweak.description}
-                        </p>
+                    <p className="text-[11.5px] text-muted-foreground leading-relaxed flex-1">
+                      {tweak.description}
+                    </p>
 
-                        {tweak.warning && (
-                          <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-amber-500/6 border border-amber-500/15">
-                            <AlertTriangle className="w-3 h-3 mt-0.5 text-amber-400 shrink-0" />
-                            <p className="text-[11px] text-amber-400/90 leading-snug">{tweak.warning}</p>
-                          </div>
-                        )}
-
-                        {tweak.featureBreaks && (
-                          <div className="mt-2 p-2 rounded-lg bg-secondary/60 border border-border/40">
-                            <p className="text-[10.5px] text-muted-foreground leading-snug">
-                              <span className="text-foreground/60 font-semibold">Impact: </span>
-                              {tweak.featureBreaks}
-                            </p>
-                          </div>
-                        )}
-
-                        {conflictIsActive && conflictTitle && (
-                          <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-orange-500/6 border border-orange-500/20">
-                            <AlertOctagon className="w-3 h-3 mt-0.5 text-orange-400 shrink-0" />
-                            <p className="text-[10.5px] text-orange-400/90 leading-snug">
-                              Conflicts with <span className="font-semibold">"{conflictTitle}"</span> — both active. Consider disabling one.
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5">
-                              <Icon className={cn("h-3 w-3", colorClass)} />
-                              <span className={cn("text-[10px] font-semibold capitalize", colorClass)}>
-                                {tweak.category}
-                              </span>
-                            </div>
-                            {impact && (
-                              <span className={cn(
-                                "text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border",
-                                impactStyle[impact]
-                              )}
-                                data-testid={`badge-impact-${tweak.id}`}
-                              >
-                                {impact}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {cmd && (
-                              <button
-                                onClick={() => setViewingCmd({ title: tweak.title, cmd: tweak.isActive ? cmd.disable : cmd.enable })}
-                                className="flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded border border-border/40 bg-secondary/50 hover:border-primary/30 hover:bg-primary/8 text-muted-foreground hover:text-primary transition-all duration-150"
-                                data-testid={`button-view-cmd-${tweak.id}`}
-                              >
-                                <Terminal className="h-2.5 w-2.5" />
-                                View CMD
-                              </button>
-                            )}
-                            {applyingTweaks.has(tweak.id) ? (
-                              <div className="flex items-center gap-1 text-amber-400">
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                <span className="text-[10px] font-bold">Applying...</span>
-                              </div>
-                            ) : tweak.isActive && (
-                              <div className="flex items-center gap-1 text-primary">
-                                <CheckCircle2 className="h-3 w-3" />
-                                <span className="text-[10px] font-bold">Active</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                    {tweak.warning && (
+                      <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-amber-500/6 border border-amber-500/15">
+                        <AlertTriangle className="w-3 h-3 mt-0.5 text-amber-400 shrink-0" />
+                        <p className="text-[11px] text-amber-400/90 leading-snug">{tweak.warning}</p>
                       </div>
-                    );
-                  })()}
+                    )}
+
+                    {tweak.featureBreaks && (
+                      <div className="mt-2 p-2 rounded-lg bg-secondary/60 border border-border/40">
+                        <p className="text-[10.5px] text-muted-foreground leading-snug">
+                          <span className="text-foreground/60 font-semibold">Impact: </span>
+                          {tweak.featureBreaks}
+                        </p>
+                      </div>
+                    )}
+
+                    {conflictIsActive && conflictTitle && (
+                      <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-orange-500/6 border border-orange-500/20">
+                        <AlertOctagon className="w-3 h-3 mt-0.5 text-orange-400 shrink-0" />
+                        <p className="text-[10.5px] text-orange-400/90 leading-snug">
+                          Conflicts with <span className="font-semibold">"{conflictTitle}"</span>
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <Icon className={cn("h-3 w-3", colorClass)} />
+                          <span className={cn("text-[10px] font-semibold capitalize", colorClass)}>
+                            {tweak.category}
+                          </span>
+                        </div>
+                        {impact && (
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border",
+                            impactStyle[impact]
+                          )}
+                            data-testid={`badge-impact-${tweak.id}`}
+                          >
+                            {impact}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {cmd && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingCmd({ title: tweak.title, cmd: isOptimized ? cmd.disable : cmd.enable });
+                            }}
+                            className="flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded border border-border/40 bg-secondary/50 hover:border-primary/30 hover:bg-primary/8 text-muted-foreground hover:text-primary transition-all duration-150"
+                            data-testid={`button-view-cmd-${tweak.id}`}
+                          >
+                            <Terminal className="h-2.5 w-2.5" />
+                            {isOptimized ? "Undo CMD" : "View CMD"}
+                          </button>
+                        )}
+                        {isSelected && !isOptimized && (
+                          <div className="flex items-center gap-1 text-primary">
+                            <CheckSquare className="h-3 w-3" />
+                            <span className="text-[10px] font-bold">Selected</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}
@@ -776,7 +788,8 @@ export default function Tweaks() {
       {filteredTweaks && filteredTweaks.length > 0 && (
         <p className="text-[11px] text-muted-foreground/40 text-center pt-2">
           Showing {filteredTweaks.length} tweak{filteredTweaks.length !== 1 ? "s" : ""}
-          {activeTweakCount > 0 && ` · ${activeTweakCount} active`}
+          {optimizedCount > 0 && <span> · <span className="text-green-400/60">{optimizedCount} optimized</span></span>}
+          {selectedCount > 0 && <span> · <span className="text-primary/60">{selectedCount} selected</span></span>}
         </p>
       )}
     </div>

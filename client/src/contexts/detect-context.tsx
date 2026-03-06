@@ -5,16 +5,19 @@ import { detectTweaks } from "@/lib/api";
 interface DetectContextValue {
   triggerDetect: (delayMs?: number) => void;
   isDetecting: boolean;
+  hasInitialDetect: boolean;
 }
 
 const DetectContext = createContext<DetectContextValue>({
   triggerDetect: () => {},
   isDetecting: false,
+  hasInitialDetect: false,
 });
 
 export function DetectProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [isDetecting, setIsDetecting] = useState(false);
+  const [hasInitialDetect, setHasInitialDetect] = useState(false);
   const isRunningRef = useRef(false);
   const pendingRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -27,12 +30,15 @@ export function DetectProvider({ children }: { children: ReactNode }) {
     isRunningRef.current = true;
     setIsDetecting(true);
     try {
-      await detectTweaks();
-      queryClient.invalidateQueries({ queryKey: ["/api/tweaks"] });
-    } catch {
+      const result = await detectTweaks();
+      console.log("[detect] Detection complete:", result.active, "active of", result.total, "scanned");
+      await queryClient.invalidateQueries({ queryKey: ["/api/tweaks"] });
+    } catch (err) {
+      console.error("[detect] Detection failed:", err);
     } finally {
       isRunningRef.current = false;
       setIsDetecting(false);
+      setHasInitialDetect(true);
       if (pendingRef.current) {
         pendingRef.current = false;
         setTimeout(runDetect, 300);
@@ -53,7 +59,7 @@ export function DetectProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <DetectContext.Provider value={{ triggerDetect, isDetecting }}>
+    <DetectContext.Provider value={{ triggerDetect, isDetecting, hasInitialDetect }}>
       {children}
     </DetectContext.Provider>
   );
