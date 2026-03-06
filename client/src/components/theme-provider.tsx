@@ -20,8 +20,9 @@ export const THEME_COLORS: ThemeColor[] = [
   { name: "blue",   hue: 215, label: "Arctic"  },
   { name: "indigo", hue: 245, label: "Void"    },
   { name: "violet", hue: 265, label: "Ultra"   },
-  { name: "purple", hue: 280, label: "Plasma"  },
-  { name: "pink",   hue: 330, label: "Pulse"   },
+  { name: "purple",  hue: 280, label: "Plasma"  },
+  { name: "magenta", hue: 307, label: "Flux"    },
+  { name: "pink",    hue: 330, label: "Pulse"   },
 ];
 
 interface ThemeContextValue {
