@@ -7,8 +7,8 @@ const PRODUCT_NAME = "JGoode's A.I.O PC Tool";
 // This URL always resolves to the most recently published GitHub Release asset.
 // When you publish a new release with the installer attached, this link
 // automatically serves the newest version — no URL change ever needed.
-const DIRECT_DOWNLOAD = "https://github.com/JaidenGoode/JGoode-s-AIO-PC-Tool/releases/latest/download/JGoode%27s%20A.I.O%20PC%20Tool%20Setup.exe";
-const FALLBACK_PAGE = "https://github.com/JaidenGoode/JGoode-s-AIO-PC-Tool/releases/latest";
+const DIRECT_DOWNLOAD = "https://drive.google.com/uc?export=download&id=1jl7CrQo69b0Y3mJbCjr30BUCHEEplxRo";
+const FALLBACK_PAGE = "https://drive.google.com/file/d/1jl7CrQo69b0Y3mJbCjr30BUCHEEplxRo/view?usp=drive_link";
 const DOWNLOAD_URL = process.env.DOWNLOAD_URL || DIRECT_DOWNLOAD;
 
 // ── HTML helpers ──────────────────────────────────────────────────────────────
