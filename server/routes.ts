@@ -231,7 +231,7 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "browser",
         name: "Browser Cache",
-        description: "Chrome, Edge, Opera GX, and Brave browser cache files",
+        description: "Chrome, Edge, and Opera GX browser cache files",
         paths: [
           // Google Chrome
           path.join(local, "Google", "Chrome", "User Data", "Default", "Cache", "Cache_Data"),
@@ -248,10 +248,6 @@ function getCleanCategories(): CleanCategory[] {
           path.join(local, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
           path.join(local, "Opera Software", "Opera GX Stable", "Code Cache"),
           path.join(local, "Opera Software", "Opera GX Stable", "GPUCache"),
-          // Brave
-          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Cache", "Cache_Data"),
-          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Code Cache"),
-          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "GPUCache"),
         ],
       },
       {
