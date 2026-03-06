@@ -1,6 +1,6 @@
 # JGoode A.I.O PC Tool
 
-> **GitHub Push Note**: GitHub OAuth integration was dismissed. To push to GitHub, use a classic PAT with `repo` scope stored as the `GITHUB_TOKEN` secret, then use the GitHub page in the app (POST `/api/github/push`). Do NOT try to use the Replit GitHub integration connector again without user re-authorizing it.
+> **GitHub Push**: Uses `GITHUB_PERSONAL_ACCESS_TOKEN_MARCH5` (falls back to `GITHUB_TOKEN`) — direct GitHub API calls, no OAuth connector needed. Push via the in-app GitHub page or `POST /api/github/push`.
 
 A modern Windows PC optimization desktop app built with Electron + Express + React.
 
