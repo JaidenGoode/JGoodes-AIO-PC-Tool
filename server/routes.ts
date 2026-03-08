@@ -651,7 +651,7 @@ $d['Disable Lock Screen Suggestions & Ads']=creg 'HKCU:\Software\Policies\Micros
 # Performance
 try{$scheme=((powercfg /getactivescheme 2>$null) -join ' ');$d['Maximum Performance Power Plan']=if($scheme -match 'e9a42b02'){1}else{0}}catch{$d['Maximum Performance Power Plan']=0}
 $d['Disable SuperFetch / SysMain']=csvc 'SysMain'
-try{$fsu=((fsutil behavior query disablelastaccess 2>$null) -join ' ');$d['Disable NTFS Access Timestamps']=if($fsu -match 'DisableLastAccess\s*=\s*[13]'){1}else{0}}catch{$d['Disable NTFS Access Timestamps']=0}
+try{$fsu=((fsutil behavior query disablelastaccess 2>$null) -join ' ');$d['Disable NTFS Access Timestamps']=if($fsu -match 'DisableLastAccess\w*\s*=\s*[1-9]'){1}else{0}}catch{$d['Disable NTFS Access Timestamps']=0}
 $d['Disable Windows Performance Counters']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib' 'Disable Performance Counters' 4
 $d['Disable Windows File Indexing']=csvc 'WSearch'
 $d['Disable Multiplane Overlay (MPO)']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'OverlayTestMode' 5
@@ -662,7 +662,7 @@ $d['Disable Cortana']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Se
 
 # Gaming
 $d['Disable Mouse Acceleration']=creg 'HKCU:\Control Panel\Mouse' 'MouseSpeed' '0'
-try{$cpm=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null) -join ' ');$d['Keep All CPU Cores Active (Unpark Cores)']=if($cpm -match '0x00000064'){1}else{0}}catch{$d['Keep All CPU Cores Active (Unpark Cores)']=0}
+try{$cpm=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null) -join ' ');$d['Keep All CPU Cores Active (Unpark Cores)']=if($cpm -match 'Current AC Power Setting Index:\s*0x00000064'){1}else{0}}catch{$d['Keep All CPU Cores Active (Unpark Cores)']=0}
 $d['Minimum Priority for Background Processes']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'Win32PrioritySeparation' 38
 $d['Disable GameBar']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
 $d['Disable GameBar Background Recording']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
@@ -672,7 +672,7 @@ $d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=creg 'HKLM:\SYSTEM\Curre
 $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0'
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
 $d['System Responsiveness & Network Throttling']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 10
-$d['GPU & CPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'GPU Priority' 8
+$d['GPU & CPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Priority' 6
 $d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 3
 try{$bcd=((bcdedit /enum 2>$null) -join ' ');$d['Disable Dynamic Tick']=if($bcd -match 'disabledynamictick\s+Yes'){1}else{0}}catch{$d['Disable Dynamic Tick']=0}
 try{$ifaces=Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA Stop;$nag=0;foreach($i in $ifaces){try{if((Get-ItemProperty $i.PSPath 'TcpAckFrequency' -EA Stop).TcpAckFrequency -eq 1){$nag=1;break}}catch{}};$d["Disable Nagle's Algorithm"]=$nag}catch{$d["Disable Nagle's Algorithm"]=0}
