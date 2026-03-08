@@ -43,7 +43,7 @@ function TokenSetupScreen() {
   return (
     <div className="space-y-5 pb-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">
+        <h1 className="text-2xl font-black text-foreground tracking-tight">
           GitHub <span className="text-primary">Push</span>
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">Push this project to your GitHub repository</p>
@@ -164,7 +164,7 @@ export default function GitHub() {
     return (
       <div className="space-y-5 pb-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
             GitHub <span className="text-primary">Push</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Push this project to your GitHub repository</p>
@@ -189,7 +189,7 @@ export default function GitHub() {
     return (
       <div className="space-y-5 pb-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
             GitHub <span className="text-primary">Push</span>
           </h1>
         </div>
@@ -209,7 +209,7 @@ export default function GitHub() {
     return (
       <div className="space-y-5 pb-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
             GitHub <span className="text-primary">Push</span>
           </h1>
         </div>
@@ -232,7 +232,7 @@ export default function GitHub() {
     <div className="space-y-5 pb-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">
+        <h1 className="text-2xl font-black text-foreground tracking-tight">
           GitHub <span className="text-primary">Push</span>
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
