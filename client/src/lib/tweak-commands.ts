@@ -1154,6 +1154,171 @@ Stop-Service -Name TabletInputService -Force -ErrorAction SilentlyContinue`,
 Stop-Service -Name wisvc -Force -ErrorAction SilentlyContinue`,
     disable: `Set-Service -Name wisvc -StartupType Manual -ErrorAction SilentlyContinue`,
   },
+
+  // ── DEBLOAT (individual) ───────────────────────────────────────────────────
+  "Uninstall OneDrive": {
+    requiresAdmin: true,
+    enable: `taskkill /f /im OneDrive.exe 2>nul
+Start-Sleep -Milliseconds 800
+$paths = @(
+  "$env:SystemRoot\\SysWOW64\\OneDriveSetup.exe",
+  "$env:SystemRoot\\System32\\OneDriveSetup.exe",
+  "$env:LOCALAPPDATA\\Microsoft\\OneDrive\\OneDriveSetup.exe"
+)
+foreach ($p in $paths) { if (Test-Path $p) { & $p /uninstall 2>nul; break } }
+# Remove OneDrive from Explorer namespace
+reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" /f 2>nul
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" /f 2>nul`,
+    disable: `# Reinstall OneDrive (download and run setup)
+$oSetup = "$env:TEMP\\OneDriveSetup.exe"
+try { Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=248256" -OutFile $oSetup -UseBasicParsing -TimeoutSec 30; Start-Process $oSetup } catch { Write-Host "Download OneDrive manually from microsoft.com/onedrive" }`,
+  },
+
+  "Disable Windows Widgets": {
+    requiresAdmin: true,
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarDa /t REG_DWORD /d 0 /f`,
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /f 2>nul
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarDa /t REG_DWORD /d 1 /f`,
+  },
+
+  "Disable Consumer Features & Silent App Installs": {
+    requiresAdmin: true,
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f`,
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /f 2>nul
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 1 /f`,
+  },
+
+  "Enable End Task in Taskbar Right-Click": {
+    requiresAdmin: false,
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings" /v TaskbarEndTask /t REG_DWORD /d 1 /f`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings" /v TaskbarEndTask /t REG_DWORD /d 0 /f`,
+  },
+
+  "Show Hidden Files & File Extensions": {
+    requiresAdmin: false,
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Hidden /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v HideFileExt /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowSuperHidden /t REG_DWORD /d 1 /f`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Hidden /t REG_DWORD /d 2 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v HideFileExt /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowSuperHidden /t REG_DWORD /d 0 /f`,
+  },
+
+  "Remove Home & Gallery from Explorer": {
+    requiresAdmin: false,
+    enable: `# Set Explorer to open to This PC
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f
+# Remove Home from navigation pane (Windows 11)
+reg add "HKCU\\Software\\Classes\\CLSID\\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /v "System.IsPinnedToNameSpaceTree" /t REG_DWORD /d 0 /f
+# Remove Gallery from navigation pane (Windows 11)
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /f 2>nul`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v LaunchTo /t REG_DWORD /d 0 /f
+reg delete "HKCU\\Software\\Classes\\CLSID\\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /v "System.IsPinnedToNameSpaceTree" /f 2>nul
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /ve /f 2>nul`,
+  },
+
+  "Disable Storage Sense": {
+    requiresAdmin: true,
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v AllowStorageSenseGlobal /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy" /v 01 /t REG_DWORD /d 0 /f`,
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v AllowStorageSenseGlobal /f 2>nul
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy" /v 01 /t REG_DWORD /d 1 /f`,
+  },
+
+  "Disable Sticky Keys Shortcut": {
+    requiresAdmin: false,
+    enable: `reg add "HKCU\\Control Panel\\Accessibility\\StickyKeys" /v Flags /t REG_SZ /d "506" /f
+reg add "HKCU\\Control Panel\\Accessibility\\ToggleKeys" /v Flags /t REG_SZ /d "58" /f
+reg add "HKCU\\Control Panel\\Accessibility\\Keyboard Response" /v Flags /t REG_SZ /d "122" /f`,
+    disable: `reg add "HKCU\\Control Panel\\Accessibility\\StickyKeys" /v Flags /t REG_SZ /d "510" /f
+reg add "HKCU\\Control Panel\\Accessibility\\ToggleKeys" /v Flags /t REG_SZ /d "62" /f
+reg add "HKCU\\Control Panel\\Accessibility\\Keyboard Response" /v Flags /t REG_SZ /d "126" /f`,
+  },
+
+  "Apply Windows Dark Theme": {
+    requiresAdmin: false,
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f`,
+  },
+
+  // ── GAMING (additional) ────────────────────────────────────────────────────
+  "Disable Teredo IPv6 Tunneling": {
+    requiresAdmin: true,
+    enable: `netsh interface teredo set state disabled 2>nul
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 1 /f`,
+    disable: `netsh interface teredo set state default 2>nul
+reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /f 2>nul`,
+  },
+
+  "Disable HPET (Platform Clock)": {
+    requiresAdmin: true,
+    requiresRestart: true,
+    enable: `bcdedit /set useplatformclock false 2>nul
+bcdedit /set uselegacyapicmode No 2>nul`,
+    disable: `bcdedit /deletevalue useplatformclock 2>nul
+bcdedit /deletevalue uselegacyapicmode 2>nul`,
+  },
+
+  "Disable Auto-Restart After Windows Updates": {
+    requiresAdmin: true,
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoRebootWithLoggedOnUsers /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 2 /f`,
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoRebootWithLoggedOnUsers /f 2>nul
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /f 2>nul`,
+  },
+
+  // ── NETWORK (additional) ───────────────────────────────────────────────────
+  "Disable 6to4 & ISATAP Tunneling": {
+    requiresAdmin: true,
+    enable: `netsh interface 6to4 set state disabled 2>nul
+netsh interface isatap set state disabled 2>nul`,
+    disable: `netsh interface 6to4 set state default 2>nul
+netsh interface isatap set state default 2>nul`,
+  },
+
+  // ── SERVICES (additional) ──────────────────────────────────────────────────
+  "Disable IP Helper Service (iphlpsvc)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name iphlpsvc -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name iphlpsvc -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name iphlpsvc -StartupType Automatic -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable Diagnostic Policy Service (DPS)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name DPS -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name DPS -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name DPS -StartupType Automatic -ErrorAction SilentlyContinue`,
+  },
+
+  "Disable Connected Devices Platform (CDPSvc)": {
+    requiresAdmin: true,
+    enable: `Set-Service -Name CDPSvc -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name CDPSvc -Force -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name CDPSvc -StartupType Automatic -ErrorAction SilentlyContinue`,
+  },
+
+  // ── PERFORMANCE (additional) ───────────────────────────────────────────────
+  "Clear Page File on Shutdown": {
+    requiresAdmin: true,
+    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 1 /f`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 0 /f`,
+  },
+
+  "Disable Transparency Effects": {
+    requiresAdmin: false,
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 1 /f`,
+  },
 };
 
 export function getTweakCommand(title: string): TweakCommand | null {
