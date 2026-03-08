@@ -529,7 +529,7 @@ export default function Tweaks() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
             System <span className="text-primary">Tweaks</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
