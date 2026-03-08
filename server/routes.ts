@@ -731,7 +731,8 @@ $d['Increase System I/O Performance']=creg 'HKLM:\SYSTEM\CurrentControlSet\Contr
 # System (Cortex Desktop Menu & Network)
 $d['Speed Up System Shutdown']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control' 'WaitToKillServiceTimeout' '2000'
 $d['Disable Taskbar & Menu Animations']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAnimations' 0
-$d['Disable Startup Disk Check']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' 'BootExecute' 'autocheck autochk *'
+# Startup disk check: detect if C: is excluded from autocheck via chkntfs
+try{$cntfsOut=(chkntfs C: 2>&1) -join ' ';$d['Disable Startup Disk Check']=if($cntfsOut -match 'excluded|will not be checked|not scheduled'){1}else{0}}catch{$d['Disable Startup Disk Check']=0}
 $d['Reduce Taskbar Preview Delay']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'ExtendedUIHoverTime' 100
 $d['Disable AutoPlay for External Devices']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer' 'NoDriveTypeAutoRun' 255
 $d['Disable Notification Center']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\PushNotifications' 'ToastEnabled' 0
