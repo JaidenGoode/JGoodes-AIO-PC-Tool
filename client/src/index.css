@@ -109,18 +109,26 @@
     @apply tracking-tight font-semibold;
   }
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: hsl(var(--background));
+    border-left: 1px solid hsl(var(--border) / 0.4);
   }
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
-    border-radius: 2px;
+    border-radius: 99px;
+    border: 2px solid hsl(var(--background));
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
+    background: hsl(var(--primary) / 0.6);
+  }
+  ::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--primary) / 0.85);
+  }
+  ::-webkit-scrollbar-corner {
+    background: hsl(var(--background));
   }
 }
 
