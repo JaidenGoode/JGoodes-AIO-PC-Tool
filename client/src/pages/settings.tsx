@@ -41,7 +41,15 @@ export default function SettingsPage() {
   const checkUpdateMutation = useMutation({
     mutationFn: () => checkUpdate() as Promise<UpdateInfo>,
     onSuccess: (data) => { setUpdateInfo(data); setUpdateError(null); },
-    onError: (e: Error) => { setUpdateError(e.message); setUpdateInfo(null); },
+    onError: (e: Error) => {
+      let msg = e.message;
+      try {
+        const parsed = JSON.parse(e.message);
+        if (parsed?.error) msg = parsed.error;
+      } catch {}
+      setUpdateError(msg);
+      setUpdateInfo(null);
+    },
   });
 
   return (
