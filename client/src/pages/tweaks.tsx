@@ -958,6 +958,44 @@ export default function Tweaks() {
           {selectedCount > 0 && <span> · <span className="text-primary/60">{selectedCount} selected</span></span>}
         </p>
       )}
+
+      {/* ── Floating Apply Button ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {selectedCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.94 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed bottom-6 right-6 z-50"
+          >
+            <button
+              onClick={handleOptimizeSelected}
+              disabled={applyingAll || isRunning || isBulkPending}
+              data-testid="button-float-apply"
+              style={{
+                boxShadow: "0 8px 28px rgba(0,0,0,0.55), 0 0 22px hsl(var(--primary) / 0.38)",
+              }}
+              className={cn(
+                "flex items-center gap-2 pl-4 pr-3.5 py-2.5 rounded-xl",
+                "bg-primary text-white font-bold text-[13px] tracking-wide",
+                "border border-white/10",
+                "transition-all duration-150 cursor-pointer",
+                "hover:brightness-110 active:scale-[0.97] active:brightness-100",
+                "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+              )}
+            >
+              {(applyingAll || isBulkPending)
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                : <Play className="h-3.5 w-3.5 shrink-0" />}
+              Apply Selected
+              <span className="ml-0.5 flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-black/25 text-[10px] font-extrabold tabular-nums leading-none">
+                {selectedCount}
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
