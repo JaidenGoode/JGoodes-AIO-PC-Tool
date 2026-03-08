@@ -527,7 +527,8 @@ reg add "HKCU\\Software\\Microsoft\\GameBar" /v AllowAutoGameMode /t REG_DWORD /
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 2 /f
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 1 /f`,
     disable: `reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /f 2>nul
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /f 2>nul`,
+reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /f 2>nul
+reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /f 2>nul`,
   },
 
   "System Responsiveness & Network Throttling": {
@@ -827,8 +828,10 @@ reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d
 
   "Disable Startup Disk Check": {
     requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager" /v BootExecute /t REG_MULTI_SZ /d "autocheck autochk *" /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager" /v BootExecute /t REG_MULTI_SZ /d "autocheck autochk *" /f`,
+    enable: `# Exclude all drive letters from automatic chkdsk on next boot
+chkntfs /x C: D: E: F: G: H: I: J: K: L: 2>nul`,
+    disable: `# Restore default automatic chkdsk behaviour
+chkntfs /d 2>nul`,
   },
 
   "Reduce Taskbar Preview Delay": {
@@ -1029,10 +1032,15 @@ if (Test-Path $discordCfg) {
     enable: `# Disable NetBIOS over TCP/IP on all adapters via WMI (0=EnableViaDhcp, 1=Enabled, 2=Disabled)
 $adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" -ErrorAction SilentlyContinue
 foreach ($a in $adapters) { $a.SetTCPIPNetBIOS(2) 2>$null }
-# Also set registry fallback for new adapters
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters\\Interfaces" /f 2>nul`,
+# Also set registry key for all NetBT interfaces (persists for new adapters)
+Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces" -ErrorAction SilentlyContinue | ForEach-Object {
+  Set-ItemProperty -Path $_.PSPath -Name NetbiosOptions -Value 2 -ErrorAction SilentlyContinue
+}`,
     disable: `$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" -ErrorAction SilentlyContinue
-foreach ($a in $adapters) { $a.SetTCPIPNetBIOS(0) 2>$null }`,
+foreach ($a in $adapters) { $a.SetTCPIPNetBIOS(0) 2>$null }
+Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces" -ErrorAction SilentlyContinue | ForEach-Object {
+  Set-ItemProperty -Path $_.PSPath -Name NetbiosOptions -Value 0 -ErrorAction SilentlyContinue
+}`,
   },
 
   "Disable SMBv1 Protocol": {
@@ -1069,7 +1077,10 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
   Enable-NetAdapterRss -Name $_.Name -ErrorAction SilentlyContinue
 }`,
-    disable: `netsh int tcp set global rss=disabled 2>nul`,
+    disable: `netsh int tcp set global rss=disabled 2>nul
+Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
+  Disable-NetAdapterRss -Name $_.Name -ErrorAction SilentlyContinue
+}`,
   },
 
   "Disable Delivery Optimization Service": {
