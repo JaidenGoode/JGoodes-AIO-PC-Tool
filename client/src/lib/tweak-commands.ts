@@ -459,8 +459,10 @@ powercfg -setacvalueindex scheme_current sub_processor CPMAXCORES 100
 powercfg -setdcvalueindex scheme_current sub_processor CPMINCORES 100
 powercfg -setdcvalueindex scheme_current sub_processor CPMAXCORES 100
 powercfg -setactive scheme_current`,
-    disable: `powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 5
-powercfg -setdcvalueindex scheme_current sub_processor CPMINCORES 5
+    disable: `powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 0
+powercfg -setdcvalueindex scheme_current sub_processor CPMINCORES 0
+powercfg -setacvalueindex scheme_current sub_processor CPMAXCORES 100
+powercfg -setdcvalueindex scheme_current sub_processor CPMAXCORES 100
 powercfg -setactive scheme_current`,
   },
 
@@ -557,8 +559,12 @@ reg add "HKCU\\System\\GameConfigStore" /v GameDVR_DXGIHonorFSEWindowsCompatible
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_EFSEFeatureFlags /t REG_DWORD /d 0 /f
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 2 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 1 /f
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v Priority /t REG_DWORD /d 2 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "Medium" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "SFIO Priority" /t REG_SZ /d "Normal" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Background Only" /t REG_SZ /d "True" /f
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Latency Sensitive" /f 2>$null
 reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v Affinity /f 2>$null
 reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Clock Rate" /f 2>$null
 reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /f 2>$null
@@ -566,6 +572,7 @@ reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /f 2>$null
 reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /f 2>$null
 reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /f 2>$null
 reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_DXGIHonorFSEWindowsCompatible /f 2>$null
+reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_EFSEFeatureFlags /f 2>$null
 reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /f 2>$null
 reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /f 2>$null`,
   },
@@ -627,7 +634,7 @@ reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v Di
   "Enable SSD TRIM Optimization": {
     requiresAdmin: true,
     enable: `fsutil behavior set DisableDeleteNotify 0`,
-    disable: `fsutil behavior set DisableDeleteNotify 1`,
+    disable: `fsutil behavior set DisableDeleteNotify 0`,
   },
 
   "Disable Web Search in Windows Search": {
