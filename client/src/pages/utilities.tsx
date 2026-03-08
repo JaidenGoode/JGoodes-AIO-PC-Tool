@@ -317,7 +317,7 @@ export default function Utilities() {
             </p>
             <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
               <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-400/90 leading-relaxed">Downloads ~2MB from O&O's official servers on first launch. Requires an active internet connection.</p>
+              <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads ~2MB from O&O's servers — takes 10–30s depending on your connection. Subsequent launches are instant (cached).</p>
             </div>
             <Button
               size="sm"
@@ -334,7 +334,7 @@ export default function Utilities() {
               data-testid="button-launch-shutup10"
             >
               {shutup10Status === "downloading" ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading & Launching...</>
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading ~2MB &amp; Launching...</>
               ) : shutup10Status === "done" ? (
                 <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
               ) : shutup10Status === "error" ? (
