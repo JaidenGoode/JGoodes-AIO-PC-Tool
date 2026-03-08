@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { runUtility, getSystemInfo } from "@/lib/api";
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   HardDrive, Cpu, Zap, RefreshCw, Network, ShieldCheck,
-  AlertTriangle, MapPin, Loader2, ChevronDown,
+  AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, ExternalLink, CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +69,8 @@ export default function Utilities() {
   const [locationServices, setLocationServices] = useState(() => localStorage.getItem("util_location") !== "false");
   const [windowsUpdateMode, setWindowsUpdateMode] = useState(() => localStorage.getItem("util_win_update") || "windows-update-default");
   const [showSystemInfo, setShowSystemInfo] = useState(false);
+  const [shutup10Status, setShutup10Status] = useState<"idle" | "downloading" | "done" | "error">("idle");
+  const shutup10CleanupRef = useRef<(() => void) | null>(null);
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -89,6 +91,56 @@ export default function Utilities() {
 
   const run = (action: string) => utilityMutation.mutate(action);
   const isPending = (action: string) => utilityMutation.isPending && (utilityMutation.variables as string) === action;
+
+  const launchShutUp10 = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "O&O ShutUp10++ can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setShutup10Status("downloading");
+    const script = `
+$url  = "https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe"
+$dest = "$env:TEMP\\OOSU10.exe"
+if (-not (Test-Path $dest)) {
+  Write-Host "Downloading O&O ShutUp10++..."
+  try {
+    Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing -TimeoutSec 60
+    Write-Host "Download complete."
+  } catch {
+    Write-Host "Download failed: $_"
+    exit 1
+  }
+} else {
+  Write-Host "OOSU10.exe already cached, launching..."
+}
+Start-Process $dest
+Write-Host "Launched."`;
+
+    shutup10CleanupRef.current = window.electronAPI.onScriptOutput((data) => {
+      if (data.type === "done") {
+        shutup10CleanupRef.current?.();
+        shutup10CleanupRef.current = null;
+        if (data.code === 0) {
+          setShutup10Status("done");
+          toast({ title: "O&O ShutUp10++ launched", description: "The app window should appear momentarily." });
+        } else {
+          setShutup10Status("error");
+          toast({ title: "Launch failed", description: "Could not download or launch ShutUp10++.", variant: "destructive" });
+        }
+        setTimeout(() => setShutup10Status("idle"), 4000);
+      }
+    });
+
+    try {
+      await window.electronAPI.runScript(script);
+    } catch {
+      shutup10CleanupRef.current?.();
+      shutup10CleanupRef.current = null;
+      setShutup10Status("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+      setTimeout(() => setShutup10Status("idle"), 3000);
+    }
+  };
 
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
@@ -269,8 +321,48 @@ export default function Utilities() {
           </Select>
         </UtilCard>
 
+        {/* O&O ShutUp10++ */}
+        <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.18}>
+          <div className="space-y-2.5">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Free third-party tool by O&O Software. Provides granular control over 200+ Windows privacy settings beyond what this app covers — telemetry, Microsoft accounts, app permissions, diagnostics, and more.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400/90 leading-relaxed">Downloads ~2MB from O&O's official servers on first launch. Requires an active internet connection.</p>
+            </div>
+            <Button
+              size="sm"
+              onClick={launchShutUp10}
+              disabled={shutup10Status === "downloading"}
+              className={cn(
+                "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                shutup10Status === "done"
+                  ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                  : shutup10Status === "error"
+                  ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                  : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+              )}
+              data-testid="button-launch-shutup10"
+            >
+              {shutup10Status === "downloading" ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading & Launching...</>
+              ) : shutup10Status === "done" ? (
+                <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+              ) : shutup10Status === "error" ? (
+                <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+              ) : (
+                <><Download className="h-3.5 w-3.5" /> Download & Launch ShutUp10++</>
+              )}
+            </Button>
+            {!window.electronAPI && (
+              <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+            )}
+          </div>
+        </UtilCard>
+
         {/* System Info */}
-        <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.18}>
+        <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.20}>
           <Button
             size="sm"
             variant="outline"
