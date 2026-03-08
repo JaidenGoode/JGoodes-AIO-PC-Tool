@@ -91,6 +91,22 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Windows switches to dark mode. Apps that respect the system theme will also switch to dark mode."
   },
+  {
+    title: "Disable Windows Platform Binary Table (WPBT)",
+    description: "Disables the Windows Platform Binary Table — a UEFI firmware feature that allows OEM manufacturers to inject executables into Windows at boot time, even after a clean reinstall. This mechanism has been exploited by rootkits and aggressive OEM software (such as some Lenovo and Acer utilities) to survive reinstallation. Disabling it blocks OEM firmware from auto-executing code in your Windows session.",
+    category: "debloat",
+    isActive: false,
+    warning: "On some Lenovo, Dell, or Acer systems, legitimate OEM utilities (warranty/support apps) installed via WPBT will no longer auto-install after reinstalls. No effect on normal PC operation or hardware functionality.",
+    featureBreaks: "OEM UEFI-injected programs will not automatically install. All other software, hardware, and Windows features unaffected."
+  },
+  {
+    title: "Disable Automatic Explorer Folder Discovery",
+    description: "Prevents File Explorer from automatically changing the view layout based on folder contents — for example, switching to Large Icons when it detects photos, or changing to a media view for music folders. This causes inconsistent Explorer layouts and makes folders that you've configured manually reset unexpectedly. Disabling it locks all folders to a consistent 'Generic' view type that respects your preferences.",
+    category: "debloat",
+    isActive: false,
+    warning: null,
+    featureBreaks: "File Explorer will no longer auto-switch to photo or media views. All folders use the same consistent layout you set. Existing saved folder views are cleared."
+  },
 
   // ── PRIVACY ──────────────────────────────────────────────────────────────────
   {
