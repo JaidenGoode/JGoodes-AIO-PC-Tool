@@ -1375,35 +1375,59 @@ Write-Host "Restore point created successfully."`;
 
   // ── Updates ────────────────────────────────────────────────────────────────
   app.get("/api/check-update", async (_req, res) => {
+    const APP_VERSION = "3.5.0";
+
+    function semverGte(a: string, b: string): boolean {
+      const pa = a.split(".").map((n) => parseInt(n, 10) || 0);
+      const pb = b.split(".").map((n) => parseInt(n, 10) || 0);
+      for (let i = 0; i < 3; i++) {
+        const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+        if (diff !== 0) return diff > 0;
+      }
+      return true;
+    }
+
     try {
       const response = await fetch(
-        "https://api.github.com/repos/JaidenGoode/JGoode-s-AIO-PC-Tool/releases/latest"
+        "https://api.github.com/repos/JaidenGoode/JGoode-s-AIO-PC-Tool/releases/latest",
+        { headers: { "User-Agent": "JGoode-AIO-PC-Tool" } }
       );
-      if (!response.ok) throw new Error("GitHub API unavailable");
+
+      if (response.status === 404) {
+        return res.json({
+          currentVersion: APP_VERSION,
+          latestVersion: APP_VERSION,
+          isUpToDate: true,
+          releaseUrl: "https://github.com/JaidenGoode/JGoode-s-AIO-PC-Tool/releases",
+          releaseName: "",
+          publishedAt: null,
+          note: "No releases published yet",
+        });
+      }
+
+      if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+
       const release = (await response.json()) as {
         tag_name: string;
         name: string;
         html_url: string;
         published_at: string;
       };
-      const currentVersion = "3.0.0";
-      const latestVersion = release.tag_name?.replace(/^v/, "") || currentVersion;
+
+      if (!release.tag_name) throw new Error("Invalid release data from GitHub");
+
+      const latestVersion = release.tag_name.replace(/^v/, "");
       res.json({
-        currentVersion,
+        currentVersion: APP_VERSION,
         latestVersion,
-        isUpToDate: currentVersion >= latestVersion,
+        isUpToDate: semverGte(APP_VERSION, latestVersion),
         releaseUrl: release.html_url,
-        releaseName: release.name,
+        releaseName: release.name || `v${latestVersion}`,
         publishedAt: release.published_at,
       });
-    } catch {
-      res.json({
-        currentVersion: "3.0.0",
-        latestVersion: "3.0.0",
-        isUpToDate: true,
-        releaseUrl: "",
-        releaseName: "",
-        publishedAt: null,
+    } catch (err: any) {
+      res.status(503).json({
+        error: err?.message || "Could not reach GitHub. Check your internet connection and try again.",
       });
     }
   });
