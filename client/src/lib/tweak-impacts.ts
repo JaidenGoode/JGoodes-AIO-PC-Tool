@@ -145,6 +145,10 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   // Performance (additional)
   "Clear Page File on Shutdown":                   "Medium",
   "Disable Transparency Effects":                  "Low",
+
+  // Debloat (additional)
+  "Disable Windows Platform Binary Table (WPBT)":  "Low",
+  "Disable Automatic Explorer Folder Discovery":   "Low",
 };
 
 export function getImpact(title: string): ImpactLevel | null {
