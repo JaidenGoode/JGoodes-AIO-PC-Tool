@@ -13,6 +13,7 @@ import {
 import {
   HardDrive, Cpu, Zap, RefreshCw, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
+  Globe, MonitorPlay, Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -286,6 +287,22 @@ export default function Utilities() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </UtilCard>
+
+        {/* Optimize & Defrag */}
+        <UtilCard icon={Layers} title="Optimize Drives" description="Defragment HDDs or TRIM/optimize SSDs" delay={0.13}>
+          <RunButton action="defrag" label="Open Optimize Drives" pending={isPending("defrag")} onRun={run} />
+        </UtilCard>
+
+        {/* NVIDIA Quick Access */}
+        <UtilCard icon={MonitorPlay} title="NVIDIA Quick Access" description="Open NVIDIA Control Panel or NVIDIA App" delay={0.135}>
+          <RunButton action="nvidia-cp" label="NVIDIA Control Panel" pending={isPending("nvidia-cp")} onRun={run} />
+          <RunButton action="nvidia-app" label="NVIDIA App" pending={isPending("nvidia-app")} onRun={run} />
+        </UtilCard>
+
+        {/* Windows Update */}
+        <UtilCard icon={Globe} title="Windows Update" description="Open Windows Update settings directly" delay={0.14}>
+          <RunButton action="windows-update" label="Open Windows Update" pending={isPending("windows-update")} onRun={run} />
         </UtilCard>
 
         {/* Toggles */}

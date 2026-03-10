@@ -231,12 +231,18 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "browser",
         name: "Browser Cache",
-        description: "Chrome, Edge, and Opera GX browser cache files",
+        description: "Chrome, Edge, Opera GX, Brave, and Firefox browser cache files (all profiles)",
         paths: [
-          // Google Chrome
+          // Google Chrome — Default profile + extra profiles
           path.join(local, "Google", "Chrome", "User Data", "Default", "Cache", "Cache_Data"),
           path.join(local, "Google", "Chrome", "User Data", "Default", "Code Cache"),
           path.join(local, "Google", "Chrome", "User Data", "Default", "GPUCache"),
+          path.join(local, "Google", "Chrome", "User Data", "Profile 1", "Cache", "Cache_Data"),
+          path.join(local, "Google", "Chrome", "User Data", "Profile 1", "Code Cache"),
+          path.join(local, "Google", "Chrome", "User Data", "Profile 1", "GPUCache"),
+          path.join(local, "Google", "Chrome", "User Data", "Profile 2", "Cache", "Cache_Data"),
+          path.join(local, "Google", "Chrome", "User Data", "Profile 2", "Code Cache"),
+          path.join(local, "Google", "Chrome", "User Data", "Profile 2", "GPUCache"),
           // Microsoft Edge
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Cache", "Cache_Data"),
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Code Cache"),
@@ -248,6 +254,15 @@ function getCleanCategories(): CleanCategory[] {
           path.join(local, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
           path.join(local, "Opera Software", "Opera GX Stable", "Code Cache"),
           path.join(local, "Opera Software", "Opera GX Stable", "GPUCache"),
+          // Brave Browser
+          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Cache", "Cache_Data"),
+          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Code Cache"),
+          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "GPUCache"),
+        ],
+        // Firefox uses randomised profile folder names — scan all profiles automatically
+        subDirScan: [
+          { parent: path.join(roaming, "Mozilla", "Firefox", "Profiles"), subdir: "cache2" },
+          { parent: path.join(roaming, "Mozilla", "Firefox", "Profiles"), subdir: "OfflineCache" },
         ],
       },
       {
@@ -691,15 +706,17 @@ $d['Disable Phone Link & Mobile Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\W
 
 # Browser
 $d['Debloat Microsoft Edge']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'HubsSidebarEnabled' 0
-$d['Debloat Google Chrome']=creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'BackgroundModeEnabled' 0
+$d['Debloat Google Chrome']=creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'HardwareAccelerationModeEnabled' 0
 $d['Optimize Discord for Gaming']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Discord.exe\PerfOptions' 'CpuPriorityClass' 2
 
-# Opera GX: check if hardware_acceleration_mode_previous is false in Preferences
+# Opera GX: check hardware acceleration AND GX sounds disabled in Preferences
 try{
   $opPref="$env:APPDATA\Opera Software\Opera GX Stable\Preferences"
   if(Test-Path $opPref){
     $opJson=Get-Content $opPref -Raw -Encoding UTF8 | ConvertFrom-Json
-    if($opJson.system -and $opJson.system.hardware_acceleration_mode_previous -eq $false){$d['Debloat Opera GX']=1}else{$d['Debloat Opera GX']=0}
+    $hwOff=$opJson.system -and $opJson.system.hardware_acceleration_mode_previous -eq $false
+    $sndOff=$opJson.gx_corner -and $opJson.gx_corner.sounds_enabled -eq $false
+    if($hwOff -and $sndOff){$d['Debloat Opera GX']=1}else{$d['Debloat Opera GX']=0}
   }else{$d['Debloat Opera GX']=0}
 }catch{$d['Debloat Opera GX']=0}
 
@@ -1273,13 +1290,14 @@ Write-Host "Restore point created successfully."`;
             "restart-explorer","disk-cleanup","storage-sense-on","storage-sense-off",
             "fast-startup-on","fast-startup-off","windows-update-default","windows-update-security",
             "location-on","location-off","open-system-restore",
+            "defrag","nvidia-cp","nvidia-app","windows-update",
           ]),
         })
         .parse(req.body);
 
       const commands: Record<string, { name: string; command: string; description: string }> = {
-        sfc: { name: "System File Checker", command: "sfc /scannow", description: "Scans and repairs corrupted Windows system files. Requires Administrator." },
-        dism: { name: "DISM Health Restore", command: "DISM /Online /Cleanup-Image /RestoreHealth", description: "Repairs the Windows image. Requires Administrator and internet." },
+        sfc: { name: "System File Checker", command: `powershell -NoProfile -Command "Start-Process cmd.exe -Verb RunAs -ArgumentList '/k','sfc /scannow & echo. & echo ===== SFC Complete ===== & pause'"`, description: "Scans and repairs corrupted Windows system files. Opens an elevated window." },
+        dism: { name: "DISM Health Restore", command: `powershell -NoProfile -Command "Start-Process cmd.exe -Verb RunAs -ArgumentList '/k','DISM /Online /Cleanup-Image /RestoreHealth & echo. & echo ===== DISM Complete ===== & pause'"`, description: "Repairs the Windows image. Requires internet. Can take 10-30 minutes." },
         checkdisk: { name: "Check Disk", command: "chkdsk C: /f /r /x", description: "Checks and repairs disk errors. Schedules for next restart. Requires Administrator." },
         "network-reset": { name: "Network Reset", command: "netsh winsock reset && netsh int ip reset && ipconfig /release && ipconfig /flushdns && ipconfig /renew", description: "Resets all network settings. Restart required." },
         "flush-dns": { name: "Flush DNS Cache", command: "ipconfig /flushdns", description: "Clears the local DNS resolver cache." },
@@ -1291,11 +1309,15 @@ Write-Host "Restore point created successfully."`;
         "storage-sense-off": { name: "Disable Storage Sense", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSenseGlobal" /t REG_DWORD /d 0 /f', description: "Disables Storage Sense automatic cleanup." },
         "fast-startup-on": { name: "Enable Fast Startup", command: 'powercfg /h on && reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 1 /f', description: "Enables Fast Startup (hybrid boot)." },
         "fast-startup-off": { name: "Disable Fast Startup", command: 'reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f', description: "Disables Fast Startup for clean shutdowns." },
-        "windows-update-default": { name: "Windows Update Default", command: 'reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /f 2>nul & echo Default Windows Update restored', description: "Restores default Windows Update behavior." },
+        "windows-update-default": { name: "Windows Update Default", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 4 /f && reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f && reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /v DisableWindowsUpdateAccess /t REG_DWORD /d 0 /f', description: "Restores default Windows Update behavior (auto download and scheduled install)." },
         "windows-update-security": { name: "Windows Update Security Only", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 3 /f && reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f', description: "Restricts Windows Update to notify-before-install mode (security updates applied manually)." },
         "location-on": { name: "Enable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 0 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableWindowsLocationProvider" /t REG_DWORD /d 0 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocationScripting" /t REG_DWORD /d 0 /f & reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\lfsvc" /v "Start" /t REG_DWORD /d 2 /f & sc config lfsvc start= auto & net start lfsvc 2>nul & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value" /t REG_SZ /d "Allow" /f & reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value" /t REG_SZ /d "Allow" /f & echo Location Services fully re-enabled.', description: "Fully re-enables Windows Location Services via Group Policy (sets all three DisableLocation keys to 0), enables the lfsvc service, and allows location access for apps." },
         "location-off": { name: "Disable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 1 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableWindowsLocationProvider" /t REG_DWORD /d 1 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocationScripting" /t REG_DWORD /d 1 /f & sc config lfsvc start= disabled & net stop lfsvc 2>nul & echo Location Services disabled.', description: "Completely disables Windows Location Services via Group Policy (sets all three DisableLocation keys to 1) and stops the lfsvc service." },
         "open-system-restore": { name: "Open System Restore", command: "rstrui.exe", description: "Opens the Windows System Restore wizard." },
+        defrag: { name: "Optimize & Defrag Drives", command: "dfrgui", description: "Opens the Windows Optimize Drives tool to defragment or optimize drives." },
+        "nvidia-cp": { name: "NVIDIA Control Panel", command: `powershell -NoProfile -Command "$p=@('${String.raw`C:\Program Files\NVIDIA Corporation\Control Panel Client\nvcplui.exe`}','${String.raw`C:\Windows\System32\nvcplui.exe`}','${String.raw`C:\Program Files (x86)\NVIDIA Corporation\Control Panel Client\nvcplui.exe`}');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'ms-settings:display'}"`, description: "Opens the NVIDIA Control Panel. Falls back to Display Settings if not found." },
+        "nvidia-app": { name: "NVIDIA App", command: `powershell -NoProfile -Command "$p=@('${String.raw`C:\Program Files\NVIDIA Corporation\NVIDIA app\nvidia-app.exe`}','${String.raw`C:\Program Files\NVIDIA Corporation\NVIDIA App\nvidia-app.exe`}','${String.raw`C:\Program Files\NVIDIA Corporation\NvContainer\nvidia-app.exe`}');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'https://www.nvidia.com/en-us/software/nvidia-app/'}"`, description: "Opens the NVIDIA App. Falls back to NVIDIA website if not installed." },
+        "windows-update": { name: "Windows Update", command: "start ms-settings:windowsupdate", description: "Opens Windows Update settings." },
       };
 
       const info = commands[action];
@@ -1305,9 +1327,13 @@ Write-Host "Restore point created successfully."`;
       }
 
       const TERMINAL_ACTIONS = new Set([
-        "sfc", "dism", "checkdisk", "network-reset",
+        "checkdisk", "network-reset",
       ]);
-      const GUI_ACTIONS = new Set(["open-system-restore", "disk-cleanup"]);
+      const GUI_ACTIONS = new Set([
+        "open-system-restore", "disk-cleanup",
+        "sfc", "dism",
+        "defrag", "nvidia-cp", "nvidia-app", "windows-update",
+      ]);
 
       if (GUI_ACTIONS.has(action)) {
         spawn(info.command, [], { detached: true, stdio: "ignore", shell: true });
