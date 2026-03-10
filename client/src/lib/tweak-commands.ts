@@ -744,20 +744,27 @@ Stop-Service -Name p2pimsvc -Force -ErrorAction SilentlyContinue`,
 
   "Optimize Discord for Gaming": {
     requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 2 /f
-# Disable Discord overlay via config file
+    enable: `# Set Discord to Below Normal CPU priority via IFEO
+# This only takes effect when CPU is contested — Discord yields to your game
+# Voice/audio threads are managed by Windows audio system and are unaffected by this
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 2 /f
+# Disable hardware acceleration and in-game overlay in Discord's settings.json
+# Restart Discord after applying for changes to take effect
 $discordCfg = "$env:APPDATA\\discord\\settings.json"
 if (Test-Path $discordCfg) {
     $cfg = Get-Content $discordCfg -Raw -Encoding UTF8 | ConvertFrom-Json
     $cfg | Add-Member -Force -NotePropertyName "enableHardwareAcceleration" -NotePropertyValue $false
-    $cfg | Add-Member -Force -NotePropertyName "IS_MAXIMIZED" -NotePropertyValue $false
+    $cfg | Add-Member -Force -NotePropertyName "OVERLAY" -NotePropertyValue $false
     $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
 }`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
+    disable: `# Restore Discord to Normal CPU priority
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
+# Restore hardware acceleration and overlay in Discord's settings.json
 $discordCfg = "$env:APPDATA\\discord\\settings.json"
 if (Test-Path $discordCfg) {
     $cfg = Get-Content $discordCfg -Raw -Encoding UTF8 | ConvertFrom-Json
     $cfg | Add-Member -Force -NotePropertyName "enableHardwareAcceleration" -NotePropertyValue $true
+    $cfg | Add-Member -Force -NotePropertyName "OVERLAY" -NotePropertyValue $true
     $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
 }`,
   },

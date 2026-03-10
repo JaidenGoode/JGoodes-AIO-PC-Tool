@@ -395,11 +395,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Optimize Discord for Gaming",
-    description: "DISCORD USERS ONLY. Disables Discord's game overlay (reduces GPU overhead and prevents stuttering), turns off hardware acceleration in Discord, and lowers Discord's process priority so it doesn't compete for CPU time during gaming. No effect if Discord is not installed.",
+    description: "DISCORD USERS ONLY. Three changes in one: (1) Sets Discord to Below Normal CPU priority via Windows IFEO — Discord yields CPU to your game only when CPU is contested; voice and audio are completely unaffected as Windows audio system manages those threads independently. (2) Disables hardware acceleration in Discord so its GPU usage does not compete with your game. (3) Disables Discord's in-game overlay which causes stuttering and frame drops on many systems. Restart Discord after applying.",
     category: "browser",
     isActive: false,
-    warning: "DISCORD USERS ONLY — skip this if you do not use Discord. Only has effect if Discord is installed. Safe to skip for non-Discord users.",
-    featureBreaks: "Discord overlay won't appear over games. Discord animations may be less smooth. Process priority is lowered."
+    warning: "DISCORD USERS ONLY — skip this if you do not use Discord. No effect if Discord is not installed.",
+    featureBreaks: "In-game Discord overlay will not appear over games (recommended to disable for gaming anyway). Discord UI may look slightly less smooth without hardware acceleration."
   },
 
   // ── PRIVACY (new standalone) ─────────────────────────────────────────────────
