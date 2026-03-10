@@ -158,14 +158,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Higher idle power consumption. All cores stay fully active permanently."
   },
   {
-    title: "Minimum Priority for Background Processes",
-    description: "Sets the CPU scheduling policy so background processes are assigned lower priority than foreground applications. Games get more CPU time while idle background tasks get less.",
-    category: "gaming",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Background downloads, updates, and tasks will be slower while gaming."
-  },
-  {
     title: "Disable Network Power Saving",
     description: "Prevents Windows from reducing the power state of the network adapter to save energy, eliminating network latency spikes that occur when the adapter wakes from sleep.",
     category: "gaming",
@@ -238,12 +230,20 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Slightly more CPU time allocated to foreground tasks. Background downloads/tasks may be marginally slower during gaming."
   },
   {
-    title: "GPU & CPU Priority for Games",
-    description: "Configures the Windows Multimedia SystemProfile Tasks\\Games entry with: GPU Priority 8 (max), CPU Priority 6 (High), Scheduling Category High, SFIO Priority High, and Latency Sensitive True. This tells the Windows scheduler to treat any process registered as a game with maximum hardware priority, reducing frame pacing issues and input lag.",
+    title: "Maximum Priority for Games",
+    description: "Configures the Windows Multimedia SystemProfile Tasks\\Games entry to give games the highest possible scheduler priority: GPU Priority 8 (max), CPU Priority 6 (High), Scheduling Category High, SFIO Priority High, Background Only False, and Latency Sensitive True. Every process registered as a game gets maximum CPU, GPU, and disk access priority — reduces frame pacing issues and input lag.",
     category: "gaming",
     isActive: false,
     warning: null,
     featureBreaks: "Background applications receive fewer scheduler slots while a game is running. No side effects outside of gaming."
+  },
+  {
+    title: "Minimum Priority for Background Processes",
+    description: "Sets Win32PrioritySeparation to foreground-boost mode: foreground applications (including your game) receive 3x more CPU time and shorter quanta than background processes. Idle background tasks like updates, antivirus scans, and system services are deprioritised while you game.",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Background downloads, updates, and tasks will be slower while gaming. Revert restores Windows default (Win32PrioritySeparation = 2)."
   },
   {
     title: "Fortnite Process High Priority",
@@ -371,27 +371,27 @@ export const TWEAKS_SEED: TweakSeed[] = [
   // ── BROWSER ──────────────────────────────────────────────────────────────────
   {
     title: "Debloat Microsoft Edge",
-    description: "MICROSOFT EDGE USERS ONLY. Applies comprehensive Edge policies: disables tracking, telemetry, shopping assistant, Copilot, AI features, Sidebar, Bing Chat on new tab, form autofill, credit card autofill, search suggestions, spotlight content, sign-in prompts, enhanced spell check, and Edge bar. Makes Edge a clean, fast browser.",
+    description: "MICROSOFT EDGE USERS ONLY. Applies the full set of Edge debloat policies matching ShutUp10/Optimizer recommendations: disables auto-import, personalization/ads, recommendations, first-run experience, Browser Essentials button, and default browser prompts (Annoyances); disables Follow Creators, both Sidebar modes, SmartScreen, Sync, crash restore dialog, Shopping, Rewards, mini context menus, implicit Microsoft Account sign-in, Collections, split screen, User Feedback, floating Bing search bar, and Startup Boost (Features/Bloat); and cleans the New Tab page by hiding pinned sites, quick links, background image, and Microsoft news content. WebView2 is NOT affected — apps that depend on it continue to work normally.",
     category: "browser",
     isActive: false,
-    warning: "MICROSOFT EDGE USERS ONLY — skip this if you primarily use Chrome, Firefox, or another browser. The registry policies will still be written but will only affect Edge if it is installed and used.",
-    featureBreaks: "Edge Copilot, AI Compose, shopping assistant, Bing Chat, sidebar, and all suggestion features disabled. Edge becomes a clean browser."
+    warning: "MICROSOFT EDGE USERS ONLY — skip this if you primarily use Chrome, Firefox, or another browser. WebView2 is fully preserved. All changes are reversible.",
+    featureBreaks: "Edge Sidebar, SmartScreen, Sync, Shopping, Rewards, Startup Boost, and New Tab page Microsoft content all disabled. Revert instantly restores all defaults."
   },
   {
     title: "Debloat Google Chrome",
-    description: "GOOGLE CHROME USERS ONLY. Disables Chrome hardware acceleration (frees GPU for gaming), disables background running when closed, turns off usage stats and crash reports, disables Google's software reporting tool, and removes Chrome's media router. Only has effect if Chrome is installed.",
+    description: "GOOGLE CHROME USERS ONLY. Disables Chrome hardware acceleration via Windows policy (frees GPU for gaming), disables background running when Chrome is closed, turns off usage stats and crash reports, disables Google's software reporting tool, and removes Chrome's media router. Restart Chrome after applying.",
     category: "browser",
     isActive: false,
     warning: "GOOGLE CHROME USERS ONLY — skip this if you do not use Chrome as your browser. Safe to skip if you use Edge, Firefox, Opera GX, or another browser.",
-    featureBreaks: "Hardware acceleration off — some web video/graphics may render differently. Chrome won't run in background after closing."
+    featureBreaks: "Hardware acceleration off — Chrome renders without GPU. Chrome won't run in background after closing. Restart Chrome for changes to take effect."
   },
   {
     title: "Debloat Opera GX",
-    description: "OPERA GX USERS ONLY. Disables Opera GX hardware acceleration for gaming performance, turns off all browser sound effects and GX sounds, sets startup to a clean empty tab, and disables Opera's background processes. Only has effect if Opera GX is installed.",
+    description: "OPERA GX USERS ONLY. Disables Opera GX hardware acceleration so its GPU usage doesn't compete with games, and disables the GX browser sound effects (GX Corner sounds) that play by default. All changes are made in Opera GX's Preferences file — no registry modifications. Restart Opera GX after applying.",
     category: "browser",
     isActive: false,
     warning: "OPERA GX USERS ONLY — skip this if you do not use Opera GX as your browser. Safe to skip if you use Chrome, Edge, Firefox, or another browser.",
-    featureBreaks: "Opera GX sound effects disabled. GPU rendering off. Browser starts with blank page. Background processes disabled."
+    featureBreaks: "GX Corner sound effects disabled. Hardware acceleration off. Restart Opera GX after applying for changes to take effect."
   },
   {
     title: "Optimize Discord for Gaming",

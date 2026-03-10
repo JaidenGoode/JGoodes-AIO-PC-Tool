@@ -231,7 +231,7 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "browser",
         name: "Browser Cache",
-        description: "Chrome, Edge, Opera GX, Brave, and Firefox browser cache files (all profiles)",
+        description: "Chrome, Edge, and Opera GX browser cache files (Default + extra profiles)",
         paths: [
           // Google Chrome — Default profile + extra profiles
           path.join(local, "Google", "Chrome", "User Data", "Default", "Cache", "Cache_Data"),
@@ -247,22 +247,13 @@ function getCleanCategories(): CleanCategory[] {
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Cache", "Cache_Data"),
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "Code Cache"),
           path.join(local, "Microsoft", "Edge", "User Data", "Default", "GPUCache"),
-          // Opera GX
+          // Opera GX — checks both AppData\Roaming and AppData\Local
           path.join(roaming, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
           path.join(roaming, "Opera Software", "Opera GX Stable", "Code Cache"),
           path.join(roaming, "Opera Software", "Opera GX Stable", "GPUCache"),
           path.join(local, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
           path.join(local, "Opera Software", "Opera GX Stable", "Code Cache"),
           path.join(local, "Opera Software", "Opera GX Stable", "GPUCache"),
-          // Brave Browser
-          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Cache", "Cache_Data"),
-          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Code Cache"),
-          path.join(local, "BraveSoftware", "Brave-Browser", "User Data", "Default", "GPUCache"),
-        ],
-        // Firefox uses randomised profile folder names — scan all profiles automatically
-        subDirScan: [
-          { parent: path.join(roaming, "Mozilla", "Firefox", "Profiles"), subdir: "cache2" },
-          { parent: path.join(roaming, "Mozilla", "Firefox", "Profiles"), subdir: "OfflineCache" },
         ],
       },
       {
@@ -686,7 +677,7 @@ $d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=creg 'HKLM:\SYSTEM\Curre
 $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0'
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
 $d['System Responsiveness & Network Throttling']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 10
-$d['GPU & CPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Priority' 6
+$d['Maximum Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Priority' 6
 $d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 3
 try{$bcd=((bcdedit /enum 2>$null) -join ' ');$d['Disable Dynamic Tick']=if($bcd -match 'disabledynamictick\s+Yes'){1}else{0}}catch{$d['Disable Dynamic Tick']=0}
 try{$ifaces=Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA Stop;$nag=0;foreach($i in $ifaces){try{if((Get-ItemProperty $i.PSPath 'TcpAckFrequency' -EA Stop).TcpAckFrequency -eq 1){$nag=1;break}}catch{}};$d["Disable Nagle's Algorithm"]=$nag}catch{$d["Disable Nagle's Algorithm"]=0}

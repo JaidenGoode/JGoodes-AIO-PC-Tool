@@ -5,7 +5,7 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Maximum Performance Power Plan":                "High",
   "Disable Mouse Acceleration":                    "High",
   "Disable Multiplane Overlay (MPO)":              "High",
-  "GPU & CPU Priority for Games":                  "High",
+  "Maximum Priority for Games":                     "High",
   "System Responsiveness & Network Throttling":    "High",
   "Disable Dynamic Tick":                          "High",
   "Enable Hardware Accelerated GPU Scheduling (HAGS)": "High",

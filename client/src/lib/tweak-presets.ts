@@ -34,7 +34,7 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Instant Menu Response (Zero Delay)",
       "Disable Full Screen Optimizations",
       "System Responsiveness & Network Throttling",
-      "GPU & CPU Priority for Games",
+      "Maximum Priority for Games",
       "Disable Dynamic Tick",
       "Disable Nagle's Algorithm",
       "Disable Xbox Core Services",
