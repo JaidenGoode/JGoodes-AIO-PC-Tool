@@ -8,106 +8,6 @@ export interface TweakSeed {
 }
 
 export const TWEAKS_SEED: TweakSeed[] = [
-  // ── DEBLOAT ──────────────────────────────────────────────────────────────────
-  {
-    title: "Debloat Windows",
-    description: "Applies a comprehensive Windows debloat: removes OneDrive, disables consumer features, telemetry, Explorer automatic folder discovery, PowerShell 7 telemetry, Windows Platform Binary Table (WPBT), widgets, enables 'End Task' via right-click, shows hidden files, removes Home & Gallery from Explorer, disables Storage Sense, turns off Sticky Keys, enables detailed BSOD, applies Windows dark theme, and sets non-essential services to manual start.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "OneDrive removed. Widgets disabled. Some Microsoft features/services disabled. Storage Sense off. Sticky Keys disabled. Reversible individually."
-  },
-
-  // ── DEBLOAT (individual) ─────────────────────────────────────────────────────
-  {
-    title: "Uninstall OneDrive",
-    description: "Terminates and fully uninstalls Microsoft OneDrive from the system. Removes the OneDrive process, runs the uninstaller, and clears OneDrive integration from Explorer. OneDrive can be reinstalled at any time from Microsoft's website if needed.",
-    category: "debloat",
-    isActive: false,
-    warning: "This permanently uninstalls OneDrive. Any files stored exclusively in OneDrive cloud (not synced locally) should be downloaded first. Local files already synced to your PC are safe.",
-    featureBreaks: "OneDrive cloud sync and backup will stop. Files in OneDrive are not deleted — they remain accessible via OneDrive.com. Reinstall from microsoft.com/onedrive if needed."
-  },
-  {
-    title: "Disable Windows Widgets",
-    description: "Disables the Windows Widgets panel (the weather/news taskbar button) and the underlying news feed service. Widgets run a background process and load web content even when you're not looking at them. Disabling removes this entirely from the taskbar.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Widgets taskbar button removed. Weather, news, and stock widgets unavailable. Can be re-enabled in Taskbar Settings."
-  },
-  {
-    title: "Disable Consumer Features & Silent App Installs",
-    description: "Prevents Windows from silently installing suggested apps (games, apps Microsoft gets paid to promote) and disables the Consumer Features system that pushes OEM pre-installed apps and promotional content. Without this tweak, Windows can silently add apps like Candy Crush to your Start menu.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Microsoft-suggested apps will no longer be silently installed. Start menu promotions disabled."
-  },
-  {
-    title: "Enable End Task in Taskbar Right-Click",
-    description: "Adds an 'End Task' option to the right-click context menu on taskbar buttons, letting you instantly kill a frozen or unresponsive program without opening Task Manager. A useful quality-of-life addition missing from Windows by default.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "None. Adds End Task to taskbar right-click menu only."
-  },
-  {
-    title: "Show Hidden Files & File Extensions",
-    description: "Configures File Explorer to show hidden files, folders, and system files, and removes the hiding of known file extensions (e.g. showing 'document.docx' instead of just 'document'). Hiding extensions is a common social engineering attack vector — seeing the real extension helps identify malicious files.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Hidden system files and folders become visible in Explorer. File names show their extension (e.g. .exe, .docx, .jpg). No negative effects."
-  },
-  {
-    title: "Remove Home & Gallery from Explorer",
-    description: "Removes the 'Home' and 'Gallery' sections from the File Explorer left navigation pane and sets Explorer to open to 'This PC' by default instead of the Home view. Reduces clutter and opens Explorer directly to your drives.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Explorer opens to This PC instead of Home. Home and Gallery removed from sidebar. All files remain accessible."
-  },
-  {
-    title: "Disable Storage Sense",
-    description: "Disables Windows Storage Sense which automatically deletes temporary files, empties the Recycle Bin, and cleans up old downloads on a schedule. On a gaming PC you likely manage storage manually — automatic cleanup can unexpectedly delete files you haven't finished with.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Automatic disk cleanup disabled. Run Disk Cleanup manually when needed. Files in Recycle Bin are not auto-deleted."
-  },
-  {
-    title: "Disable Sticky Keys Shortcut",
-    description: "Disables the Sticky Keys, Toggle Keys, and Filter Keys accessibility shortcuts that trigger when you press Shift 5 times (or hold it down). These popups interrupt gaming constantly and offer no benefit to users who don't need them.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Sticky Keys, Toggle Keys, and Filter Keys keyboard shortcuts disabled. Accessibility features can still be enabled manually via Settings."
-  },
-  {
-    title: "Apply Windows Dark Theme",
-    description: "Sets Windows to use the dark color scheme for both apps and the system UI (taskbar, Start menu, settings). Dark mode reduces eye strain in low-light environments and is the standard choice for most gamers and power users.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Windows switches to dark mode. Apps that respect the system theme will also switch to dark mode."
-  },
-  {
-    title: "Disable Windows Platform Binary Table (WPBT)",
-    description: "Disables the Windows Platform Binary Table — a UEFI firmware feature that allows OEM manufacturers to inject executables into Windows at boot time, even after a clean reinstall. This mechanism has been exploited by rootkits and aggressive OEM software (such as some Lenovo and Acer utilities) to survive reinstallation. Disabling it blocks OEM firmware from auto-executing code in your Windows session.",
-    category: "debloat",
-    isActive: false,
-    warning: "On some Lenovo, Dell, or Acer systems, legitimate OEM utilities (warranty/support apps) installed via WPBT will no longer auto-install after reinstalls. No effect on normal PC operation or hardware functionality.",
-    featureBreaks: "OEM UEFI-injected programs will not automatically install. All other software, hardware, and Windows features unaffected."
-  },
-  {
-    title: "Disable Automatic Explorer Folder Discovery",
-    description: "Prevents File Explorer from automatically changing the view layout based on folder contents — for example, switching to Large Icons when it detects photos, or changing to a media view for music folders. This causes inconsistent Explorer layouts and makes folders that you've configured manually reset unexpectedly. Disabling it locks all folders to a consistent 'Generic' view type that respects your preferences.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "File Explorer will no longer auto-switch to photo or media views. All folders use the same consistent layout you set. Existing saved folder views are cleared."
-  },
-
   // ── PRIVACY ──────────────────────────────────────────────────────────────────
   {
     title: "Disable Telemetry & Data Collection",
@@ -222,14 +122,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: "LAPTOP USERS: Only apply if you never use hibernation. Hibernation saves your full RAM state to disk before powering off — useful for resuming exactly where you left off after a full shutdown. This also disables Fast Startup. Desktop users can apply safely.",
     featureBreaks: "Hibernation disabled. Fast Startup disabled (uses full boot instead). Free space gained equals your total RAM amount."
-  },
-  {
-    title: "Disable Background Apps (Legacy)",
-    description: "Disables background app access for UWP (Universal Windows Platform) apps. Note: This setting was removed in Windows 11 but the underlying registry policy still functions.",
-    category: "performance",
-    isActive: false,
-    warning: "This setting was removed from Windows 11 Settings UI but the registry policy still works.",
-    featureBreaks: "UWP apps (Mail, Calendar, etc.) won't refresh in background. Push notifications may be delayed."
   },
   {
     title: "Optimize Visual Effects for Performance",

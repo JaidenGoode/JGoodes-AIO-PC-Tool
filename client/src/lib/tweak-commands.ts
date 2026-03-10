@@ -9,303 +9,7 @@ export interface TweakCommand {
 }
 
 export const TWEAK_COMMANDS: Record<string, TweakCommand> = {
-  "Debloat Windows": {
-    requiresAdmin: true,
-    requiresRestart: true,
-    enable: `# ── PRIVACY: Handwriting & Typing Input (P001/P002/P008) ─────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\InputPersonalization" /v RestrictImplicitInkCollection /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\HandwritingErrorReports" /v PreventHandwritingErrorReports /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Input\\TIPC" /v Enabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\InputPersonalization" /v AllowInputPersonalization /t REG_DWORD /d 0 /f
-# ── PRIVACY: System & Security (P003/P004/S001/S002) ─────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInventory /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization" /v NoLockScreenCamera /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CredUI" /v DisablePasswordReveal /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableUAR /t REG_DWORD /d 1 /f
-# ── PRIVACY: Advertising & Bluetooth (P005/P006/P026) ────────────────────
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Bluetooth" /v AllowAdvertising /t REG_DWORD /d 0 /f
-# ── PRIVACY: Telemetry & Error Reporting (P027/P069/S003/U001/U004-U007) ──
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v CEIPEnable /t REG_DWORD /d 0 /f
-schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" /Disable 2>$null
-schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Disable 2>$null
-schtasks /Change /TN "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser" /Disable 2>$null
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v AITEnable /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v DoNotShowFeedbackNotifications /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v DisableOneSettingsDownloads /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Messaging" /v AllowMessageSync /t REG_DWORD /d 0 /f
-Set-Service -Name DiagTrack -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name DiagTrack -ErrorAction SilentlyContinue
-Set-Service -Name dmwappushservice -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name dmwappushservice -ErrorAction SilentlyContinue
-Set-Service -Name WerSvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name WerSvc -ErrorAction SilentlyContinue
-# ── ACTIVITY HISTORY & CLIPBOARD (A001-A006) ──────────────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 0 /f
-# ── APP PRIVACY (P007/P023/P025/P033/P036/P056) ───────────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsAccessAccountInfo /t REG_DWORD /d 2 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackProgs /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsGetDiagnosticInfo /t REG_DWORD /d 2 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsAccessLocation /t REG_DWORD /d 2 /f
-# ── START MENU & CONTENT SUGGESTIONS (P064/P065/P066/P067/P070/M006) ─────
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353694Enabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\UserProfileEngagement" /v ScoobeSystemSettingEnabled /t REG_DWORD /d 0 /f
-# ── CORTANA & SEARCH (C002/C007-C015/C012) ────────────────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v ConnectedSearchUseWeb /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCloudSearch /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortanaAboveLock /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BingSearchEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v CortanaConsent /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\SearchSettings" /v IsDynamicSearchBoxEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\InputPersonalization" /v RestrictImplicitTextCollection /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\InputPersonalization" /v RestrictImplicitInkCollection /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Personalization\\Settings" /v AcceptedPrivacyPolicy /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Speech_OneCore\\Settings\\OnlineSpeechPrivacy" /v HasAccepted /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Speech" /v AllowSpeechModelUpdate /t REG_DWORD /d 0 /f
-# ── WINDOWS AI / COPILOT / RECALL (C101/C102/C103/C201/C203/C204/C205) ───
-reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowCopilotButton /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v AllowRecallEnablement /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v EnableAIImageCreator /t REG_DWORD /d 0 /f
-# ── WINDOWS SETTINGS SYNC (Y001-Y007) ────────────────────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync" /v DisableSettingSync /t REG_DWORD /d 2 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync" /v DisableSettingSyncUserOverride /t REG_DWORD /d 1 /f
-# ── LOCATION SERVICES (L001/L003/L005) ───────────────────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableWindowsLocationProvider /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /t REG_DWORD /d 1 /f
-Set-Service -Name lfsvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name lfsvc -ErrorAction SilentlyContinue
-# ── MICROSOFT EDGE CHROMIUM POLICIES (E101-E230) ──────────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v TrackingPrevention /t REG_DWORD /d 3 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PaymentMethodQueryEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PersonalizationReportingEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v URLAddressBarDropdownEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v UserFeedbackAllowed /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutofillCreditCardEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutofillAddressEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v LocalProvidersEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SearchSuggestEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeShoppingAssistantEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v ShowMicrosoftRewards /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SignInAllowed /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SpellCheckServiceEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AlternateErrorPagesEnabled /t REG_DWORD /d 0 /f
-# ── MICROSOFT EDGE LEGACY POLICIES (E001/E002/E003/E006-E008/E010-E012) ──
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Main" /v DoNotTrack /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\TabPreloader" /v PreventTabPreloading /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\SearchScopes" /v ShowSearchSuggestionsGlobal /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Geolocation" /v PolicyConfigSystemFLEnable /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Main" /v "FormSuggest Passwords" /t REG_SZ /d "no" /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Main" /v "Use FormSuggest" /t REG_SZ /d "no" /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\PhishingFilter" /v EnabledV9 /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\BooksLibrary" /v EnableExtendedBooksTelemetry /t REG_DWORD /d 0 /f
-# ── LOCK SCREEN (K001/K002/K005) ──────────────────────────────────────────
-reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightFeatures /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightOnActionCenter /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenOverlayEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v LockScreenToastEnabled /t REG_DWORD /d 0 /f
-# ── TASKBAR & START MENU (M015/M016/M018/M021/M025) ─────────────────────
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v PeopleBand /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v HideSCAMeetNow /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f
-# ── MOBILE DEVICES & PHONE LINK (D001/D002/D003/D104) ────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableCdp /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Mobility" /v AllowLinkDevices /t REG_DWORD /d 0 /f
-# ── WINDOWS UPDATE DELIVERY OPTIMIZATION (W001/W011) ─────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 0 /f
-# ── MISCELLANEOUS (M001/M004/M005/M022/M024/M026/M027/M028) ─────────────
-reg add "HKCU\\Software\\Microsoft\\Siuf\\Rules" /v NumberOfSIUFInPeriod /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Siuf\\Rules" /v PeriodInNanoSeconds /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\MediaPlayer\\Preferences" /v UsageTracking /t REG_DWORD /d 0 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Remote Assistance" /v fAllowToGetHelp /t REG_DWORD /d 0 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}" /t REG_DWORD /d 1 /f
-# ── CONSUMER FEATURES & ONEDRIVE ─────────────────────────────────────────
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f
-taskkill /f /im OneDrive.exe 2>$null
-Start-Sleep -Milliseconds 500
-$oneDrivePaths = @(
-  "$env:SystemRoot\\SysWOW64\\OneDriveSetup.exe",
-  "$env:SystemRoot\\System32\\OneDriveSetup.exe",
-  "$env:LOCALAPPDATA\\Microsoft\\OneDrive\\OneDriveSetup.exe"
-)
-foreach ($p in $oneDrivePaths) { if (Test-Path $p) { & $p /uninstall 2>$null; break } }
-# ── EXPLORER, SHELL & SYSTEM ─────────────────────────────────────────────
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings" /v TaskbarEndTask /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Hidden /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v AllowStorageSenseGlobal /t REG_DWORD /d 0 /f
-reg add "HKCU\\Control Panel\\Accessibility\\StickyKeys" /v Flags /t REG_SZ /d "506" /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\CrashControl" /v DisplayParameters /t REG_DWORD /d 1 /f
-@("WMPNetworkSvc","PimIndexMaintenanceSvc","MapsBroker") | ForEach-Object { Set-Service -Name $_ -StartupType Manual -ErrorAction SilentlyContinue }`,
-    disable: `# Restore Consumer Features
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /f 2>$null
-# Restore Telemetry & Error Reporting
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /f 2>$null
-reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v CEIPEnable /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v AITEnable /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v DoNotShowFeedbackNotifications /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v DisableOneSettingsDownloads /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Messaging" /v AllowMessageSync /f 2>$null
-Set-Service -Name DiagTrack -StartupType Automatic -ErrorAction SilentlyContinue
-Set-Service -Name dmwappushservice -StartupType Automatic -ErrorAction SilentlyContinue
-Set-Service -Name WerSvc -StartupType Manual -ErrorAction SilentlyContinue
-# Restore Privacy
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\InputPersonalization" /v RestrictImplicitInkCollection /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\InputPersonalization" /v AllowInputPersonalization /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\HandwritingErrorReports" /v PreventHandwritingErrorReports /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Input\\TIPC" /v Enabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInventory /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableUAR /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization" /v NoLockScreenCamera /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CredUI" /v DisablePasswordReveal /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Bluetooth" /v AllowAdvertising /f 2>$null
-# Restore Activity History & Clipboard
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /f 2>$null
-# Restore App Privacy
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsAccessAccountInfo /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsGetDiagnosticInfo /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsAccessLocation /f 2>$null
-# Restore Start Menu Suggestions
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353694Enabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\UserProfileEngagement" /v ScoobeSystemSettingEnabled /f 2>$null
-# Restore Cortana & Search
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v ConnectedSearchUseWeb /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCloudSearch /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortanaAboveLock /f 2>$null
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BingSearchEnabled /t REG_DWORD /d 1 /f
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\SearchSettings" /v IsDynamicSearchBoxEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\InputPersonalization" /v RestrictImplicitTextCollection /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\InputPersonalization" /v RestrictImplicitInkCollection /f 2>$null
-# Restore Copilot & AI
-reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v DisableAIDataAnalysis /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v AllowRecallEnablement /f 2>$null
-# Restore Settings Sync
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync" /v DisableSettingSync /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\SettingSync" /v DisableSettingSyncUserOverride /f 2>$null
-# Restore Location (user-specified restore values: 0 = not blocked by policy)
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableWindowsLocationProvider /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /t REG_DWORD /d 0 /f
-Set-Service -Name lfsvc -StartupType Manual -ErrorAction SilentlyContinue
-# Restore Edge Chromium Policies
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v TrackingPrevention /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PaymentMethodQueryEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PersonalizationReportingEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v URLAddressBarDropdownEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v UserFeedbackAllowed /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutofillCreditCardEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutofillAddressEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v LocalProvidersEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SearchSuggestEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeShoppingAssistantEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HubsSidebarEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v ShowMicrosoftRewards /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SignInAllowed /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SpellCheckServiceEnabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AlternateErrorPagesEnabled /f 2>$null
-# Restore Edge Legacy Policies
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Main" /v DoNotTrack /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Main" /v "FormSuggest Passwords" /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Main" /v "Use FormSuggest" /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\TabPreloader" /v PreventTabPreloading /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\PhishingFilter" /v EnabledV9 /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\SearchScopes" /v ShowSearchSuggestionsGlobal /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\Geolocation" /v PolicyConfigSystemFLEnable /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\MicrosoftEdge\\BooksLibrary" /v EnableExtendedBooksTelemetry /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\CrashControl" /v DisplayParameters /f 2>$null
-# Restore Lock Screen
-reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightFeatures /f 2>$null
-reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightOnActionCenter /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenOverlayEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v LockScreenToastEnabled /f 2>$null
-# Restore Taskbar
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v SearchboxTaskbarMode /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\People" /v PeopleBand /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v HideSCAMeetNow /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /f 2>$null
-# Restore Mobile Devices
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableCdp /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Mobility" /v AllowLinkDevices /f 2>$null
-# Restore Windows Update P2P
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /f 2>$null
-# Restore Miscellaneous
-reg delete "HKCU\\Software\\Microsoft\\Siuf\\Rules" /v NumberOfSIUFInPeriod /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Siuf\\Rules" /v PeriodInNanoSeconds /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\MediaPlayer\\Preferences" /v UsageTracking /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Remote Assistance" /v fAllowToGetHelp /f 2>$null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel" /v "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}" /f 2>$null
-# Restore Explorer & Shell
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings" /v TaskbarEndTask /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowCopilotButton /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v EnableAIImageCreator /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Start_TrackProgs /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Speech" /v AllowSpeechModelUpdate /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v CortanaConsent /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Personalization\\Settings" /v AcceptedPrivacyPolicy /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Speech_OneCore\\Settings\\OnlineSpeechPrivacy" /v HasAccepted /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v AllowStorageSenseGlobal /f 2>$null
-# Restore scheduled tasks
-schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" /Enable 2>$null
-schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Enable 2>$null
-schtasks /Change /TN "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser" /Enable 2>$null
-# Restore services
-Set-Service -Name WMPNetworkSvc -StartupType Manual -ErrorAction SilentlyContinue
-Set-Service -Name PimIndexMaintenanceSvc -StartupType Manual -ErrorAction SilentlyContinue
-Set-Service -Name MapsBroker -StartupType Automatic -ErrorAction SilentlyContinue`,
-  },
-
+  // ── PRIVACY ────────────────────────────────────────────────────────────────
   "Disable Telemetry & Data Collection": {
     requiresAdmin: true,
     enable: `Set-Service -Name DiagTrack -StartupType Disabled -ErrorAction SilentlyContinue
@@ -318,14 +22,17 @@ schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Progra
 schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Disable 2>$null`,
     disable: `Set-Service -Name DiagTrack -StartupType Automatic -ErrorAction SilentlyContinue
 Set-Service -Name dmwappushservice -StartupType Automatic -ErrorAction SilentlyContinue
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /f 2>$null`,
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 3 /f
+schtasks /Change /TN "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser" /Enable 2>$null
+schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" /Enable 2>$null
+schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Enable 2>$null`,
   },
 
   "Disable Advertising ID": {
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /f 2>$null`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Activity History & Timeline": {
@@ -333,9 +40,9 @@ reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v Di
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /t REG_DWORD /d 1 /f`,
   },
 
   "Disable Customer Experience Improvement Program": {
@@ -343,7 +50,9 @@ reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserA
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v CEIPEnable /t REG_DWORD /d 0 /f
 schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" /Disable 2>$null
 schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Disable 2>$null`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v CEIPEnable /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\SQMClient\\Windows" /v CEIPEnable /t REG_DWORD /d 1 /f
+schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator" /Enable 2>$null
+schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Program\\UsbCeip" /Enable 2>$null`,
   },
 
   "Disable Windows Error Reporting": {
@@ -351,7 +60,7 @@ schtasks /Change /TN "Microsoft\\Windows\\Customer Experience Improvement Progra
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f
 Set-Service -Name WerSvc -StartupType Disabled -ErrorAction SilentlyContinue
 Stop-Service -Name WerSvc -ErrorAction SilentlyContinue`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /f 2>$null
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /t REG_DWORD /d 0 /f
 Set-Service -Name WerSvc -StartupType Manual -ErrorAction SilentlyContinue`,
   },
 
@@ -359,8 +68,8 @@ Set-Service -Name WerSvc -StartupType Manual -ErrorAction SilentlyContinue`,
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 1 /f`,
   },
 
   "Disable Start Menu Suggestions & Tips": {
@@ -369,7 +78,11 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryMana
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353694Enabled /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /f 2>$null`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SystemPaneSuggestionsEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338393Enabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353694Enabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353696Enabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SoftLandingEnabled /t REG_DWORD /d 1 /f`,
   },
 
   "Maximum Performance Power Plan": {
@@ -396,7 +109,7 @@ Start-Service -Name SysMain -ErrorAction SilentlyContinue`,
   "Disable Windows Performance Counters": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Perflib" /v "Disable Performance Counters" /t REG_DWORD /d 4 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Perflib" /v "Disable Performance Counters" /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Perflib" /v "Disable Performance Counters" /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Windows File Indexing": {
@@ -411,7 +124,7 @@ Start-Service -Name WSearch -ErrorAction SilentlyContinue`,
     requiresAdmin: true,
     requiresRestart: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v OverlayTestMode /t REG_DWORD /d 5 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v OverlayTestMode /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v OverlayTestMode /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Hibernation": {
@@ -420,12 +133,6 @@ Start-Service -Name WSearch -ErrorAction SilentlyContinue`,
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f`,
     disable: `powercfg /hibernate on
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 1 /f`,
-  },
-
-  "Disable Background Apps (Legacy)": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsRunInBackground /t REG_DWORD /d 2 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy" /v LetAppsRunInBackground /f 2>$null`,
   },
 
   "Optimize Visual Effects for Performance": {
@@ -438,8 +145,9 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v Hi
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v ConnectedSearchUseWeb /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v AllowCortana /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v ConnectedSearchUseWeb /t REG_DWORD /d 1 /f`,
   },
 
   "Disable Mouse Acceleration": {
@@ -487,7 +195,7 @@ powercfg -setactive scheme_current`,
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\GameBar" /v UseNexusForGameBarEnabled /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /f 2>$null
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 1 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 1 /f`,
   },
 
@@ -502,8 +210,8 @@ reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 1 /f`
   "Optimize for Windowed & Borderless Games": {
     enable: `reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v DirectXUserGlobalSettings /t REG_SZ /d "SwapEffectUpgradeEnable=1;" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v ForceEffectMode /t REG_DWORD /d 2 /f`,
-    disable: `reg delete "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v DirectXUserGlobalSettings /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v ForceEffectMode /f 2>$null`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v DirectXUserGlobalSettings /t REG_SZ /d "" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v ForceEffectMode /t REG_DWORD /d 0 /f`,
   },
 
   "Enable Game Mode": {
@@ -528,17 +236,17 @@ reg add "HKCU\\Software\\Microsoft\\GameBar" /v AllowAutoGameMode /t REG_DWORD /
     enable: `reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 2 /f
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 2 /f
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /f 2>$null`,
+    disable: `reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 0 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 0 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 0 /f`,
   },
 
   "System Responsiveness & Network Throttling": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 10 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 10 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 0xFFFFFFFF /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 20 /f`,
   },
 
   "GPU & CPU Priority for Games": {
@@ -564,25 +272,25 @@ reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\Syst
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "Medium" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "SFIO Priority" /t REG_SZ /d "Normal" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Background Only" /t REG_SZ /d "True" /f
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Latency Sensitive" /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v Affinity /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Clock Rate" /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_DXGIHonorFSEWindowsCompatible /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_EFSEFeatureFlags /f 2>$null
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /f 2>$null`,
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Latency Sensitive" /t REG_SZ /d "False" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v Affinity /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Clock Rate" /t REG_DWORD /d 10000 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 1 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehaviorMode /t REG_DWORD /d 0 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_HonorUserFSEBehaviorMode /t REG_DWORD /d 0 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_DXGIHonorFSEWindowsCompatible /t REG_DWORD /d 0 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_EFSEFeatureFlags /t REG_DWORD /d 0 /f
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 1 /f`,
   },
 
   "Fortnite Process High Priority": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe" /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe" /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 2 /f`,
   },
 
   "Disable Dynamic Tick": {
@@ -601,8 +309,8 @@ foreach ($iface in $interfaces) {
 }`,
     disable: `$interfaces = Get-ChildItem "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"
 foreach ($iface in $interfaces) {
-    Remove-ItemProperty -Path $iface.PSPath -Name TcpAckFrequency -Force -ErrorAction SilentlyContinue
-    Remove-ItemProperty -Path $iface.PSPath -Name TCPNoDelay -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $iface.PSPath -Name TcpAckFrequency -Value 0 -Type DWORD -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $iface.PSPath -Name TCPNoDelay -Value 0 -Type DWORD -Force -ErrorAction SilentlyContinue
 }`,
   },
 
@@ -622,13 +330,13 @@ foreach ($iface in $interfaces) {
     enable: `Disable-NetAdapterBinding -Name "*" -ComponentID ms_tcpip6 -ErrorAction SilentlyContinue
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 0xFF /f`,
     disable: `Enable-NetAdapterBinding -Name "*" -ComponentID ms_tcpip6 -ErrorAction SilentlyContinue
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /f 2>$null`,
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 0 /f`,
   },
 
   "Prefer IPv4 over IPv6": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 0x20 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 0 /f`,
   },
 
   "Enable SSD TRIM Optimization": {
@@ -643,7 +351,7 @@ reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v Di
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v CortanaConsent /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 1 /f`,
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BingSearchEnabled /t REG_DWORD /d 1 /f
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /f 2>$null`,
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Windows TCP Auto-Tuning": {
@@ -654,19 +362,19 @@ reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v Dis
 
   "Disable Startup Program Delay": {
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v StartupDelayInMSec /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v StartupDelayInMSec /f 2>$null`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize" /v StartupDelayInMSec /t REG_DWORD /d 10000 /f`,
   },
 
   "Disable Windows Automatic Maintenance": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\Maintenance" /v MaintenanceDisabled /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\Maintenance" /v MaintenanceDisabled /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\Maintenance" /v MaintenanceDisabled /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Power Throttling": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 0 /f`,
   },
 
   "Debloat Microsoft Edge": {
@@ -679,7 +387,12 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PromotionalTabsEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutofillCreditCardEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SpellcheckEnabled /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v TrackingPrevention /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PersonalizationReportingEnabled /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v ShowMicrosoftRewards /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PromotionalTabsEnabled /t REG_DWORD /d 1 /f`,
   },
 
   "Debloat Google Chrome": {
@@ -688,7 +401,9 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SpellcheckEnabled /t REG_
 reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MetricsReportingEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v ChromeCleanupEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MediaRouterCastAllowAllIPs /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v BackgroundModeEnabled /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MetricsReportingEnabled /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v ChromeCleanupEnabled /t REG_DWORD /d 1 /f`,
   },
 
   "Debloat Opera GX": {
@@ -719,10 +434,11 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v AllowRecallEnablement /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v EnableAIImageCreator /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v DisableAIDataAnalysis /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v AllowRecallEnablement /f 2>$null`,
+    disable: `reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowCopilotButton /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v DisableAIDataAnalysis /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI" /v AllowRecallEnablement /t REG_DWORD /d 1 /f`,
   },
 
   "Disable Lock Screen Suggestions & Ads": {
@@ -731,11 +447,11 @@ reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableW
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenEnabled /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenOverlayEnabled /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v LockScreenToastEnabled /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightFeatures /f 2>$null
-reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightOnActionCenter /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenOverlayEnabled /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v LockScreenToastEnabled /f 2>$null`,
+    disable: `reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightFeatures /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsSpotlightOnActionCenter /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v RotatingLockScreenOverlayEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v LockScreenToastEnabled /t REG_DWORD /d 1 /f`,
   },
 
   "Disable Remote Assistance": {
@@ -750,8 +466,8 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Remote Assistance" /v fAllowF
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableCdp /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Mobility" /v AllowLinkDevices /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableCdp /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Mobility" /v AllowLinkDevices /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableCdp /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Mobility" /v AllowLinkDevices /t REG_DWORD /d 1 /f`,
   },
 
   // ── PERFORMANCE (Cortex Disk Cache & Desktop Menu) ─────────────────────────
@@ -786,7 +502,7 @@ reg add "HKLM\\SOFTWARE\\Microsoft\\Dfrg\\BootOptimizeFunction" /v OptimizeCompl
 
   "Release Unused DLLs from Memory": {
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v AlwaysUnloadDLL /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v AlwaysUnloadDLL /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v AlwaysUnloadDLL /t REG_DWORD /d 0 /f`,
   },
 
   "Svchost Process Isolation": {
@@ -813,7 +529,7 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Manag
   "Increase System I/O Performance": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v IoPageLockLimit /t REG_DWORD /d 983040 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v IoPageLockLimit /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v IoPageLockLimit /t REG_DWORD /d 0 /f`,
   },
 
   // ── SYSTEM (Cortex Desktop Menu & Network Optimization) ───────────────────
@@ -844,22 +560,22 @@ chkntfs /d 2>$null`,
   "Reduce Taskbar Preview Delay": {
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ExtendedUIHoverTime /t REG_DWORD /d 100 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v ThumbnailLivePreviewHoverTime /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ExtendedUIHoverTime /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\DWM" /v ThumbnailLivePreviewHoverTime /f 2>$null`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ExtendedUIHoverTime /t REG_DWORD /d 400 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v ThumbnailLivePreviewHoverTime /t REG_DWORD /d 500 /f`,
   },
 
   "Disable AutoPlay for External Devices": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDriveTypeAutoRun /t REG_DWORD /d 255 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDriveTypeAutoRun /t REG_DWORD /d 255 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDriveTypeAutoRun /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDriveTypeAutoRun /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDriveTypeAutoRun /t REG_DWORD /d 145 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoDriveTypeAutoRun /t REG_DWORD /d 145 /f`,
   },
 
   "Disable Notification Center": {
     enable: `reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableNotificationCenter /t REG_DWORD /d 1 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v ToastEnabled /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableNotificationCenter /f 2>$null
+    disable: `reg add "HKCU\\Software\\Policies\\Microsoft\\Windows\\Explorer" /v DisableNotificationCenter /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v ToastEnabled /t REG_DWORD /d 1 /f`,
   },
 
@@ -874,8 +590,8 @@ reg add "HKCU\\Control Panel\\Keyboard" /v KeyboardSpeed /t REG_SZ /d "31" /f`,
     requiresAdmin: true,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SizReqBuf /t REG_DWORD /d 65535 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v IRPStackSize /t REG_DWORD /d 20 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SizReqBuf /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v IRPStackSize /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SizReqBuf /t REG_DWORD /d 4356 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v IRPStackSize /t REG_DWORD /d 15 /f`,
   },
 
   "Optimize TCP/IP Network Stack": {
@@ -886,12 +602,12 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Enable
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v SackOpts /t REG_DWORD /d 1 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v TcpMaxDataRetransmissions /t REG_DWORD /d 5 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Tcp1323Opts /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v DefaultTTL /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUDiscovery /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUBHDetect /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v SackOpts /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v TcpMaxDataRetransmissions /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Tcp1323Opts /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v DefaultTTL /t REG_DWORD /d 128 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUDiscovery /t REG_DWORD /d 1 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUBHDetect /t REG_DWORD /d 0 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v SackOpts /t REG_DWORD /d 1 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v TcpMaxDataRetransmissions /t REG_DWORD /d 5 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Tcp1323Opts /t REG_DWORD /d 0 /f`,
   },
 
   "Optimize DNS Resolution": {
@@ -900,16 +616,16 @@ reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Tcp
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxSOACacheEntryTtlLimit /t REG_DWORD /d 300 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheTtl /t REG_DWORD /d 86400 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxNegativeCacheTtl /t REG_DWORD /d 5 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheEntryTtlLimit /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxSOACacheEntryTtlLimit /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheTtl /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxNegativeCacheTtl /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheEntryTtlLimit /t REG_DWORD /d 86400 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxSOACacheEntryTtlLimit /t REG_DWORD /d 300 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheTtl /t REG_DWORD /d 86400 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxNegativeCacheTtl /t REG_DWORD /d 300 /f`,
   },
 
   "Unlock Reserved Network Bandwidth": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 20 /f`,
   },
 
   "Increase Browser Connection Limits": {
@@ -1030,7 +746,13 @@ if (Test-Path $discordCfg) {
     $cfg | Add-Member -Force -NotePropertyName "IS_MAXIMIZED" -NotePropertyValue $false
     $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
 }`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe" /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
+$discordCfg = "$env:APPDATA\\discord\\settings.json"
+if (Test-Path $discordCfg) {
+    $cfg = Get-Content $discordCfg -Raw -Encoding UTF8 | ConvertFrom-Json
+    $cfg | Add-Member -Force -NotePropertyName "enableHardwareAcceleration" -NotePropertyValue $true
+    $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
+}`,
   },
 
   // ── NETWORK ────────────────────────────────────────────────────────────────
@@ -1057,7 +779,7 @@ Set-SmbClientConfiguration -EnableBandwidthThrottling 0 -EnableLargeMtu 1 -Force
 Disable-WindowsOptionalFeature -Online -FeatureName smb1protocol -NoRestart -ErrorAction SilentlyContinue
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /t REG_DWORD /d 0 /f`,
     disable: `Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force -ErrorAction SilentlyContinue
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /f 2>$null`,
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /t REG_DWORD /d 1 /f`,
     requiresRestart: true,
   },
 
@@ -1096,7 +818,7 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 Stop-Service -Name DoSvc -Force -ErrorAction SilentlyContinue
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 0 /f`,
     disable: `Set-Service -Name DoSvc -StartupType Automatic -ErrorAction SilentlyContinue
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /f 2>$null`,
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 3 /f`,
   },
 
   "Disable Windows Connect Now (wcncsvc)": {
@@ -1109,13 +831,13 @@ Stop-Service -Name wcncsvc -Force -ErrorAction SilentlyContinue`,
   "Disable LLMNR Protocol": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" /v EnableMulticast /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" /v EnableMulticast /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" /v EnableMulticast /t REG_DWORD /d 1 /f`,
   },
 
   "Disable mDNS Multicast": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /t REG_DWORD /d 1 /f`,
   },
 
   // ── SERVICES (additional) ──────────────────────────────────────────────────
@@ -1162,108 +884,13 @@ Stop-Service -Name wisvc -Force -ErrorAction SilentlyContinue`,
     disable: `Set-Service -Name wisvc -StartupType Manual -ErrorAction SilentlyContinue`,
   },
 
-  // ── DEBLOAT (individual) ───────────────────────────────────────────────────
-  "Uninstall OneDrive": {
-    requiresAdmin: true,
-    enable: `taskkill /f /im OneDrive.exe 2>$null
-Start-Sleep -Milliseconds 800
-$paths = @(
-  "$env:SystemRoot\\SysWOW64\\OneDriveSetup.exe",
-  "$env:SystemRoot\\System32\\OneDriveSetup.exe",
-  "$env:LOCALAPPDATA\\Microsoft\\OneDrive\\OneDriveSetup.exe"
-)
-foreach ($p in $paths) { if (Test-Path $p) { & $p /uninstall 2>$null; break } }
-# Remove OneDrive from Explorer namespace
-reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" /f 2>$null`,
-    disable: `# Reinstall OneDrive (download and run setup)
-$oSetup = "$env:TEMP\\OneDriveSetup.exe"
-try { Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=248256" -OutFile $oSetup -UseBasicParsing -TimeoutSec 30; Start-Process $oSetup } catch { Write-Host "Download OneDrive manually from microsoft.com/onedrive" }`,
-  },
-
-  "Disable Windows Widgets": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarDa /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /f 2>$null
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarDa /t REG_DWORD /d 1 /f`,
-  },
-
-  "Disable Consumer Features & Silent App Installs": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent" /v DisableWindowsConsumerFeatures /f 2>$null
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 1 /f`,
-  },
-
-  "Enable End Task in Taskbar Right-Click": {
-    requiresAdmin: false,
-    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings" /v TaskbarEndTask /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings" /v TaskbarEndTask /t REG_DWORD /d 0 /f`,
-  },
-
-  "Show Hidden Files & File Extensions": {
-    requiresAdmin: false,
-    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Hidden /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v HideFileExt /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowSuperHidden /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v Hidden /t REG_DWORD /d 2 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v HideFileExt /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ShowSuperHidden /t REG_DWORD /d 0 /f`,
-  },
-
-  "Remove Home & Gallery from Explorer": {
-    requiresAdmin: false,
-    enable: `# Set Explorer to open to This PC
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f
-# Remove Home from navigation pane (Windows 11)
-reg add "HKCU\\Software\\Classes\\CLSID\\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /v "System.IsPinnedToNameSpaceTree" /t REG_DWORD /d 0 /f
-# Remove Gallery from navigation pane (Windows 11)
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /f 2>$null`,
-    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v LaunchTo /t REG_DWORD /d 0 /f
-reg delete "HKCU\\Software\\Classes\\CLSID\\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}" /v "System.IsPinnedToNameSpaceTree" /f 2>$null
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MyComputer\\NameSpace\\{24ad3ad4-a569-4530-98e1-ab02f9417aa8}" /ve /f 2>$null`,
-  },
-
-  "Disable Storage Sense": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v AllowStorageSenseGlobal /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy" /v 01 /t REG_DWORD /d 0 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v AllowStorageSenseGlobal /f 2>$null
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy" /v 01 /t REG_DWORD /d 1 /f`,
-  },
-
-  "Disable Sticky Keys Shortcut": {
-    requiresAdmin: false,
-    enable: `reg add "HKCU\\Control Panel\\Accessibility\\StickyKeys" /v Flags /t REG_SZ /d "506" /f
-reg add "HKCU\\Control Panel\\Accessibility\\ToggleKeys" /v Flags /t REG_SZ /d "58" /f
-reg add "HKCU\\Control Panel\\Accessibility\\Keyboard Response" /v Flags /t REG_SZ /d "122" /f`,
-    disable: `reg add "HKCU\\Control Panel\\Accessibility\\StickyKeys" /v Flags /t REG_SZ /d "510" /f
-reg add "HKCU\\Control Panel\\Accessibility\\ToggleKeys" /v Flags /t REG_SZ /d "62" /f
-reg add "HKCU\\Control Panel\\Accessibility\\Keyboard Response" /v Flags /t REG_SZ /d "126" /f`,
-  },
-
-  "Apply Windows Dark Theme": {
-    requiresAdmin: false,
-    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f`,
-    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f`,
-  },
-
   // ── GAMING (additional) ────────────────────────────────────────────────────
   "Disable Teredo IPv6 Tunneling": {
     requiresAdmin: true,
     enable: `netsh interface teredo set state disabled 2>$null
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 1 /f`,
     disable: `netsh interface teredo set state default 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /f 2>$null`,
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 0 /f`,
   },
 
   "Disable HPET (Platform Clock)": {
@@ -1279,8 +906,8 @@ bcdedit /deletevalue uselegacyapicmode 2>$null`,
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoRebootWithLoggedOnUsers /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 2 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoRebootWithLoggedOnUsers /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoRebootWithLoggedOnUsers /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v AUOptions /t REG_DWORD /d 4 /f`,
   },
 
   // ── NETWORK (additional) ───────────────────────────────────────────────────
@@ -1325,22 +952,6 @@ Stop-Service -Name CDPSvc -Force -ErrorAction SilentlyContinue`,
     requiresAdmin: false,
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f`,
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 1 /f`,
-  },
-
-  "Disable Windows Platform Binary Table (WPBT)": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\WPBT" /v Disable /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\WPBT" /v Disable /f 2>$null`,
-  },
-
-  "Disable Automatic Explorer Folder Discovery": {
-    requiresAdmin: false,
-    enable: `# Clear existing folder type memory
-Remove-Item "HKCU:\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\Bags" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item "HKCU:\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\BagMRU" -Recurse -Force -ErrorAction SilentlyContinue
-# Lock all folders to generic (non-auto-detected) view
-reg add "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\Bags\\AllFolders\\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f`,
-    disable: `reg delete "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\Bags\\AllFolders\\Shell" /v FolderType /f 2>$null`,
   },
 
   // ── GAMING (Razer Cortex Speed Up style) ──────────────────────────────────

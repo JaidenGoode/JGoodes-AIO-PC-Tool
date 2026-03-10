@@ -70,6 +70,7 @@ export default function Utilities() {
   const [windowsUpdateMode, setWindowsUpdateMode] = useState(() => localStorage.getItem("util_win_update") || "windows-update-default");
   const [showSystemInfo, setShowSystemInfo] = useState(false);
   const [shutup10Status, setShutup10Status] = useState<"idle" | "downloading" | "done" | "error">("idle");
+  const [titusStatus, setTitusStatus] = useState<"idle" | "running" | "done" | "error">("idle");
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -102,16 +103,20 @@ export default function Utilities() {
     }
     setShutup10Status("downloading");
     const script = [
-      `$dest = "$env:TEMP\\OOSU10.exe"`,
+      `$ErrorActionPreference = 'Stop'`,
+      `$dest = Join-Path $env:TEMP "OOSU10.exe"`,
       `if (-not (Test-Path $dest)) {`,
       `  try {`,
-      `    (New-Object System.Net.WebClient).DownloadFile("https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe", $dest)`,
+      `    $wc = New-Object System.Net.WebClient`,
+      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0")`,
+      `    $wc.DownloadFile("https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe", $dest)`,
       `  } catch {`,
-      `    Write-Host "Download failed: $_"`,
+      `    Write-Error "Download failed: $_"`,
       `    exit 1`,
       `  }`,
       `}`,
-      `Start-Process -FilePath $dest`,
+      `if (-not (Test-Path $dest)) { Write-Error "File not found after download"; exit 1 }`,
+      `Start-Process -FilePath $dest -WindowStyle Normal`,
     ].join("\r\n");
 
     try {
@@ -128,6 +133,39 @@ export default function Utilities() {
       toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
     }
     setTimeout(() => setShutup10Status("idle"), 4000);
+  };
+
+  const launchTitusTool = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({
+        title: "Desktop app required",
+        description: "Chris Titus Tech WinUtil can only run from the installed desktop app.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setTitusStatus("running");
+    const script = [
+      `# Chris Titus Tech WinUtil — encode the command to avoid all quoting issues`,
+      `$cmd = 'irm https://christitus.com/win | iex'`,
+      `$bytes = [System.Text.Encoding]::Unicode.GetBytes($cmd)`,
+      `$encoded = [System.Convert]::ToBase64String($bytes)`,
+      `Start-Process powershell.exe -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encoded -Verb RunAs -WindowStyle Normal`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.success) {
+        setTitusStatus("done");
+        toast({ title: "WinUtil launched", description: "The Chris Titus Tech window should appear. Accept the UAC prompt if asked." });
+      } else {
+        setTitusStatus("error");
+        toast({ title: "Launch failed", description: "Could not launch WinUtil. Check your internet connection.", variant: "destructive" });
+      }
+    } catch {
+      setTitusStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setTitusStatus("idle"), 5000);
   };
 
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
@@ -341,6 +379,46 @@ export default function Utilities() {
                 <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
               ) : (
                 <><Download className="h-3.5 w-3.5" /> Download & Launch ShutUp10++</>
+              )}
+            </Button>
+            {!window.electronAPI && (
+              <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+            )}
+          </div>
+        </UtilCard>
+
+        {/* Chris Titus Tech WinUtil */}
+        <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.19}>
+          <div className="space-y-2.5">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Popular open-source utility by Chris Titus Tech. Offers one-click Windows debloat, program installation, system tweaks, and fixes — all in a clean GUI.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet access and will launch an elevated PowerShell window. Review changes before applying.</p>
+            </div>
+            <Button
+              size="sm"
+              onClick={launchTitusTool}
+              disabled={titusStatus === "running"}
+              className={cn(
+                "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                titusStatus === "done"
+                  ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                  : titusStatus === "error"
+                  ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                  : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+              )}
+              data-testid="button-launch-christitus"
+            >
+              {titusStatus === "running" ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching WinUtil...</>
+              ) : titusStatus === "done" ? (
+                <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+              ) : titusStatus === "error" ? (
+                <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+              ) : (
+                <><Zap className="h-3.5 w-3.5" /> Launch WinUtil</>
               )}
             </Button>
             {!window.electronAPI && (

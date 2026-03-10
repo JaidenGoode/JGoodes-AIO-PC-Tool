@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Wrench, Shield, Zap, SlidersHorizontal,
-  AlertTriangle, Ghost, Gamepad2, Globe, CheckCircle2,
+  AlertTriangle, Gamepad2, Globe, CheckCircle2,
   Download, Copy, Check, Terminal, Loader2, ScanSearch,
   Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Cog, Network,
 } from "lucide-react";
@@ -41,13 +41,12 @@ declare global {
   }
 }
 
-const CATEGORIES = ["all", "debloat", "privacy", "performance", "gaming", "system", "browser", "network", "services"] as const;
+const CATEGORIES = ["all", "privacy", "performance", "gaming", "system", "browser", "network", "services"] as const;
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   performance: Zap,
   privacy: Shield,
   system: SlidersHorizontal,
-  debloat: Ghost,
   gaming: Gamepad2,
   browser: Globe,
   network: Network,
@@ -59,7 +58,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   performance: "text-yellow-400",
   privacy: "text-blue-400",
   system: "text-purple-400",
-  debloat: "text-orange-400",
   gaming: "text-green-400",
   browser: "text-cyan-400",
   network: "text-teal-400",

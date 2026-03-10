@@ -41,7 +41,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Maximum Performance Power Plan",
       "Disable Multiplane Overlay (MPO)",
       "Disable Power Throttling",
-      "Disable Background Apps (Legacy)",
     ],
   },
   {
@@ -81,7 +80,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Disable Windows File Indexing",
       "Disable Multiplane Overlay (MPO)",
       "Disable Hibernation",
-      "Disable Background Apps (Legacy)",
       "Optimize Visual Effects for Performance",
       "Minimum Priority for Background Processes",
       "Disable Power Throttling",

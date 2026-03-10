@@ -11,7 +11,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Enable Hardware Accelerated GPU Scheduling (HAGS)": "High",
   "Disable SuperFetch / SysMain":                  "High",
   "Disable Windows File Indexing":                 "High",
-  "Debloat Windows":                               "High",
   "Disable Telemetry & Data Collection":           "High",
   "Optimize Visual Effects for Performance":       "High",
   "Disable Power Throttling":                      "High",
@@ -23,7 +22,7 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable GameBar Background Recording":          "Medium",
   "Disable Nagle's Algorithm":                     "Medium",
   "Enable Game Mode":                              "Medium",
-  "Disable Background Apps (Legacy)":              "Medium",
+
   "Disable Cortana":                               "Medium",
   "Disable Startup Program Delay":                 "Medium",
   "Disable Hibernation":                           "Medium",
@@ -118,17 +117,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Peer Networking (p2psvc)":              "Low",
   "Disable Peer Networking Identity (p2pimsvc)":   "Low",
 
-  // Debloat (individual)
-  "Uninstall OneDrive":                            "High",
-  "Disable Windows Widgets":                       "Medium",
-  "Disable Consumer Features & Silent App Installs": "Medium",
-  "Enable End Task in Taskbar Right-Click":        "Low",
-  "Show Hidden Files & File Extensions":           "Low",
-  "Remove Home & Gallery from Explorer":           "Low",
-  "Disable Storage Sense":                         "Low",
-  "Disable Sticky Keys Shortcut":                  "Low",
-  "Apply Windows Dark Theme":                      "Low",
-
   // Gaming (additional)
   "Disable Teredo IPv6 Tunneling":                 "Medium",
   "Disable HPET (Platform Clock)":                 "Medium",
@@ -145,10 +133,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   // Performance (additional)
   "Clear Page File on Shutdown":                   "Medium",
   "Disable Transparency Effects":                  "Low",
-
-  // Debloat (additional)
-  "Disable Windows Platform Binary Table (WPBT)":  "Low",
-  "Disable Automatic Explorer Folder Discovery":   "Low",
 
   // Gaming (Razer Cortex Speed Up style)
   "Disable USB Selective Suspend":                 "Medium",
