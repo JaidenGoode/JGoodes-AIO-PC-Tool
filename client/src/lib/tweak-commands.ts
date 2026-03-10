@@ -8,6 +8,8 @@ export interface TweakCommand {
   requiresAdmin?: boolean;
 }
 
+const BLOCKED_TWEAK_TITLES = new Set(["Debloat Windows", "Disable Background Apps (Legacy)"]);
+
 export const TWEAK_COMMANDS: Record<string, TweakCommand> = {
   "Debloat Windows": {
     requiresAdmin: true,
@@ -1457,13 +1459,14 @@ Stop-Service -Name RasMan -Force -ErrorAction SilentlyContinue`,
 };
 
 export function getTweakCommand(title: string): TweakCommand | null {
+  if (BLOCKED_TWEAK_TITLES.has(title)) return null;
   return TWEAK_COMMANDS[title] ?? null;
 }
 
 export function generatePowerShellScript(
   activeTweaks: Array<{ title: string; isActive: boolean }>
 ): string {
-  const active = activeTweaks.filter((t) => t.isActive);
+  const active = activeTweaks.filter((t) => t.isActive && !BLOCKED_TWEAK_TITLES.has(t.title));
   if (active.length === 0) return "";
 
   const needsRestart = active.some(
@@ -1477,6 +1480,17 @@ export function generatePowerShellScript(
     `# Active tweaks: ${active.length}`,
     "",
     "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force",
+    "$ErrorActionPreference = 'Stop'",
+    "",
+    "function Invoke-SafeStep([string]$Name, [scriptblock]$Step) {",
+    "  try {",
+    '    Write-Host "Applying: $Name" -ForegroundColor Yellow',
+    "    & $Step",
+    "  } catch {",
+    '    Write-Host "FAILED: $Name -> $($_.Exception.Message)" -ForegroundColor Red',
+    "    throw",
+    "  }",
+    "}",
     'Write-Host "JGoode A.I.O PC Tool - Applying tweaks..." -ForegroundColor Cyan',
     "",
   ];
@@ -1484,9 +1498,11 @@ export function generatePowerShellScript(
   for (const tweak of active) {
     const cmd = TWEAK_COMMANDS[tweak.title];
     if (!cmd) continue;
+    const safeTitle = tweak.title.replace(/"/g, '\"');
     lines.push(`# ── ${tweak.title} ──`);
-    lines.push(`Write-Host "Applying: ${tweak.title}" -ForegroundColor Yellow`);
+    lines.push(`Invoke-SafeStep "${safeTitle}" {`);
     lines.push(cmd.enable);
+    lines.push("}");
     lines.push("");
   }
 
@@ -1505,7 +1521,7 @@ export function generatePowerShellScript(
 export function generateUndoScript(
   tweaks: Array<{ title: string; isActive: boolean }>
 ): string {
-  const active = tweaks.filter((t) => t.isActive);
+  const active = tweaks.filter((t) => t.isActive && !BLOCKED_TWEAK_TITLES.has(t.title));
   const reversible = active.filter(
     (t) => TWEAK_COMMANDS[t.title]?.disable
   );
@@ -1519,6 +1535,7 @@ export function generateUndoScript(
     `# Tweaks to revert: ${reversible.length}`,
     "",
     "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force",
+    "$ErrorActionPreference = 'Stop'",
     'Write-Host "JGoode A.I.O PC Tool - Reverting tweaks..." -ForegroundColor Cyan',
     "",
   ];

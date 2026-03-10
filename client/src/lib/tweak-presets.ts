@@ -41,7 +41,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Maximum Performance Power Plan",
       "Disable Multiplane Overlay (MPO)",
       "Disable Power Throttling",
-      "Disable Background Apps (Legacy)",
     ],
   },
   {
@@ -53,7 +52,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
     bgColor: "hover:bg-blue-500/10",
     borderColor: "hover:border-blue-500/30",
     titles: [
-      "Debloat Windows",
       "Disable Telemetry & Data Collection",
       "Disable Advertising ID",
       "Disable Activity History & Timeline",
@@ -81,7 +79,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Disable Windows File Indexing",
       "Disable Multiplane Overlay (MPO)",
       "Disable Hibernation",
-      "Disable Background Apps (Legacy)",
       "Optimize Visual Effects for Performance",
       "Minimum Priority for Background Processes",
       "Disable Power Throttling",

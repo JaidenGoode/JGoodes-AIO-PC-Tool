@@ -9,17 +9,8 @@ export const TWEAK_CONFLICTS: Record<string, string> = {
   "Disable IPv6":           "Prefer IPv4 over IPv6",
   "Prefer IPv4 over IPv6":  "Disable IPv6",
 
-  // Debloat Windows already disables Cortana via Group Policy.
   // Having both active applies the same registry keys twice.
-  "Debloat Windows":        "Disable Cortana",
-  "Disable Cortana":        "Debloat Windows",
 
-  // Debloat Windows includes Copilot/AI disable, Lock Screen, Remote Assistance,
-  // and Phone Link — making these standalone tweaks redundant if Debloat is active.
-  "Disable Windows Copilot & AI Features": "Debloat Windows",
-  "Disable Lock Screen Suggestions & Ads": "Debloat Windows",
-  "Disable Remote Assistance":             "Debloat Windows",
-  "Disable Phone Link & Mobile Sync":      "Debloat Windows",
 
   // GPU & CPU Priority and Disable Full Screen Optimizations both write
   // to the same GameConfigStore FSE keys. Redundant to enable both.

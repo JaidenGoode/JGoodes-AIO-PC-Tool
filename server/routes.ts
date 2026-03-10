@@ -10,6 +10,16 @@ import path from "path";
 import os from "os";
 import { exec, spawn } from "child_process";
 
+const BLOCKED_TWEAK_TITLES = new Set([
+  "Debloat Windows",
+  "Disable Background Apps (Legacy)",
+]);
+
+function isAllowedTweakTitle(title: string): boolean {
+  return !BLOCKED_TWEAK_TITLES.has(title);
+}
+
+
 // ── PowerShell / cmd helpers ──────────────────────────────────────────────────
 function runPowerShell(script: string, timeoutMs = 20000): Promise<string> {
   return new Promise((resolve) => {
@@ -51,14 +61,14 @@ async function seedTweaksIfNeeded() {
   try {
     const existing = await storage.getTweaks();
     if (existing.length === 0) {
-      for (const tweak of TWEAKS_SEED) {
+      for (const tweak of TWEAKS_SEED.filter((t) => isAllowedTweakTitle(t.title))) {
         await storage.createTweak(tweak);
       }
-      console.log(`[seed] Seeded ${TWEAKS_SEED.length} tweaks`);
+      console.log(`[seed] Seeded ${TWEAKS_SEED.filter((t) => isAllowedTweakTitle(t.title)).length} tweaks`);
     } else {
       const existingTitles = new Set(existing.map((t) => t.title));
       let added = 0;
-      for (const tweak of TWEAKS_SEED) {
+      for (const tweak of TWEAKS_SEED.filter((t) => isAllowedTweakTitle(t.title))) {
         if (!existingTitles.has(tweak.title)) {
           await storage.createTweak(tweak);
           added++;
@@ -596,7 +606,8 @@ if ($result) { $result }`;
 
   // ── Tweaks ─────────────────────────────────────────────────────────────────
   app.get("/api/tweaks", async (_req, res) => {
-    res.json(await storage.getTweaks());
+    const allTweaks = await storage.getTweaks();
+    res.json(allTweaks.filter((t) => isAllowedTweakTitle(t.title)));
   });
 
   app.patch("/api/tweaks/:id", async (req, res) => {
@@ -637,7 +648,6 @@ function csvc($n){
 $d=[ordered]@{}
 
 # Privacy
-$d['Debloat Windows']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsConsumerFeatures' 1
 $d['Disable Telemetry & Data Collection']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection' 'AllowTelemetry' 0
 $d['Disable Advertising ID']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' 'Enabled' 0
 $d['Disable Activity History & Timeline']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0
@@ -656,7 +666,6 @@ $d['Disable Windows Performance Counters']=creg 'HKLM:\SOFTWARE\Microsoft\Window
 $d['Disable Windows File Indexing']=csvc 'WSearch'
 $d['Disable Multiplane Overlay (MPO)']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'OverlayTestMode' 5
 $d['Disable Hibernation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power' 'HiberbootEnabled' 0
-$d['Disable Background Apps (Legacy)']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' 'LetAppsRunInBackground' 2
 $d['Optimize Visual Effects for Performance']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' 'VisualFXSetting' 2
 $d['Disable Cortana']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' 'AllowCortana' 0
 
@@ -898,7 +907,7 @@ $d | ConvertTo-Json -Compress`;
 
       console.log("[detect] Detected", Object.keys(results).length, "tweaks from system");
 
-      const allTweaks = await storage.getTweaks();
+      const allTweaks = (await storage.getTweaks()).filter((t) => isAllowedTweakTitle(t.title));
       let activeCount = 0;
 
       for (const tweak of allTweaks) {
@@ -935,7 +944,7 @@ $d | ConvertTo-Json -Compress`;
         .object({ titles: z.array(z.string()), isActive: z.boolean() })
         .parse(req.body);
 
-      const allTweaks = await storage.getTweaks();
+      const allTweaks = (await storage.getTweaks()).filter((t) => isAllowedTweakTitle(t.title));
       const toUpdate =
         titles.length === 0
           ? allTweaks

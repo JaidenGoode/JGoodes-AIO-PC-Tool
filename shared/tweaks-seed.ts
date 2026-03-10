@@ -9,15 +9,7 @@ export interface TweakSeed {
 
 export const TWEAKS_SEED: TweakSeed[] = [
   // ── DEBLOAT ──────────────────────────────────────────────────────────────────
-  {
-    title: "Debloat Windows",
-    description: "Applies a comprehensive Windows debloat: removes OneDrive, disables consumer features, telemetry, Explorer automatic folder discovery, PowerShell 7 telemetry, Windows Platform Binary Table (WPBT), widgets, enables 'End Task' via right-click, shows hidden files, removes Home & Gallery from Explorer, disables Storage Sense, turns off Sticky Keys, enables detailed BSOD, applies Windows dark theme, and sets non-essential services to manual start.",
-    category: "debloat",
-    isActive: false,
-    warning: null,
-    featureBreaks: "OneDrive removed. Widgets disabled. Some Microsoft features/services disabled. Storage Sense off. Sticky Keys disabled. Reversible individually."
-  },
-
+  
   // ── DEBLOAT (individual) ─────────────────────────────────────────────────────
   {
     title: "Uninstall OneDrive",
@@ -223,15 +215,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: "LAPTOP USERS: Only apply if you never use hibernation. Hibernation saves your full RAM state to disk before powering off — useful for resuming exactly where you left off after a full shutdown. This also disables Fast Startup. Desktop users can apply safely.",
     featureBreaks: "Hibernation disabled. Fast Startup disabled (uses full boot instead). Free space gained equals your total RAM amount."
   },
-  {
-    title: "Disable Background Apps (Legacy)",
-    description: "Disables background app access for UWP (Universal Windows Platform) apps. Note: This setting was removed in Windows 11 but the underlying registry policy still functions.",
-    category: "performance",
-    isActive: false,
-    warning: "This setting was removed from Windows 11 Settings UI but the registry policy still works.",
-    featureBreaks: "UWP apps (Mail, Calendar, etc.) won't refresh in background. Push notifications may be delayed."
-  },
-  {
+    {
     title: "Optimize Visual Effects for Performance",
     description: "Sets Windows to 'Adjust for best performance' mode which disables all visual effects including window animations, drop shadows, fading menus, smooth scrolling, and transparent glass effects. Reduces Desktop Window Manager CPU and GPU overhead, freeing resources for games and applications.",
     category: "performance",
