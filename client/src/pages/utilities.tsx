@@ -13,7 +13,7 @@ import {
 import {
   HardDrive, Cpu, Zap, RefreshCw, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
-  Globe, MonitorPlay, Layers, MemoryStick,
+  Globe, MonitorPlay, Layers, MemoryStick, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -254,9 +254,10 @@ export default function Utilities() {
           </AlertDialog>
         </UtilCard>
 
-        {/* Explorer */}
-        <UtilCard icon={RefreshCw} title="Restart Explorer" description="Fixes taskbar, desktop, and shell issues" delay={0.10}>
+        {/* Shell & Desktop Fixes */}
+        <UtilCard icon={RefreshCw} title="Shell & Desktop Fixes" description="Fix taskbar, desktop icons, and Explorer" delay={0.10}>
           <RunButton action="restart-explorer" label="Restart Explorer" pending={isPending("restart-explorer")} onRun={run} />
+          <RunButton action="rebuild-icon-cache" label="Rebuild Icon Cache" pending={isPending("rebuild-icon-cache")} onRun={run} />
         </UtilCard>
 
         {/* Check Disk */}
@@ -293,10 +294,19 @@ export default function Utilities() {
           <RunButton action="defrag" label="Open Optimize Drives" pending={isPending("defrag")} onRun={run} />
         </UtilCard>
 
-        {/* NVIDIA Quick Access */}
-        <UtilCard icon={MonitorPlay} title="NVIDIA Quick Access" description="Open NVIDIA Control Panel or NVIDIA App" delay={0.135}>
+        {/* Graphics & Display */}
+        <UtilCard icon={MonitorPlay} title="Graphics & Display" description="NVIDIA tools and DirectX diagnostics" delay={0.135}>
           <RunButton action="nvidia-cp" label="NVIDIA Control Panel" pending={isPending("nvidia-cp")} onRun={run} />
           <RunButton action="nvidia-app" label="NVIDIA App" pending={isPending("nvidia-app")} onRun={run} />
+          <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
+        </UtilCard>
+
+        {/* Clear Shader Cache */}
+        <UtilCard icon={Sparkles} title="Clear Shader Cache" description="Flush NVIDIA, AMD, and DirectX shader caches" delay={0.138}>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Fixes game stutters, black screens, and crashes caused by corrupt shader caches. Your GPU rebuilds them on the next game launch — performance may dip briefly on first run.
+          </p>
+          <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
         </UtilCard>
 
         {/* Windows Update */}
@@ -368,85 +378,90 @@ export default function Utilities() {
           </Select>
         </UtilCard>
 
-        {/* O&O ShutUp10++ */}
-        <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.18}>
-          <div className="space-y-2.5">
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Free third-party tool by O&O Software. Provides granular control over 200+ Windows privacy settings beyond what this app covers — telemetry, Microsoft accounts, app permissions, diagnostics, and more.
-            </p>
-            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
-              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads ~2MB from O&O's servers — takes 10–30s depending on your connection. Subsequent launches are instant (cached).</p>
-            </div>
-            <Button
-              size="sm"
-              onClick={launchShutUp10}
-              disabled={shutup10Status === "downloading"}
-              className={cn(
-                "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                shutup10Status === "done"
-                  ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                  : shutup10Status === "error"
-                  ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                  : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-              )}
-              data-testid="button-launch-shutup10"
-            >
-              {shutup10Status === "downloading" ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading ~2MB &amp; Launching...</>
-              ) : shutup10Status === "done" ? (
-                <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-              ) : shutup10Status === "error" ? (
-                <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-              ) : (
-                <><Download className="h-3.5 w-3.5" /> Download & Launch ShutUp10++</>
-              )}
-            </Button>
-            {!window.electronAPI && (
-              <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-            )}
-          </div>
-        </UtilCard>
+        {/* CTT WinUtil + O&O ShutUp10++ — always side by side */}
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
 
-        {/* Chris Titus Tech WinUtil */}
-        <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.19}>
-          <div className="space-y-2.5">
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Popular open-source utility by Chris Titus Tech. Offers one-click Windows debloat, program installation, system tweaks, and fixes — all in a clean GUI.
-            </p>
-            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
-              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet access and will launch an elevated PowerShell window. Review changes before applying.</p>
+          {/* Chris Titus Tech WinUtil — LEFT */}
+          <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.19}>
+            <div className="space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Popular open-source utility by Chris Titus Tech. Offers one-click Windows debloat, program installation, system tweaks, and fixes — all in a clean GUI.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet access and will launch an elevated PowerShell window. Review changes before applying.</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={launchTitusTool}
+                disabled={titusStatus === "running"}
+                className={cn(
+                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                  titusStatus === "done"
+                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                    : titusStatus === "error"
+                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                )}
+                data-testid="button-launch-christitus"
+              >
+                {titusStatus === "running" ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching WinUtil...</>
+                ) : titusStatus === "done" ? (
+                  <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                ) : titusStatus === "error" ? (
+                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                ) : (
+                  <><Zap className="h-3.5 w-3.5" /> Launch WinUtil</>
+                )}
+              </Button>
+              {!window.electronAPI && (
+                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+              )}
             </div>
-            <Button
-              size="sm"
-              onClick={launchTitusTool}
-              disabled={titusStatus === "running"}
-              className={cn(
-                "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                titusStatus === "done"
-                  ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                  : titusStatus === "error"
-                  ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                  : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+          </UtilCard>
+
+          {/* O&O ShutUp10++ — RIGHT */}
+          <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.20}>
+            <div className="space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Free third-party tool by O&O Software. Provides granular control over 200+ Windows privacy settings beyond what this app covers — telemetry, Microsoft accounts, app permissions, diagnostics, and more.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads ~2MB from O&O's servers — takes 10–30s depending on your connection. Subsequent launches are instant (cached).</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={launchShutUp10}
+                disabled={shutup10Status === "downloading"}
+                className={cn(
+                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                  shutup10Status === "done"
+                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                    : shutup10Status === "error"
+                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                )}
+                data-testid="button-launch-shutup10"
+              >
+                {shutup10Status === "downloading" ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading ~2MB &amp; Launching...</>
+                ) : shutup10Status === "done" ? (
+                  <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                ) : shutup10Status === "error" ? (
+                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                ) : (
+                  <><Download className="h-3.5 w-3.5" /> Download & Launch ShutUp10++</>
+                )}
+              </Button>
+              {!window.electronAPI && (
+                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
               )}
-              data-testid="button-launch-christitus"
-            >
-              {titusStatus === "running" ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching WinUtil...</>
-              ) : titusStatus === "done" ? (
-                <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-              ) : titusStatus === "error" ? (
-                <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-              ) : (
-                <><Zap className="h-3.5 w-3.5" /> Launch WinUtil</>
-              )}
-            </Button>
-            {!window.electronAPI && (
-              <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-            )}
-          </div>
-        </UtilCard>
+            </div>
+          </UtilCard>
+
+        </div>
 
         {/* System Info */}
         <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.20}>
