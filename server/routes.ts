@@ -817,6 +817,8 @@ $d['Disable Connected Devices Platform (CDPSvc)']=csvc 'CDPSvc'
 # Performance (additional)
 $d['Clear Page File on Shutdown']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'ClearPageFileAtShutdown' 1
 $d['Disable Transparency Effects']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'EnableTransparency' 0
+$d['Increase Gaming Task Priority in System Scheduler']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Audio' 'Priority' 6
+$d['Disable Tile Notification System']=creg 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications' 'NoTileApplicationNotification' 1
 
 # Gaming (Razer Cortex Speed Up style)
 try{

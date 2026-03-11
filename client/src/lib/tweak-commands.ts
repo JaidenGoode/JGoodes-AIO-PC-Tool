@@ -957,6 +957,28 @@ Stop-Service -Name CDPSvc -Force -ErrorAction SilentlyContinue`,
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 1 /f`,
   },
 
+  "Increase Gaming Task Priority in System Scheduler": {
+    requiresAdmin: true,
+    // Targets MMCSS Tasks\Audio — distinct from Tasks\Games (covered by "Maximum Priority for Games")
+    // Windows defaults: Priority=3, Scheduling Category=Medium, SFIO Priority=Normal, Background Only=True
+    enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v Priority /t REG_DWORD /d 6 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Scheduling Category" /t REG_SZ /d "High" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "SFIO Priority" /t REG_SZ /d "High" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Background Only" /t REG_SZ /d "False" /f`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v Priority /t REG_DWORD /d 3 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Scheduling Category" /t REG_SZ /d "Medium" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "SFIO Priority" /t REG_SZ /d "Normal" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Background Only" /t REG_SZ /d "True" /f`,
+  },
+
+  "Disable Tile Notification System": {
+    requiresAdmin: false,
+    enable: `reg add "HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v DisableTileNotification /t REG_DWORD /d 1 /f
+reg add "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v NoTileApplicationNotification /t REG_DWORD /d 1 /f`,
+    disable: `reg delete "HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v DisableTileNotification /f 2>$null
+reg delete "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v NoTileApplicationNotification /f 2>$null`,
+  },
+
   // ── GAMING (Razer Cortex Speed Up style) ──────────────────────────────────
 
   "Disable USB Selective Suspend": {

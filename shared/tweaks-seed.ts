@@ -954,4 +954,20 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Taskbar, Start menu, and Action Center become fully opaque instead of translucent/blurred. Visual appearance change only — no functional effect."
   },
+  {
+    title: "Increase Gaming Task Priority in System Scheduler",
+    description: "Configures the Windows Multimedia Class Scheduler Service (MMCSS) audio task profile with gaming-optimized values. By default, the audio scheduling category is Medium and runs as a background-only task — this means game audio competes with background processes for CPU time, causing audio stutters and crackling under load. Setting Priority to 6 (High), Scheduling Category to High, SFIO Priority to High, and Background Only to False ensures audio threads serving games are scheduled with the same urgency as the game process itself. Fully safe values taken from Microsoft's MMCSS documentation.",
+    category: "gaming",
+    isActive: false,
+    warning: "May slightly deprioritize background audio applications (music players, chat apps) while gaming. Game audio and in-game voice will be noticeably crisper.",
+    featureBreaks: "Background audio apps receive fewer CPU scheduler slots while gaming. No effect on game functionality — only affects audio thread scheduling priority."
+  },
+  {
+    title: "Disable Tile Notification System",
+    description: "Disables the Windows Live Tile notification system which continuously polls the internet, wakes the CPU, writes notification data to disk, and keeps background UWP app processes alive to update Start menu tile content. On Windows 10/11, tiles silently generate disk I/O and consume memory even when the Start menu is not open. Disabling tile notifications reduces idle disk writes, lowers background memory usage, and improves system responsiveness — especially on HDDs and systems with limited RAM.",
+    category: "performance",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Start menu tiles will no longer display live content (news headlines, weather, mail counts, etc.). Tile icons remain but become static. All other notification types (toast popups, system tray alerts) are unaffected."
+  },
 ];
