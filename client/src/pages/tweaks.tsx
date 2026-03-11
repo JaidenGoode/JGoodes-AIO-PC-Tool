@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Wrench, Shield, Zap, SlidersHorizontal,
+  Search, Wrench, Zap, SlidersHorizontal,
   AlertTriangle, Gamepad2, Globe, CheckCircle2,
   Download, Copy, Check, Terminal, Loader2, ScanSearch,
   Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Cog, Network,
@@ -44,11 +44,10 @@ declare global {
   }
 }
 
-const CATEGORIES = ["all", "privacy", "performance", "gaming", "system", "browser", "network", "services"] as const;
+const CATEGORIES = ["all", "performance", "gaming", "system", "browser", "network", "services"] as const;
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   performance: Zap,
-  privacy: Shield,
   system: SlidersHorizontal,
   gaming: Gamepad2,
   browser: Globe,
@@ -59,7 +58,6 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   performance: "text-yellow-400",
-  privacy: "text-blue-400",
   system: "text-purple-400",
   gaming: "text-green-400",
   browser: "text-cyan-400",
