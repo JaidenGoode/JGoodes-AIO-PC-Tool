@@ -8,64 +8,6 @@ export interface TweakSeed {
 }
 
 export const TWEAKS_SEED: TweakSeed[] = [
-  // ── PRIVACY ──────────────────────────────────────────────────────────────────
-  {
-    title: "Disable Telemetry & Data Collection",
-    description: "Stops Windows from sending usage, diagnostic, and crash data to Microsoft. Includes disabling the Connected User Experiences service, telemetry scheduled tasks, and setting diagnostic data to minimum.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Microsoft may not receive crash reports. Windows feedback prompts disabled."
-  },
-  {
-    title: "Disable Advertising ID",
-    description: "Resets and disables the Advertising ID used for personalized ads across apps. Prevents apps from profiling your usage for targeted advertising.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Personalized ad experiences in apps will be disabled."
-  },
-  {
-    title: "Disable Activity History & Timeline",
-    description: "Stops Windows from recording which apps and files you open, and disables syncing activity to Microsoft servers. Removes Timeline feature.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Windows Timeline feature disabled. Activity sync across devices stops."
-  },
-  {
-    title: "Disable Customer Experience Improvement Program",
-    description: "Opts out of Microsoft's CEIP which silently collects data about how you use Windows to send to Microsoft.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Microsoft won't improve certain features based on your usage patterns."
-  },
-  {
-    title: "Disable Windows Error Reporting",
-    description: "Prevents Windows from automatically sending error and crash reports to Microsoft after a program crash.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Microsoft won't receive crash data. Some apps may not offer automatic troubleshooting."
-  },
-  {
-    title: "Disable Clipboard History & Cloud Sync",
-    description: "Disables the clipboard history feature (Win+V) and stops clipboard content from being synced to the cloud or other devices via your Microsoft account.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Win+V clipboard history disabled. Clipboard no longer syncs between devices."
-  },
-  {
-    title: "Disable Start Menu Suggestions & Tips",
-    description: "Removes app suggestions, ads, and tips from the Start menu, Settings app, and Windows tips notifications. Disables suggested content throughout Windows.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Microsoft app suggestions and promotional content disabled in Start and Settings."
-  },
-
   // ── PERFORMANCE ──────────────────────────────────────────────────────────────
   {
     title: "Maximum Performance Power Plan",
@@ -456,24 +398,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: "DISCORD USERS ONLY — skip this if you do not use Discord. No effect if Discord is not installed.",
     featureBreaks: "In-game Discord overlay will not appear over games (recommended to disable for gaming anyway). Discord UI may look slightly less smooth without hardware acceleration."
-  },
-
-  // ── PRIVACY (new standalone) ─────────────────────────────────────────────────
-  {
-    title: "Disable Windows Copilot & AI Features",
-    description: "Disables Windows Copilot, removes the Copilot button from the taskbar, disables the AI-powered Recall feature (which records everything you see on screen), and disables the AI Image Creator in Microsoft Paint. Safe for all users — these are opt-in Microsoft AI features.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Copilot button removed from taskbar. Windows Recall disabled. AI Image Creator in Paint disabled. Copilot chat features unavailable."
-  },
-  {
-    title: "Disable Lock Screen Suggestions & Ads",
-    description: "Removes Microsoft's Windows Spotlight ads, rotating lock screen images, 'fun facts', tips, and push notifications from your lock screen. Replaces the lock screen with a clean, static image and removes notification badges.",
-    category: "privacy",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Lock screen will use a static wallpaper instead of rotating Spotlight images. Tips and ads on lock screen removed."
   },
 
   // ── SYSTEM (new standalone) ──────────────────────────────────────────────────
