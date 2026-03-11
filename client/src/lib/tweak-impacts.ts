@@ -17,6 +17,7 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Optimize Visual Effects for Performance":       "High",
   "Disable Power Throttling":                      "High",
   "System Responsiveness for Games":               "High",
+  "Enable MSI Mode for GPU":                       "High",
   "GPU Priority for Games":                        "High",
   "Global Timer Resolution for Gaming":            "High",
   "Disable Background UWP Apps":                   "Medium",

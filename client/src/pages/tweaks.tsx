@@ -5,6 +5,7 @@ import {
   AlertTriangle, Gamepad2, Globe, CheckCircle2,
   Download, Copy, Check, Terminal, Loader2, ScanSearch,
   Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Cog, Network,
+  Upload, Database,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,8 @@ declare global {
       onMaximizeChange: (callback: (v: boolean) => void) => () => void;
       runScript: (script: string) => Promise<{ success: boolean; code: number }>;
       onScriptOutput: (callback: (data: { type: string; text?: string; code?: number }) => void) => () => void;
+      saveFile?: (content: string, defaultName: string) => Promise<{ success: boolean; error?: string }>;
+      openFile?: () => Promise<{ success: boolean; content?: string; error?: string }>;
     };
   }
 }
@@ -109,6 +112,9 @@ export default function Tweaks() {
   const [scriptOutput, setScriptOutput] = useState<Array<{ type: string; text: string }>>([]);
   const terminalRef = useRef<HTMLDivElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
+  const [importTweakTitles, setImportTweakTitles] = useState<string[]>([]);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
 
   const bulkMutation = useMutation({
     mutationFn: ({ titles, isActive }: { titles: string[]; isActive: boolean }) =>
@@ -404,6 +410,125 @@ export default function Tweaks() {
     await runRevertScript([tweak], `Reverting "${tweak.title}"`);
   };
 
+  const parseAndConfirmImport = (content: string) => {
+    try {
+      const parsed = JSON.parse(content);
+      if (!parsed.tweaks || !Array.isArray(parsed.tweaks)) {
+        toast({ title: "Invalid profile", description: "File does not contain a valid tweak profile.", variant: "destructive" });
+        return;
+      }
+      const validTitles = (parsed.tweaks as unknown[]).filter(
+        (t): t is string => typeof t === "string" && (tweaks?.some(tw => tw.title === t) ?? false)
+      );
+      if (validTitles.length === 0) {
+        toast({ title: "No matching tweaks", description: "None of the tweaks in this profile are recognized in the current database.", variant: "destructive" });
+        return;
+      }
+      setImportTweakTitles(validTitles);
+      setShowImportConfirm(true);
+    } catch {
+      toast({ title: "Invalid file", description: "Could not parse the profile JSON.", variant: "destructive" });
+    }
+  };
+
+  const handleExportProfile = async () => {
+    if (!tweaks) return;
+    const activeTweaks = tweaks.filter(t => t.isActive);
+    if (activeTweaks.length === 0) {
+      toast({ title: "Nothing to export", description: "No tweaks are currently applied.", variant: "destructive" });
+      return;
+    }
+    const profile = JSON.stringify({
+      app: "JGoode's A.I.O PC Tool",
+      version: "3.5.0",
+      exported: new Date().toISOString(),
+      tweaks: activeTweaks.map(t => t.title),
+    }, null, 2);
+    const fileName = `JGoode-Profile-${new Date().toISOString().split("T")[0]}.json`;
+    if (window.electronAPI?.saveFile) {
+      const result = await window.electronAPI.saveFile(profile, fileName);
+      if (result.success) {
+        toast({ title: "Profile saved", description: `Exported ${activeTweaks.length} active tweak${activeTweaks.length !== 1 ? "s" : ""}.` });
+      }
+    } else {
+      const blob = new Blob([profile], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fileName; a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Profile exported", description: `Exported ${activeTweaks.length} tweak${activeTweaks.length !== 1 ? "s" : ""}.` });
+    }
+  };
+
+  const handleImportProfile = async () => {
+    if (window.electronAPI?.openFile) {
+      const result = await window.electronAPI.openFile();
+      if (!result.success || !result.content) return;
+      parseAndConfirmImport(result.content);
+    } else {
+      importFileRef.current?.click();
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    setShowImportConfirm(false);
+    if (!tweaks || importTweakTitles.length === 0) return;
+    const titlesToCapture = [...importTweakTitles];
+    setImportTweakTitles([]);
+    const toApply = tweaks.filter(t => titlesToCapture.includes(t.title) && !t.isActive);
+    if (toApply.length === 0) {
+      toast({ title: "Already applied", description: "All tweaks in this profile are already active." });
+      return;
+    }
+    const titles = toApply.map(t => t.title);
+    setApplyingAll(true);
+    setIsRunning(true);
+    setDialogMode("apply");
+    if (window.electronAPI?.runScript) {
+      const script = generatePowerShellScript(toApply.map(t => ({ ...t, isActive: true })));
+      if (!script) { setApplyingAll(false); setIsRunning(false); return; }
+      setScriptOutput([{ type: "info", text: `# JGoode's A.I.O PC Tool — Importing ${toApply.length} tweak${toApply.length !== 1 ? "s" : ""} from profile\n# Running as Administrator...\n` }]);
+      setShowRunDialog(true);
+      const safetyTimeout = setTimeout(() => {
+        setIsRunning(false); setApplyingAll(false); cleanupRef.current?.(); cleanupRef.current = null;
+        queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) => old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old);
+        bulkMutation.mutate({ titles, isActive: true });
+        triggerDetect(800);
+      }, 120000);
+      cleanupRef.current = window.electronAPI.onScriptOutput((data) => {
+        if (data.type === "done") {
+          clearTimeout(safetyTimeout);
+          setIsRunning(false); setApplyingAll(false);
+          setScriptOutput((prev) => [...prev, { type: data.code === 0 ? "success" : "stderr", text: data.code === 0 ? `\n\u2713 ${toApply.length} tweak${toApply.length !== 1 ? "s" : ""} imported successfully.` : `\n\u2717 Script exited with code ${data.code}.` }]);
+          cleanupRef.current?.(); cleanupRef.current = null;
+          queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) => old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old);
+          bulkMutation.mutate({ titles, isActive: true });
+          triggerDetect(800); triggerDetect(9000);
+          if (data.code === 0) setTimeout(() => { setShowRunDialog(false); setScriptOutput([]); }, 2500);
+        } else if (data.text) {
+          setScriptOutput(prev => [...prev, { type: data.type, text: data.text! }]);
+        }
+      });
+      try { await window.electronAPI.runScript(script); }
+      catch (err) {
+        clearTimeout(safetyTimeout);
+        setIsRunning(false); setApplyingAll(false);
+        setScriptOutput((prev) => [...prev, { type: "stderr", text: String(err) }]);
+        cleanupRef.current?.(); cleanupRef.current = null;
+      }
+    } else {
+      try {
+        queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) => old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: true } : t) : old);
+        await bulkMutation.mutateAsync({ titles, isActive: true });
+        toast({ title: "Profile imported", description: `${toApply.length} tweak${toApply.length !== 1 ? "s" : ""} applied. Export the .ps1 script and run on Windows to apply registry changes.` });
+      } catch {
+        toast({ title: "Import failed", description: "Could not update tweaks.", variant: "destructive" });
+      } finally {
+        setApplyingAll(false); setIsRunning(false);
+      }
+    }
+  };
+
   const filteredTweaks = tweaks?.filter((tweak) => {
     const matchesSearch =
       tweak.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -420,6 +545,28 @@ export default function Tweaks() {
 
   return (
     <div className="space-y-5 pb-8">
+      {/* Import profile confirmation dialog */}
+      <AlertDialog open={showImportConfirm} onOpenChange={setShowImportConfirm}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-bold">Import Tweak Profile?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-sm">
+              Found <span className="text-primary font-bold">{importTweakTitles.length}</span> recognized tweak{importTweakTitles.length !== 1 ? "s" : ""} in this profile. Already-active tweaks will be skipped.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-import">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmImport}
+              className="bg-primary text-white"
+              data-testid="button-confirm-import"
+            >
+              Apply {importTweakTitles.length} Tweak{importTweakTitles.length !== 1 ? "s" : ""}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Restore prompt dialog */}
       <AlertDialog open={showRestorePrompt} onOpenChange={setShowRestorePrompt}>
         <AlertDialogContent className="bg-card border-border">
@@ -613,6 +760,33 @@ export default function Tweaks() {
             >
               <Download className="h-3.5 w-3.5" />
               Export .ps1
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleExportProfile}
+              disabled={optimizedCount === 0}
+              className={cn(
+                "h-8 gap-1.5 text-xs font-semibold shrink-0",
+                optimizedCount > 0
+                  ? "bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 hover:border-primary/30"
+                  : "bg-secondary text-muted-foreground cursor-not-allowed border border-border/40"
+              )}
+              data-testid="button-save-profile"
+              title="Save active tweaks as a reusable JSON profile"
+            >
+              <Database className="h-3.5 w-3.5 text-primary" />
+              Save Profile
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleImportProfile}
+              disabled={isRunning || isBulkPending}
+              className="h-8 gap-1.5 text-xs font-semibold shrink-0 bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 hover:border-primary/30"
+              data-testid="button-load-profile"
+              title="Load and apply a saved JSON profile"
+            >
+              <Upload className="h-3.5 w-3.5 text-primary" />
+              Load Profile
             </Button>
             {optimizedCount > 0 && (
               <Button
@@ -994,6 +1168,26 @@ export default function Tweaks() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Hidden file input for web-mode profile import */}
+      <input
+        ref={importFileRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        data-testid="input-import-profile-file"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const content = ev.target?.result as string;
+            if (content) parseAndConfirmImport(content);
+          };
+          reader.readAsText(file);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }

@@ -299,6 +299,28 @@ reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEBehavior /t REG_DWORD /d 0
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 1 /f`,
   },
 
+  "Enable MSI Mode for GPU": {
+    requiresAdmin: true,
+    requiresRestart: true,
+    enable: `# Auto-detect primary GPU and enable Message Signaled Interrupts (MSI Mode)
+try {
+    $gpu = Get-PnpDevice -Class Display -Status OK | Where-Object { $_.FriendlyName -notmatch 'Microsoft|Remote|Basic' } | Select-Object -First 1
+    if (!$gpu) { Write-Host "No compatible GPU found."; exit 1 }
+    $regPath = "HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\" + $gpu.InstanceId + "\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties"
+    if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
+    reg add ("HKLM\\SYSTEM\\CurrentControlSet\\Enum\\" + $gpu.InstanceId + "\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties") /v MSISupported /t REG_DWORD /d 1 /f
+    Write-Host "MSI Mode ENABLED for: $($gpu.FriendlyName)"
+    Write-Host "A system restart is required for the change to take effect."
+} catch { Write-Host "Error: $_" }`,
+    disable: `# Auto-detect primary GPU and disable MSI Mode (revert to Windows default)
+try {
+    $gpu = Get-PnpDevice -Class Display -Status OK | Where-Object { $_.FriendlyName -notmatch 'Microsoft|Remote|Basic' } | Select-Object -First 1
+    if (!$gpu) { Write-Host "No compatible GPU found."; exit 1 }
+    reg add ("HKLM\\SYSTEM\\CurrentControlSet\\Enum\\" + $gpu.InstanceId + "\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties") /v MSISupported /t REG_DWORD /d 0 /f
+    Write-Host "MSI Mode DISABLED for: $($gpu.FriendlyName). Restart required."
+} catch { Write-Host "Error: $_" }`,
+  },
+
   "GPU Priority for Games": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f`,

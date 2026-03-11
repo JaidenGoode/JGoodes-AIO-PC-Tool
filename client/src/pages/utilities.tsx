@@ -13,7 +13,7 @@ import {
 import {
   HardDrive, Cpu, Zap, RefreshCw, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
-  Globe, MonitorPlay, Layers,
+  Globe, MonitorPlay, Layers, MemoryStick,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -303,6 +303,11 @@ export default function Utilities() {
         {/* Windows Update */}
         <UtilCard icon={Globe} title="Windows Update" description="Open Windows Update settings directly" delay={0.14}>
           <RunButton action="windows-update" label="Open Windows Update" pending={isPending("windows-update")} onRun={run} />
+        </UtilCard>
+
+        {/* Empty Standby Memory */}
+        <UtilCard icon={MemoryStick} title="Empty Standby Memory" description="Flush the Windows standby memory list to instantly free cached RAM before gaming" delay={0.145}>
+          <RunButton action="empty-standby-memory" label="Empty Standby Memory" pending={isPending("empty-standby-memory")} onRun={run} />
         </UtilCard>
 
         {/* Toggles */}

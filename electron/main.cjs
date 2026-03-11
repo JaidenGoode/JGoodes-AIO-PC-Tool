@@ -137,6 +137,31 @@ ipcMain.on("window-maximize", () => {
 ipcMain.on("window-close", () => mainWindow?.close());
 ipcMain.handle("window-is-maximized", () => mainWindow?.isMaximized() ?? false);
 
+// ── File Save / Open dialogs ───────────────────────────────────────────────────
+ipcMain.handle("save-file", async (_event, { content, defaultName }) => {
+  const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: defaultName || "JGoode-Profile.json",
+    filters: [{ name: "JSON Profile", extensions: ["json"] }],
+  });
+  if (!canceled && filePath) {
+    try { fs.writeFileSync(filePath, content, "utf-8"); return { success: true }; }
+    catch (err) { return { success: false, error: err.message }; }
+  }
+  return { success: false };
+});
+
+ipcMain.handle("open-file", async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    filters: [{ name: "JSON Profile", extensions: ["json"] }],
+    properties: ["openFile"],
+  });
+  if (!canceled && filePaths[0]) {
+    try { return { success: true, content: fs.readFileSync(filePaths[0], "utf-8") }; }
+    catch (err) { return { success: false, error: err.message }; }
+  }
+  return { success: false };
+});
+
 // ── Run PowerShell Script (in-app execution) ──────────────────────────────────
 ipcMain.handle("run-ps-script", async (event, scriptContent) => {
   const tmpFile = path.join(os.tmpdir(), `jgoode-tweak-${Date.now()}.ps1`);

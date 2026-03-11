@@ -254,6 +254,14 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive fewer scheduler slots while a game is running. No side effects outside of gaming."
   },
   {
+    title: "Enable MSI Mode for GPU",
+    description: "Switches the primary GPU from legacy line-based interrupt mode to Message Signaled Interrupts (MSI). MSI mode gives the GPU a direct, low-latency communication channel to the CPU, eliminating shared IRQ conflicts and reducing GPU interrupt latency. Automatically detects your primary GPU's PCI device path — no manual registry editing required. Widely recommended by competitive gaming communities. Requires a restart to take effect.",
+    category: "gaming",
+    isActive: false,
+    warning: "Requires a full system restart to take effect. NVIDIA and AMD discrete GPUs are supported. If you experience GPU instability after enabling, use the Revert button and restart.",
+    featureBreaks: "Restart required. If MSI mode causes instability on a specific GPU, revert with the Revert button and restart."
+  },
+  {
     title: "GPU Priority for Games",
     description: "Sets the GPU Priority value in the Windows Multimedia SystemProfile Tasks\\Games entry to 8 (maximum). This gives game processes the highest possible GPU scheduling priority over background tasks. Default Windows value is 2. Enabled: 8 — Disabled: 2.",
     category: "gaming",

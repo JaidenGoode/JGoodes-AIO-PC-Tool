@@ -20,4 +20,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("maximize-change", handler);
     return () => ipcRenderer.removeListener("maximize-change", handler);
   },
+
+  saveFile: (content, defaultName) =>
+    ipcRenderer.invoke("save-file", { content, defaultName }),
+
+  openFile: () =>
+    ipcRenderer.invoke("open-file"),
 });
