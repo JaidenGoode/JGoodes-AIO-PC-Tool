@@ -628,106 +628,6 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" 
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v MaxConnectionsPer1_0Server /t REG_DWORD /d 2 /f`,
   },
 
-  // ── SERVICES (Windows Service Optimization) ───────────────────────────────
-
-  "Disable BranchCache (PeerDistSvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name PeerDistSvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name PeerDistSvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name PeerDistSvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable iSCSI Initiator (MSiSCSI)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name MSiSCSI -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name MSiSCSI -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name MSiSCSI -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable SNMP Trap (SNMPTRAP)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name SNMPTRAP -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name SNMPTRAP -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name SNMPTRAP -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Certificate Propagation (CertPropSvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name CertPropSvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name CertPropSvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name CertPropSvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable ActiveX Installer (AxInstSV)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name AxInstSV -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name AxInstSV -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name AxInstSV -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Application Management (AppMgmt)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name AppMgmt -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name AppMgmt -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name AppMgmt -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Remote Registry (RemoteRegistry)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name RemoteRegistry -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name RemoteRegistry -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name RemoteRegistry -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Smart Card Removal Policy (SCPolicySvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name SCPolicySvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name SCPolicySvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name SCPolicySvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable WebDAV Client (WebClient)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name WebClient -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name WebClient -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name WebClient -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Windows Remote Management (WinRM)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name WinRM -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name WinRM -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name WinRM -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Offline Files (CscService)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name CscService -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name CscService -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name CscService -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Peer Name Resolution (PNRPsvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name PNRPsvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name PNRPsvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name PNRPsvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Peer Networking (p2psvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name p2psvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name p2psvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name p2psvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Peer Networking Identity (p2pimsvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name p2pimsvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name p2pimsvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name p2pimsvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
   "Optimize Discord for Gaming": {
     requiresAdmin: true,
     enable: `# Set Discord to Below Normal CPU priority via IFEO
@@ -846,50 +746,6 @@ Stop-Service -Name wcncsvc -Force -ErrorAction SilentlyContinue`,
     disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /t REG_DWORD /d 1 /f`,
   },
 
-  // ── SERVICES (additional) ──────────────────────────────────────────────────
-  "Disable Print Spooler (Spooler)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name Spooler -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name Spooler -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name Spooler -StartupType Automatic -ErrorAction SilentlyContinue
-Start-Service -Name Spooler -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Fax Service (Fax)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name Fax -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name Fax -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name Fax -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Distributed Link Tracking (TrkWks)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name TrkWks -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name TrkWks -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name TrkWks -StartupType Automatic -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Program Compatibility Assistant (PcaSvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name PcaSvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name PcaSvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name PcaSvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Touch Keyboard Service (TabletInputService)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name TabletInputService -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name TabletInputService -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name TabletInputService -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Windows Insider Service (wisvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name wisvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name wisvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name wisvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
   // ── GAMING (additional) ────────────────────────────────────────────────────
   "Disable Teredo IPv6 Tunneling": {
     requiresAdmin: true,
@@ -920,28 +776,6 @@ bcdedit /deletevalue uselegacyapicmode 2>$null`,
 netsh interface isatap set state disabled 2>$null`,
     disable: `netsh interface 6to4 set state default 2>$null
 netsh interface isatap set state default 2>$null`,
-  },
-
-  // ── SERVICES (additional) ──────────────────────────────────────────────────
-  "Disable IP Helper Service (iphlpsvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name iphlpsvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name iphlpsvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name iphlpsvc -StartupType Automatic -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Diagnostic Policy Service (DPS)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name DPS -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name DPS -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name DPS -StartupType Automatic -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Connected Devices Platform (CDPSvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name CDPSvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name CDPSvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name CDPSvc -StartupType Automatic -ErrorAction SilentlyContinue`,
   },
 
   // ── PERFORMANCE (additional) ───────────────────────────────────────────────
@@ -1033,63 +867,6 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 }`,
   },
 
-  // ── SERVICES (Windows Service Optimization) ────────────────────────────────
-
-  "Disable Secondary Logon (seclogon)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name seclogon -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name seclogon -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name seclogon -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable WMI Performance Adapter (wmiApSrv)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name wmiApSrv -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name wmiApSrv -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name wmiApSrv -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable TCP/IP NetBIOS Helper (lmhosts)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name lmhosts -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name lmhosts -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name lmhosts -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Telephony Service (TapiSrv)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name TapiSrv -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name TapiSrv -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name TapiSrv -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Still Image Service (StiSvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name StiSvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name StiSvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name StiSvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Bluetooth Support Service (bthserv)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name bthserv -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name bthserv -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name bthserv -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Net.TCP Port Sharing (NetTcpPortSharing)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name NetTcpPortSharing -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name NetTcpPortSharing -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name NetTcpPortSharing -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable Remote Access Manager (RasMan)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name RasMan -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name RasMan -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name RasMan -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
 };
 
 export function getTweakCommand(title: string): TweakCommand | null {

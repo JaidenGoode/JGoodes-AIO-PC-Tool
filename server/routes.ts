@@ -746,22 +746,6 @@ $d['Optimize DNS Resolution']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnsc
 $d['Unlock Reserved Network Bandwidth']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched' 'NonBestEffortLimit' 0
 $d['Increase Browser Connection Limits']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' 'MaxConnectionsPerServer' 16
 
-# Services
-$d['Disable BranchCache (PeerDistSvc)']=csvc 'PeerDistSvc'
-$d['Disable iSCSI Initiator (MSiSCSI)']=csvc 'MSiSCSI'
-$d['Disable SNMP Trap (SNMPTRAP)']=csvc 'SNMPTRAP'
-$d['Disable Certificate Propagation (CertPropSvc)']=csvc 'CertPropSvc'
-$d['Disable ActiveX Installer (AxInstSV)']=csvc 'AxInstSV'
-$d['Disable Application Management (AppMgmt)']=csvc 'AppMgmt'
-$d['Disable Remote Registry (RemoteRegistry)']=csvc 'RemoteRegistry'
-$d['Disable Smart Card Removal Policy (SCPolicySvc)']=csvc 'SCPolicySvc'
-$d['Disable WebDAV Client (WebClient)']=csvc 'WebClient'
-$d['Disable Windows Remote Management (WinRM)']=csvc 'WinRM'
-$d['Disable Offline Files (CscService)']=csvc 'CscService'
-$d['Disable Peer Name Resolution (PNRPsvc)']=csvc 'PNRPsvc'
-$d['Disable Peer Networking (p2psvc)']=csvc 'p2psvc'
-$d['Disable Peer Networking Identity (p2pimsvc)']=csvc 'p2pimsvc'
-
 # Network
 $d['Disable Delivery Optimization Service']=csvc 'DoSvc'
 $d['Disable Windows Connect Now (wcncsvc)']=csvc 'wcncsvc'
@@ -796,24 +780,12 @@ try{
 
 # RSS: detection omitted — enabled by Windows default, apply/revert both keep it enabled, DB is authoritative
 
-# More services
-$d['Disable Print Spooler (Spooler)']=csvc 'Spooler'
-$d['Disable Fax Service (Fax)']=csvc 'Fax'
-$d['Disable Distributed Link Tracking (TrkWks)']=csvc 'TrkWks'
-$d['Disable Program Compatibility Assistant (PcaSvc)']=csvc 'PcaSvc'
-$d['Disable Touch Keyboard Service (TabletInputService)']=csvc 'TabletInputService'
-$d['Disable Windows Insider Service (wisvc)']=csvc 'wisvc'
-
 # Gaming (additional)
 try{$ter=(netsh interface teredo show state 2>$null) -join ' ';$d['Disable Teredo IPv6 Tunneling']=if($ter -match 'disabled'){1}else{0}}catch{$d['Disable Teredo IPv6 Tunneling']=0}
 try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Disable HPET (Platform Clock)']=if($bcd -match 'useplatformclock\s+No'){1}else{0}}catch{$d['Disable HPET (Platform Clock)']=0}
 $d['Disable Auto-Restart After Windows Updates']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' 'NoAutoRebootWithLoggedOnUsers' 1
 # Network (additional)
 try{$6t=(netsh interface 6to4 show state 2>$null) -join ' ';$d['Disable 6to4 & ISATAP Tunneling']=if($6t -match 'disabled'){1}else{0}}catch{$d['Disable 6to4 & ISATAP Tunneling']=0}
-# Services (additional)
-$d['Disable IP Helper Service (iphlpsvc)']=csvc 'iphlpsvc'
-$d['Disable Diagnostic Policy Service (DPS)']=csvc 'DPS'
-$d['Disable Connected Devices Platform (CDPSvc)']=csvc 'CDPSvc'
 # Performance (additional)
 $d['Clear Page File on Shutdown']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'ClearPageFileAtShutdown' 1
 $d['Disable Transparency Effects']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'EnableTransparency' 0
@@ -842,16 +814,6 @@ try{
   }
   $d['Disable NIC Interrupt Moderation']=$imOff
 }catch{$d['Disable NIC Interrupt Moderation']=0}
-
-# Services (Windows Service Optimization)
-$d['Disable Secondary Logon (seclogon)']=csvc 'seclogon'
-$d['Disable WMI Performance Adapter (wmiApSrv)']=csvc 'wmiApSrv'
-$d['Disable TCP/IP NetBIOS Helper (lmhosts)']=csvc 'lmhosts'
-$d['Disable Telephony Service (TapiSrv)']=csvc 'TapiSrv'
-$d['Disable Still Image Service (StiSvc)']=csvc 'StiSvc'
-$d['Disable Bluetooth Support Service (bthserv)']=csvc 'bthserv'
-$d['Disable Net.TCP Port Sharing (NetTcpPortSharing)']=csvc 'NetTcpPortSharing'
-$d['Disable Remote Access Manager (RasMan)']=csvc 'RasMan'
 
 $d | ConvertTo-Json -Compress`;
 
