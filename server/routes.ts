@@ -669,7 +669,7 @@ $d['Disable Cortana']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Se
 $d['Disable Mouse Acceleration']=creg 'HKCU:\Control Panel\Mouse' 'MouseSpeed' '0'
 try{$cpm=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null) -join ' ');$d['Keep All CPU Cores Active (Unpark Cores)']=if($cpm -match 'Current AC Power Setting Index:\s*0x00000064'){1}else{0}}catch{$d['Keep All CPU Cores Active (Unpark Cores)']=0}
 $d['Win32 Priority Separation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'Win32PrioritySeparation' 36
-$d['Minimum Priority for Background Processes']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 0
+$d['System Responsiveness for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 0
 $d['Disable GameBar']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
 $d['Disable GameBar Background Recording']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
 $d['Optimize for Windowed & Borderless Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'ForceEffectMode' 2
@@ -679,6 +679,7 @@ $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'Men
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
 $d['System Responsiveness & Network Throttling']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 10
 $d['Maximum Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Priority' 6
+$d['GPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'GPU Priority' 8
 $d['CPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Priority' 6
 $d['High Scheduling Category for Gaming']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Scheduling Category' 'High'
 $d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 3

@@ -246,8 +246,16 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive fewer scheduler slots while a game is running. No side effects outside of gaming."
   },
   {
+    title: "GPU Priority for Games",
+    description: "Sets the GPU Priority value in the Windows Multimedia SystemProfile Tasks\\Games entry to 8 (maximum). This gives game processes the highest possible GPU scheduling priority over background tasks. Default Windows value is 2. Enabled: 8 — Disabled: 2.",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Background applications receive lower GPU scheduling priority while a game is running. No side effects outside of gaming."
+  },
+  {
     title: "CPU Priority for Games",
-    description: "Sets the CPU Priority value in the Windows Multimedia SystemProfile Tasks\\Games entry to 6 (High). This raises the CPU scheduling priority for any process registered as a game, ensuring it gets more CPU time over background tasks. Default Windows value is 2.",
+    description: "Sets the CPU Priority value in the Windows Multimedia SystemProfile Tasks\\Games entry to 6 (High). This raises the CPU scheduling priority for any process registered as a game, ensuring it gets more CPU time over background tasks. Default Windows value is 2. Enabled: 6 — Disabled: 2.",
     category: "gaming",
     isActive: false,
     warning: null,
@@ -262,8 +270,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive fewer scheduling slots while a game is running. No side effects outside of gaming."
   },
   {
-    title: "Minimum Priority for Background Processes",
-    description: "Sets SystemResponsiveness to 0 in the Windows Multimedia SystemProfile. This removes the CPU reservation that Windows normally holds for background services and lets games use the maximum available CPU time. Default Windows value is 14 (decimal).",
+    title: "System Responsiveness for Games",
+    description: "Sets SystemResponsiveness to 0 in the Windows Multimedia SystemProfile. This removes the CPU reservation that Windows normally holds for background services and lets games use the maximum available CPU time. Default Windows value is 14 (decimal). Enabled: 0 — Disabled: 14.",
     category: "gaming",
     isActive: false,
     warning: null,

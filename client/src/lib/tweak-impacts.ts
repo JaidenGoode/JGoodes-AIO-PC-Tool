@@ -16,11 +16,12 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Telemetry & Data Collection":           "High",
   "Optimize Visual Effects for Performance":       "High",
   "Disable Power Throttling":                      "High",
+  "System Responsiveness for Games":               "High",
+  "GPU Priority for Games":                        "High",
 
   // Medium — measurable improvement, may not be immediately obvious
   "Keep All CPU Cores Active (Unpark Cores)":      "Medium",
   "Win32 Priority Separation":                     "Medium",
-  "Minimum Priority for Background Processes":     "Medium",
   "Disable GameBar":                               "Medium",
   "Disable GameBar Background Recording":          "Medium",
   "Disable Nagle's Algorithm":                     "Medium",
