@@ -14,4 +14,3 @@ desktop/bin/
 desktop/obj/
 publish/
 *.pdb
-.env

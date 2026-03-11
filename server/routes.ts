@@ -702,7 +702,7 @@ $d['GPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVe
 try{$gpu=Get-PnpDevice -Class Display -Status OK|Where-Object{$_.FriendlyName -notmatch 'Microsoft|Remote|Basic'}|Select-Object -First 1;if($gpu){$p='HKLM:\SYSTEM\CurrentControlSet\Enum\'+$gpu.InstanceId+'\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties';if(Test-Path $p){$v=(Get-ItemProperty $p -EA SilentlyContinue).MSISupported;$d['Enable MSI Mode for GPU']=if($v -eq 1){1}else{0}}else{$d['Enable MSI Mode for GPU']=0}}else{$d['Enable MSI Mode for GPU']=0}}catch{$d['Enable MSI Mode for GPU']=0}
 $d['CPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Priority' 6
 $d['High Scheduling Category for Gaming']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Scheduling Category' 'High'
-$d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 3
+$d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 5
 $d['Global Timer Resolution for Gaming']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel' 'GlobalTimerResolutionRequests' 1
 try{$bcd=((bcdedit /enum 2>$null) -join ' ');$d['Disable Dynamic Tick']=if($bcd -match 'disabledynamictick\s+Yes'){1}else{0}}catch{$d['Disable Dynamic Tick']=0}
 try{$ifaces=Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA Stop;$nag=0;foreach($i in $ifaces){try{if((Get-ItemProperty $i.PSPath 'TcpAckFrequency' -EA Stop).TcpAckFrequency -eq 1){$nag=1;break}}catch{}};$d["Disable Nagle's Algorithm"]=$nag}catch{$d["Disable Nagle's Algorithm"]=0}
@@ -711,7 +711,7 @@ $d['Disable Xbox Core Services']=csvc 'XboxGipSvc'
 # System / Network
 $d['Disable IPv6']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' 255
 try{$ipv6v=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' -EA Stop).DisabledComponents;$d['Prefer IPv4 over IPv6']=if($ipv6v -eq 32){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
-try{$trim=((fsutil behavior query DisableDeleteNotify 2>$null) -join ' ');$d['Enable SSD TRIM Optimization']=if($trim -match '= 0'){1}else{0}}catch{$d['Enable SSD TRIM Optimization']=0}
+# SSD TRIM: detection omitted — apply/revert both set DisableDeleteNotify=0 (Windows default), DB is authoritative
 $d['Disable Web Search in Windows Search']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0
 try{$tcp=((netsh int tcp show global 2>$null) -join ' ');$d['Disable Windows TCP Auto-Tuning']=if($tcp -match 'Auto-Tuning.+disabled'){1}else{0}}catch{$d['Disable Windows TCP Auto-Tuning']=0}
 $d['Disable Startup Program Delay']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0
@@ -805,8 +805,7 @@ try{
   $d['Disable NetBIOS over TCP/IP']=$nbOff
 }catch{$d['Disable NetBIOS over TCP/IP']=0}
 
-# SMBv1: check server config
-try{$smb=(Get-SmbServerConfiguration -EA Stop).EnableSMB1Protocol;$d['Disable SMBv1 Protocol']=if($smb -eq $false){1}else{0}}catch{$d['Disable SMBv1 Protocol']=0}
+# SMBv1: detection omitted — disabled by Windows 10/11 default, apply/revert both keep it disabled, DB is authoritative
 
 # LSO: check LsoV2IPv4/LsoV2IPv6 — the correct Get-NetAdapterLso property names
 try{
@@ -824,8 +823,7 @@ try{
   $d['Disable Large Send Offload (LSO)']=$lsoOff
 }catch{$d['Disable Large Send Offload (LSO)']=0}
 
-# RSS: case-insensitive match on netsh tcp global output
-try{$rssOut=(netsh int tcp show global 2>$null) -join ' ';$d['Enable Receive Side Scaling (RSS)']=if($rssOut -imatch 'Receive-Side Scaling.+enabled'){1}else{0}}catch{$d['Enable Receive Side Scaling (RSS)']=0}
+# RSS: detection omitted — enabled by Windows default, apply/revert both keep it enabled, DB is authoritative
 
 # More services
 $d['Disable Print Spooler (Spooler)']=csvc 'Spooler'
