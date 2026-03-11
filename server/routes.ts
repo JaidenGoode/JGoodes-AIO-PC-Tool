@@ -670,7 +670,7 @@ $d['Enable Game Mode']=creg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnab
 $d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers' 'HwSchMode' 2
 $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0'
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
-$d['System Responsiveness & Network Throttling']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 10
+$d['System Responsiveness & Network Throttling']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'NetworkThrottlingIndex' 10
 $d['Maximum Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Priority' 6
 $d['GPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'GPU Priority' 8
 try{$gpu=Get-PnpDevice -Class Display -Status OK|Where-Object{$_.FriendlyName -notmatch 'Microsoft|Remote|Basic'}|Select-Object -First 1;if($gpu){$p='HKLM:\SYSTEM\CurrentControlSet\Enum\'+$gpu.InstanceId+'\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties';if(Test-Path $p){$v=(Get-ItemProperty $p -EA SilentlyContinue).MSISupported;$d['Enable MSI Mode for GPU']=if($v -eq 1){1}else{0}}else{$d['Enable MSI Mode for GPU']=0}}else{$d['Enable MSI Mode for GPU']=0}}catch{$d['Enable MSI Mode for GPU']=0}
