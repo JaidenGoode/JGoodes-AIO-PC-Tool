@@ -985,21 +985,16 @@ try {
             totalSize += Math.max(0, parseInt(parts[0]) || 0);
             totalCount += Math.max(0, parseInt(parts[1]) || 0);
           } else if (cat.id === "deliveryopt" && process.platform === "win32") {
-            // Enumerate DO cache folder directly — Electron app runs elevated so admin paths are accessible
+            // Scan entire DeliveryOptimization folder — subfolder structure varies by Windows version
             const psDoScan = `
 try {
-  $paths = @(
-    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\Cache',
-    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\FileSharingCache'
-  )
+  $root = Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization'
   $tot=0L; $cnt=0
-  foreach ($p in $paths) {
-    if (Test-Path -LiteralPath $p -EA SilentlyContinue) {
-      $items = Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue
-      $s = ($items | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
-      if ($s) { $tot += [long]$s }
-      $cnt += $items.Count
-    }
+  if (Test-Path -LiteralPath $root -EA SilentlyContinue) {
+    $items = Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue
+    $s = ($items | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
+    if ($s) { $tot = [long]$s }
+    $cnt = ($items | Where-Object { -not $_.PSIsContainer }).Count
   }
   Write-Output "$tot $cnt"
 } catch { Write-Output "0 0" }`.trim();
@@ -1134,23 +1129,18 @@ try {
           freed += Math.max(0, parseInt(sizeRaw.trim()) || 0);
           await runPowerShell(`Clear-RecycleBin -Force -ErrorAction SilentlyContinue`, 10000).catch(() => {});
         } else if (isDeliveryOpt) {
-          // Measure size first using direct folder enumeration, then stop DoSvc, wipe, restart
+          // Measure entire DO folder, stop service, delete contents (not the folder itself), restart service
           const psDoClean = `
 try {
-  $paths = @(
-    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\Cache',
-    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\FileSharingCache'
-  )
+  $root = Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization'
   $tot=0L
-  foreach ($p in $paths) {
-    if (Test-Path -LiteralPath $p -EA SilentlyContinue) {
-      $s = (Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
-      if ($s) { $tot += [long]$s }
-    }
+  if (Test-Path -LiteralPath $root -EA SilentlyContinue) {
+    $s = (Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
+    if ($s) { $tot = [long]$s }
   }
   Stop-Service DoSvc -Force -EA SilentlyContinue
-  foreach ($p in $paths) {
-    Remove-Item -LiteralPath $p -Recurse -Force -EA SilentlyContinue
+  if (Test-Path -LiteralPath $root -EA SilentlyContinue) {
+    Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue | Remove-Item -Recurse -Force -EA SilentlyContinue
   }
   Start-Service DoSvc -EA SilentlyContinue
   Write-Output $tot
