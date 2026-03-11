@@ -251,10 +251,11 @@ try {
     requiresAdmin: true,
     // CpuPriorityClass IFEO values: 1=Idle, 2=Below Normal, 3=Normal, 4=Above Normal, 5=High, 6=Real-time
     // IoPriority IFEO values: 0=Very Low, 1=Low, 2=Normal, 3=High
+    // Windows default: no IFEO PerfOptions entry at all — revert deletes the keys entirely
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 5 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 2 /f`,
+    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /f 2>$null
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /f 2>$null`,
   },
 
   "Global Timer Resolution for Gaming": {
@@ -311,8 +312,9 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v Disab
 
   "Enable SSD TRIM Optimization": {
     requiresAdmin: true,
+    // Windows default: DisableDeleteNotify=0 (TRIM enabled). Revert restores to the same default.
     enable: `fsutil behavior set DisableDeleteNotify 0`,
-    disable: `fsutil behavior set DisableDeleteNotify 1`,
+    disable: `fsutil behavior set DisableDeleteNotify 0`,
   },
 
   "Disable Web Search in Windows Search": {
@@ -788,12 +790,14 @@ Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfac
 
   "Disable SMBv1 Protocol": {
     requiresAdmin: true,
+    // Windows default since Win10 Fall Creators Update (2017): SMBv1 disabled.
+    // Revert also keeps SMBv1 disabled — this is the correct modern Windows default.
     enable: `Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force -ErrorAction SilentlyContinue
 Set-SmbClientConfiguration -EnableBandwidthThrottling 0 -EnableLargeMtu 1 -Force -ErrorAction SilentlyContinue
 Disable-WindowsOptionalFeature -Online -FeatureName smb1protocol -NoRestart -ErrorAction SilentlyContinue
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /t REG_DWORD /d 0 /f`,
-    disable: `Set-SmbServerConfiguration -EnableSMB1Protocol $true -Force -ErrorAction SilentlyContinue
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /t REG_DWORD /d 1 /f`,
+    disable: `Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force -ErrorAction SilentlyContinue
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /t REG_DWORD /d 0 /f`,
     requiresRestart: true,
   },
 
@@ -816,13 +820,14 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 
   "Enable Receive Side Scaling (RSS)": {
     requiresAdmin: true,
+    // Windows default: RSS enabled. Revert restores to Windows default (enabled).
     enable: `netsh int tcp set global rss=enabled 2>$null
 Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
   Enable-NetAdapterRss -Name $_.Name -ErrorAction SilentlyContinue
 }`,
-    disable: `netsh int tcp set global rss=disabled 2>$null
+    disable: `netsh int tcp set global rss=enabled 2>$null
 Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
-  Disable-NetAdapterRss -Name $_.Name -ErrorAction SilentlyContinue
+  Enable-NetAdapterRss -Name $_.Name -ErrorAction SilentlyContinue
 }`,
   },
 
@@ -901,8 +906,9 @@ Stop-Service -Name wisvc -Force -ErrorAction SilentlyContinue`,
   // ── GAMING (additional) ────────────────────────────────────────────────────
   "Disable Teredo IPv6 Tunneling": {
     requiresAdmin: true,
+    // Windows default on workstation/home: Teredo in "client" state
     enable: `netsh interface teredo set state disabled 2>$null`,
-    disable: `netsh interface teredo set state default 2>$null`,
+    disable: `netsh interface teredo set state client 2>$null`,
   },
 
   "Disable HPET (Platform Clock)": {
@@ -999,10 +1005,10 @@ Stop-Service -Name gaminputsvc -Force -ErrorAction SilentlyContinue`,
 
   "Enable TCP Fast Open": {
     requiresAdmin: true,
-    enable: `netsh int tcp set global fastopen=enabled 2>$null
-netsh int tcp set global fastopenfallback=enabled 2>$null`,
-    disable: `netsh int tcp set global fastopen=disabled 2>$null
-netsh int tcp set global fastopenfallback=disabled 2>$null`,
+    // fastopenfallback is not a recognized global parameter on many Windows builds — use fastopen only
+    // Windows default: fastopen=disabled; revert restores the Windows default
+    enable: `netsh int tcp set global fastopen=enabled 2>$null`,
+    disable: `netsh int tcp set global fastopen=disabled 2>$null`,
   },
 
   "Disable NIC Interrupt Moderation": {
