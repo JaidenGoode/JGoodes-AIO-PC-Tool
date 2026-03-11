@@ -1607,39 +1607,61 @@ Write-Host "Restore point created successfully."`;
     const script = `
 $items = [System.Collections.Generic.List[object]]::new()
 
+# Returns $true (enabled) or $false (disabled) by reading StartupApproved binary.
+# Byte[0] = 2 means enabled, 3 means disabled. Absent entry = enabled (Windows default).
 function Get-Approved {
-  param([string]$path,[string]$name)
+  param([string]$regPath,[string]$valName)
   try {
-    if (Test-Path $path) {
-      $val = (Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue).$name
-      if ($null -ne $val -and $val.Length -ge 1) { return ($val[0] -ne 3) }
+    if (Test-Path $regPath) {
+      $val = (Get-ItemProperty -Path $regPath -Name $valName -ErrorAction SilentlyContinue).$valName
+      if ($null -ne $val) {
+        $arr = [byte[]]$val
+        if ($arr.Length -ge 1) { return ($arr[0] -ne 3) }
+      }
     }
   } catch {}
   return $true
 }
 
-$p = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
-if (Test-Path $p) {
+# Helper to read a Run key and emit items
+function Read-RunKey {
+  param([string]$regPath,[string]$approvedPath,[string]$source,[bool]$admin)
+  if (-not (Test-Path $regPath)) { return }
   try {
-    (Get-ItemProperty $p -ErrorAction SilentlyContinue).PSObject.Properties |
-      Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
-        $en = Get-Approved 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' $_.Name
-        $items.Add([PSCustomObject]@{name=$_.Name;command=[string]$_.Value;source='HKCU\\Run';enabled=[bool]$en;requiresAdmin=$false})
+    (Get-ItemProperty $regPath -ErrorAction SilentlyContinue).PSObject.Properties |
+      Where-Object { $_.Name -notlike 'PS*' -and $_.Name -ne '' } |
+      ForEach-Object {
+        $en = Get-Approved $approvedPath $_.Name
+        $script:items.Add([PSCustomObject]@{
+          name         = $_.Name
+          command      = [string]$_.Value
+          source       = $source
+          enabled      = [bool]$en
+          requiresAdmin= $admin
+        })
       }
   } catch {}
 }
 
-$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run'
-if (Test-Path $p) {
-  try {
-    (Get-ItemProperty $p -ErrorAction SilentlyContinue).PSObject.Properties |
-      Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
-        $en = Get-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' $_.Name
-        $items.Add([PSCustomObject]@{name=$_.Name;command=[string]$_.Value;source='HKLM\\Run';enabled=[bool]$en;requiresAdmin=$true})
-      }
-  } catch {}
-}
+# HKCU 64-bit Run
+Read-RunKey `
+  'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' `
+  'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' `
+  'HKCU\\Run' $false
 
+# HKLM 64-bit Run
+Read-RunKey `
+  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' `
+  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' `
+  'HKLM\\Run' $true
+
+# HKLM 32-bit Run (WOW6432Node) — many 32-bit apps register here
+Read-RunKey `
+  'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run' `
+  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32' `
+  'HKLM\\Run32' $true
+
+# User Startup Folder
 try {
   $sf = [System.Environment]::GetFolderPath('Startup')
   if ($sf -and (Test-Path $sf)) {
@@ -1650,6 +1672,7 @@ try {
   }
 } catch {}
 
+# All Users Startup Folder
 try {
   $sf = [System.Environment]::GetFolderPath('CommonStartup')
   if ($sf -and (Test-Path $sf)) {
@@ -1664,8 +1687,13 @@ if ($items.Count -eq 0) { Write-Output '[]'; exit }
 $items | ConvertTo-Json -Compress -Depth 3
 `;
     try {
-      const out = (await runPowerShell(script)).trim();
+      const out = (await runPowerShell(script, 15000)).trim();
       if (!out || out === "null") return res.json([]);
+      // Detect PowerShell errors (output won't start with [ or {)
+      const firstChar = out[0];
+      if (firstChar !== "[" && firstChar !== "{") {
+        return res.status(500).json({ error: out.slice(0, 300) });
+      }
       let parsed = JSON.parse(out);
       if (!Array.isArray(parsed)) parsed = [parsed];
       res.json(parsed);
@@ -1678,16 +1706,23 @@ $items | ConvertTo-Json -Compress -Depth 3
     const { name, source, enabled } = req.body as { name: string; source: string; enabled: boolean };
     if (!name || !source) return res.status(400).json({ error: "Missing name or source" });
     const enableFlag = enabled ? "$true" : "$false";
+    const safeName = name.replace(/'/g, "''");
     const script = `
-$enable = ${enableFlag}
-$bytes = if ($enable) { [byte[]]@(2,0,0,0,0,0,0,0,0,0,0,0) } else { [byte[]]@(3,0,0,0,0,0,0,0,0,0,0,0) }
-$itemName = '${name.replace(/'/g, "''")}'
-$itemSource = '${source}'
+$ErrorActionPreference = 'Stop'
+$enable    = ${enableFlag}
+$bytes     = if ($enable) { [byte[]]@(2,0,0,0,0,0,0,0,0,0,0,0) } else { [byte[]]@(3,0,0,0,0,0,0,0,0,0,0,0) }
+$itemName  = '${safeName}'
+$itemSource= '${source}'
 
 function Set-Approved {
   param([string]$regPath,[string]$valName)
-  if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
-  Set-ItemProperty -Path $regPath -Name $valName -Value $bytes -Type Binary -ErrorAction Stop
+  try {
+    if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
+    Set-ItemProperty -Path $regPath -Name $valName -Value $bytes -Type Binary -ErrorAction Stop
+  } catch {
+    Write-Error "Registry write failed for '$valName' at '$regPath': $_"
+    exit 1
+  }
 }
 
 switch ($itemSource) {
@@ -1697,21 +1732,34 @@ switch ($itemSource) {
   'HKLM\\Run' {
     Set-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' $itemName
   }
+  'HKLM\\Run32' {
+    Set-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32' $itemName
+  }
   'Startup\\User' {
     $sf = [System.Environment]::GetFolderPath('Startup')
-    $f = Get-ChildItem $sf -File -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -eq $itemName } | Select-Object -First 1
-    if ($f) { Set-Approved 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $f.Name }
+    $f  = Get-ChildItem $sf -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.BaseName -eq $itemName } | Select-Object -First 1
+    if (-not $f) { Write-Error "Startup folder file not found: $itemName"; exit 1 }
+    Set-Approved 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $f.Name
   }
   'Startup\\All' {
     $sf = [System.Environment]::GetFolderPath('CommonStartup')
-    $f = Get-ChildItem $sf -File -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -eq $itemName } | Select-Object -First 1
-    if ($f) { Set-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $f.Name }
+    $f  = Get-ChildItem $sf -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.BaseName -eq $itemName } | Select-Object -First 1
+    if (-not $f) { Write-Error "Common startup folder file not found: $itemName"; exit 1 }
+    Set-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $f.Name
+  }
+  default {
+    Write-Error "Unknown source: $itemSource"; exit 1
   }
 }
 Write-Output 'OK'
 `;
     try {
-      await runPowerShell(script);
+      const out = (await runPowerShell(script, 10000)).trim();
+      if (!out.includes("OK")) {
+        return res.status(500).json({ error: out || "Toggle script produced no output" });
+      }
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err?.message || "Toggle failed" });
