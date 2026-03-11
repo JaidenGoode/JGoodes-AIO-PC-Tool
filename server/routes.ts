@@ -357,7 +357,7 @@ function getCleanCategories(): CleanCategory[] {
       },
       {
         id: "deliveryopt",
-        name: "Delivery Optimization Cache",
+        name: "Delivery Optimization Files",
         description: "Windows P2P update distribution cache used to share updates with other PCs",
         paths: [],
       },
@@ -957,20 +957,56 @@ $d | ConvertTo-Json -Compress`;
           let totalCount = 0;
 
           if (cat.id === "recycle" && process.platform === "win32") {
-            // Enumerate $RECYCLE.BIN\{SID} on every drive — reliable across all Windows versions
-            const raw = await runPowerShell(
-              `try{$sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value;$tot=0;$cnt=0;Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|ForEach-Object{try{$rb=$_.Root+'$RECYCLE.BIN'+[IO.Path]::DirectorySeparatorChar+$sid;if(Test-Path $rb -EA SilentlyContinue){$items=Get-ChildItem $rb -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum;if($s){$tot+=[long]$s};$cnt+=$items.Count}}catch{}};Write-Output "$tot $cnt"}catch{Write-Output "0 0"}`,
-              8000
-            ).catch(() => "0 0");
+            // Read $I* metadata files inside every $RECYCLE.BIN\{SID} folder across all drives.
+            // Each $I* file stores the original file size as Int64 at byte offset 8 — works without
+            // needing access to the actual $R* content files, reliable on all Windows versions.
+            const psRecycleScan = `
+try {
+  $tot=0L; $cnt=0
+  Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue | ForEach-Object {
+    try {
+      $rb = Join-Path $_.Root '$RECYCLE.BIN'
+      if (Test-Path -LiteralPath $rb -EA SilentlyContinue) {
+        Get-ChildItem -LiteralPath $rb -Directory -Force -EA SilentlyContinue | ForEach-Object {
+          Get-ChildItem -LiteralPath $_.FullName -Force -EA SilentlyContinue | Where-Object { $_.Name -like '$I*' } | ForEach-Object {
+            try {
+              $b = [System.IO.File]::ReadAllBytes($_.FullName)
+              if ($b.Length -ge 24) {
+                $s = [System.BitConverter]::ToInt64($b, 8)
+                if ($s -gt 0) { $tot += $s; $cnt++ }
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {}
+  }
+  Write-Output "$tot $cnt"
+} catch { Write-Output "0 0" }`.trim();
+            const raw = await runPowerShell(psRecycleScan, 12000).catch(() => "0 0");
             const parts = raw.trim().split(/\s+/);
             totalSize += Math.max(0, parseInt(parts[0]) || 0);
             totalCount += Math.max(0, parseInt(parts[1]) || 0);
           } else if (cat.id === "deliveryopt" && process.platform === "win32") {
-            // Get-DeliveryOptimizationStatus is available on Win10 1709+ and works without admin
-            const raw = await runPowerShell(
-              `try{$st=Get-DeliveryOptimizationStatus -EA Stop;$sz=($st|Measure-Object -Property FileSizeInCache -Sum -EA SilentlyContinue).Sum;if(-not $sz){$sz=0};Write-Output "$sz $($st.Count)"}catch{try{$items=Get-ChildItem 'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization' -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum;if(-not $s){$s=0};Write-Output "$s $($items.Count)"}catch{Write-Output "0 0"}}`,
-              8000
-            ).catch(() => "0 0");
+            // Enumerate DO cache folder directly — Electron app runs elevated so admin paths are accessible
+            const psDoScan = `
+try {
+  $paths = @(
+    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\Cache',
+    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\FileSharingCache'
+  )
+  $tot=0L; $cnt=0
+  foreach ($p in $paths) {
+    if (Test-Path -LiteralPath $p -EA SilentlyContinue) {
+      $items = Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue
+      $s = ($items | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
+      if ($s) { $tot += [long]$s }
+      $cnt += $items.Count
+    }
+  }
+  Write-Output "$tot $cnt"
+} catch { Write-Output "0 0" }`.trim();
+            const raw = await runPowerShell(psDoScan, 12000).catch(() => "0 0");
             const parts = raw.trim().split(/\s+/);
             totalSize += Math.max(0, parseInt(parts[0]) || 0);
             totalCount += Math.max(0, parseInt(parts[1]) || 0);
@@ -1073,17 +1109,56 @@ $d | ConvertTo-Json -Compress`;
         }
 
         if (isRecycle) {
-          // Measure using same drive-enumeration approach as scan
-          const sizeRaw = await runPowerShell(
-            `try{$sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value;$tot=0;Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|ForEach-Object{try{$rb=$_.Root+'$RECYCLE.BIN'+[IO.Path]::DirectorySeparatorChar+$sid;if(Test-Path $rb -EA SilentlyContinue){$s=(Get-ChildItem $rb -Recurse -Force -EA SilentlyContinue|Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum;if($s){$tot+=[long]$s}}}catch{}};$tot}catch{0}`,
-            8000
-          ).catch(() => "0");
+          // Measure size using $I* metadata files (same method as scan), then clear
+          const psRecycleClean = `
+try {
+  $tot=0L; $cnt=0
+  Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue | ForEach-Object {
+    try {
+      $rb = Join-Path $_.Root '$RECYCLE.BIN'
+      if (Test-Path -LiteralPath $rb -EA SilentlyContinue) {
+        Get-ChildItem -LiteralPath $rb -Directory -Force -EA SilentlyContinue | ForEach-Object {
+          Get-ChildItem -LiteralPath $_.FullName -Force -EA SilentlyContinue | Where-Object { $_.Name -like '$I*' } | ForEach-Object {
+            try {
+              $b = [System.IO.File]::ReadAllBytes($_.FullName)
+              if ($b.Length -ge 24) {
+                $s = [System.BitConverter]::ToInt64($b, 8)
+                if ($s -gt 0) { $tot += $s; $cnt++ }
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {}
+  }
+  Write-Output $tot
+} catch { Write-Output 0 }`.trim();
+          const sizeRaw = await runPowerShell(psRecycleClean, 10000).catch(() => "0");
           freed += Math.max(0, parseInt(sizeRaw.trim()) || 0);
-          await runPowerShell(`Clear-RecycleBin -Force -ErrorAction SilentlyContinue`, 8000).catch(() => {});
+          await runPowerShell(`Clear-RecycleBin -Force -ErrorAction SilentlyContinue`, 10000).catch(() => {});
         } else if (isDeliveryOpt) {
-          // Measure size first, then stop DoSvc, wipe cache, restart service
-          const psScript = `try{$st=Get-DeliveryOptimizationStatus -EA SilentlyContinue;$sz=0;if($st){$m=($st|Measure-Object -Property FileSizeInCache -Sum -EA SilentlyContinue).Sum;if($m){$sz=[long]$m}};Stop-Service DoSvc -Force -EA SilentlyContinue;Remove-Item 'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\Cache' -Recurse -Force -EA SilentlyContinue;Remove-Item 'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\FileSharingCache' -Recurse -Force -EA SilentlyContinue;Start-Service DoSvc -EA SilentlyContinue;Write-Output $sz}catch{Write-Output 0}`;
-          const result = await runPowerShell(psScript, 15000).catch(() => "0");
+          // Measure size first using direct folder enumeration, then stop DoSvc, wipe, restart
+          const psDoClean = `
+try {
+  $paths = @(
+    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\Cache',
+    'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\FileSharingCache'
+  )
+  $tot=0L
+  foreach ($p in $paths) {
+    if (Test-Path -LiteralPath $p -EA SilentlyContinue) {
+      $s = (Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
+      if ($s) { $tot += [long]$s }
+    }
+  }
+  Stop-Service DoSvc -Force -EA SilentlyContinue
+  foreach ($p in $paths) {
+    Remove-Item -LiteralPath $p -Recurse -Force -EA SilentlyContinue
+  }
+  Start-Service DoSvc -EA SilentlyContinue
+  Write-Output $tot
+} catch { Write-Output 0 }`.trim();
+          const result = await runPowerShell(psDoClean, 20000).catch(() => "0");
           freed += Math.max(0, parseInt(result.trim()) || 0);
         } else if (isThumbnails) {
           // thumbcache_*.db files are locked by Explorer.exe — stop Explorer, delete, restart
