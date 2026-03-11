@@ -60,6 +60,11 @@ async function seedTweaksIfNeeded() {
       const removed = await storage.removeTweaksByCategory("privacy");
       if (removed > 0) console.log(`[seed] Removed ${removed} legacy privacy tweaks`);
 
+      // Purge any orphaned tweaks whose title is no longer in the current seed
+      const seedTitles = TWEAKS_SEED.map((t) => t.title);
+      const orphaned = await storage.removeTweaksNotInSeed(seedTitles);
+      if (orphaned > 0) console.log(`[seed] Removed ${orphaned} orphaned tweaks not in current seed`);
+
       const freshExisting = await storage.getTweaks();
       const existingTitles = new Set(freshExisting.map((t) => t.title));
       const existingByTitle = new Map(freshExisting.map((t) => [t.title, t]));
