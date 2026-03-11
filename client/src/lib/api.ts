@@ -26,6 +26,8 @@ export type ScanCategory = {
   sizeHuman: string;
   fileCount: number;
   found: boolean;
+  autoSelect: boolean;
+  warnNote: string | null;
 };
 
 export type ScanResult = {
