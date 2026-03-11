@@ -204,22 +204,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Restart required. If MSI mode causes instability on a specific GPU, revert with the Revert button and restart."
   },
   {
-    title: "GPU Priority for Games",
-    description: "Sets the GPU Priority value in the Windows Multimedia SystemProfile Tasks\\Games entry to 8 (maximum). This gives game processes the highest possible GPU scheduling priority over background tasks. Default Windows value is 2. Enabled: 8 — Disabled: 2.",
-    category: "gaming",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Background applications receive lower GPU scheduling priority while a game is running. No side effects outside of gaming."
-  },
-  {
-    title: "CPU Priority for Games",
-    description: "Sets the CPU Priority value in the Windows Multimedia SystemProfile Tasks\\Games entry to 6 (High). This raises the CPU scheduling priority for any process registered as a game, ensuring it gets more CPU time over background tasks. Default Windows value is 2. Enabled: 6 — Disabled: 2.",
-    category: "gaming",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Background applications receive fewer CPU scheduling slots while a game is running. No side effects outside of gaming."
-  },
-  {
     title: "High Scheduling Category for Gaming",
     description: "Sets the Scheduling Category for the Windows Multimedia SystemProfile Tasks\\Games entry to High. This tells the Windows scheduler to give game processes a higher-priority scheduling tier, reducing latency and improving frame consistency compared to the default Medium category.",
     category: "gaming",

@@ -6,7 +6,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Mouse Acceleration":                    "High",
   "Disable Multiplane Overlay (MPO)":              "High",
   "Maximum Priority for Games":                     "High",
-  "CPU Priority for Games":                         "High",
   "High Scheduling Category for Gaming":            "High",
   "System Responsiveness & Network Throttling":    "High",
   "Disable Dynamic Tick":                          "High",
@@ -17,7 +16,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Power Throttling":                      "High",
   "System Responsiveness & Network Throttling":    "High",
   "Enable MSI Mode for GPU":                       "High",
-  "GPU Priority for Games":                        "High",
   "Global Timer Resolution for Gaming":            "High",
   "Disable Background UWP Apps":                   "Medium",
 
