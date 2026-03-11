@@ -24,23 +24,23 @@ A modern Windows PC optimization desktop app built with Electron + Express + Rea
 | `client/src/components/theme-provider.tsx` | Theme context: 13 colors, dark/light mode, CSS variable injection |
 | `client/src/components/layout.tsx` | App shell: sidebar + header + status bar |
 | `client/src/lib/api.ts` | All API calls (fetch-based, no Tauri) |
-| `client/src/lib/tweak-commands.ts` | All 47 real PowerShell enable/disable commands + `generateUndoScript()` |
+| `client/src/lib/tweak-commands.ts` | All 129 real PowerShell enable/disable commands + `generateUndoScript()` |
 | `client/src/lib/tweak-presets.ts` | Gaming, Privacy, Performance, Select All preset definitions |
 | `client/src/lib/tweak-impacts.ts` | Impact ratings (High/Medium/Low) per tweak |
 | `client/src/lib/tweak-conflicts.ts` | Conflict pairs between mutually exclusive tweaks |
 | `client/src/components/command-palette.tsx` | Global Ctrl+K command palette (navigate, preset, export) |
-| `server/routes.ts` | Express routes + PowerShell execution + auto-seeds 47 tweaks + `POST /api/tweaks/detect` + `POST /api/tweaks/bulk` + cleaning history |
+| `server/routes.ts` | Express routes + PowerShell execution + auto-seeds 129 tweaks + `POST /api/tweaks/detect` + `POST /api/tweaks/bulk` + cleaning history |
 | `server/storage.ts` | `IStorage` interface → always uses `JsonStorage` |
 | `server/storage-json.ts` | JSON file persistence at `~/.jgoode-aio/data.json` |
 | `shared/schema.ts` | Drizzle schema + Zod types for Tweaks, Settings |
-| `shared/tweaks-seed.ts` | 47 pre-defined Windows optimization tweaks |
+| `shared/tweaks-seed.ts` | 129 pre-defined Windows optimization tweaks |
 
 ## Pages
 
 - `/` — Dashboard: System Health Score ring gauge (0-100 with grade A-F); live CPU/RAM/GPU/disk bars, hardware info, temperature readouts, quick restore point button
-- `/tweaks` — 47 toggles with PowerShell commands; impact ratings (High/Medium/Low) per card; conflict detection between incompatible tweaks; "View CMD", "Export .ps1", "Undo Script" buttons
+- `/tweaks` — 129 toggles with PowerShell commands; impact ratings (High/Medium/Low) per card; conflict detection between incompatible tweaks; "View CMD", "Export .ps1", "Undo Script", "Save Profile", "Load Profile" buttons
 - `/cleaner` — Razer Cortex-style Scan → Select → Clean flow (Windows temp, prefetch, browser cache, etc.)
-- `/utilities` — Windows tools: SFC, DISM, CheckDisk (opens terminal); Flush DNS, Restart Explorer, etc. (background execution)
+- `/utilities` — Windows tools: SFC, DISM, CheckDisk (opens terminal); Flush DNS, Restart Explorer, Empty Standby Memory, etc. (background/GUI execution)
 - `/dns` — DNS Manager: switch to Cloudflare, Google, Quad9, etc. — applies via PowerShell `Set-DnsClientServerAddress`
 - `/restore` — Create Windows System Restore Point via PowerShell `Checkpoint-Computer`; Open System Restore wizard
 - `/settings` — Theme, font size, check for updates (queries GitHub releases API)
@@ -56,10 +56,14 @@ A modern Windows PC optimization desktop app built with Electron + Express + Rea
 ## Tweaks Behavior
 
 - Toggle saves state instantly via `PATCH /api/tweaks/:id` to JSON storage
-- 47 tweaks across: debloat, privacy, performance, gaming, system, browser
+- 129 tweaks across: debloat, privacy, performance, gaming, system, browser, network, services
 - "View CMD" shows correct command: `enable` command when tweak is off, `disable` command when on
 - "Export .ps1" generates a complete Administrator PowerShell script for all active tweaks
+- "Save Profile" exports active tweaks as a JSON file (uses Electron file dialog or browser download)
+- "Load Profile" imports a saved JSON profile and applies matching tweaks via the run dialog
 - Tweaks are applied by the user running the exported `.ps1` script as Administrator
+- **MSI Mode for GPU** (gaming): dynamically detects primary GPU PCI path, sets MSISupported=1/0
+- **Enable MSI Mode for GPU** tweak uses `Get-PnpDevice` to find GPU, no hardcoded registry path
 
 ## Windows Execution Logic (routes.ts)
 
