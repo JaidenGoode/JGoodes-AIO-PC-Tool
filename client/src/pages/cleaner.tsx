@@ -6,7 +6,7 @@ import {
   Globe, HardDrive, RotateCcw, ScanLine, Sparkles,
   CheckSquare, Square, Loader2, CheckCircle2, AlertCircle,
   Cpu, RefreshCw, Database, Layers, Archive, History,
-  MessageSquare, Music, Gamepad2, Download, Film, Info,
+  MessageSquare, Gamepad2, Download, Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -36,10 +36,8 @@ const CAT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   shadercache: Layers,
   recycle: Archive,
   discord: MessageSquare,
-  spotify: Music,
   gamelaunchers: Gamepad2,
   deliveryopt: Download,
-  adobe: Film,
 };
 
 function UsageBar({ pct, active = true }: { pct: number; active?: boolean }) {
@@ -266,7 +264,6 @@ export default function CleanerPage() {
                 { icon: Gamepad2,      label: "Game Launchers", sub: "Steam & Epic cache" },
                 { icon: Layers,        label: "Shader Cache",   sub: "GPU & DirectX cache" },
                 { icon: MessageSquare, label: "Discord Cache",  sub: "App & GPU cache" },
-                { icon: Music,         label: "Spotify Cache",  sub: "Audio & image cache" },
                 { icon: RefreshCw,     label: "Windows Update", sub: "Downloaded update files" },
                 { icon: FileText,      label: "Log Files",      sub: "CBS, DISM, system logs" },
               ].map(({ icon: Icon, label, sub }) => (
