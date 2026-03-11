@@ -1575,5 +1575,121 @@ Write-Host "Restore point created successfully."`;
     }
   });
 
+  // ── STARTUP MANAGER ───────────────────────────────────────────────────────
+  app.get("/api/startup", async (_req, res) => {
+    const script = `
+$items = [System.Collections.Generic.List[object]]::new()
+
+function Get-Approved {
+  param([string]$path,[string]$name)
+  try {
+    if (Test-Path $path) {
+      $val = (Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue).$name
+      if ($null -ne $val -and $val.Length -ge 1) { return ($val[0] -ne 3) }
+    }
+  } catch {}
+  return $true
+}
+
+$p = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
+if (Test-Path $p) {
+  try {
+    (Get-ItemProperty $p -ErrorAction SilentlyContinue).PSObject.Properties |
+      Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
+        $en = Get-Approved 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' $_.Name
+        $items.Add([PSCustomObject]@{name=$_.Name;command=[string]$_.Value;source='HKCU\\Run';enabled=[bool]$en;requiresAdmin=$false})
+      }
+  } catch {}
+}
+
+$p = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run'
+if (Test-Path $p) {
+  try {
+    (Get-ItemProperty $p -ErrorAction SilentlyContinue).PSObject.Properties |
+      Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
+        $en = Get-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' $_.Name
+        $items.Add([PSCustomObject]@{name=$_.Name;command=[string]$_.Value;source='HKLM\\Run';enabled=[bool]$en;requiresAdmin=$true})
+      }
+  } catch {}
+}
+
+try {
+  $sf = [System.Environment]::GetFolderPath('Startup')
+  if ($sf -and (Test-Path $sf)) {
+    Get-ChildItem $sf -File -ErrorAction SilentlyContinue | ForEach-Object {
+      $en = Get-Approved 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $_.Name
+      $items.Add([PSCustomObject]@{name=$_.BaseName;command=$_.FullName;source='Startup\\User';enabled=[bool]$en;requiresAdmin=$false})
+    }
+  }
+} catch {}
+
+try {
+  $sf = [System.Environment]::GetFolderPath('CommonStartup')
+  if ($sf -and (Test-Path $sf)) {
+    Get-ChildItem $sf -File -ErrorAction SilentlyContinue | ForEach-Object {
+      $en = Get-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $_.Name
+      $items.Add([PSCustomObject]@{name=$_.BaseName;command=$_.FullName;source='Startup\\All';enabled=[bool]$en;requiresAdmin=$true})
+    }
+  }
+} catch {}
+
+if ($items.Count -eq 0) { Write-Output '[]'; exit }
+$items | ConvertTo-Json -Compress -Depth 3
+`;
+    try {
+      const out = (await runPowerShell(script)).trim();
+      if (!out || out === "null") return res.json([]);
+      let parsed = JSON.parse(out);
+      if (!Array.isArray(parsed)) parsed = [parsed];
+      res.json(parsed);
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || "Failed to list startup items" });
+    }
+  });
+
+  app.post("/api/startup/toggle", async (req, res) => {
+    const { name, source, enabled } = req.body as { name: string; source: string; enabled: boolean };
+    if (!name || !source) return res.status(400).json({ error: "Missing name or source" });
+    const enableFlag = enabled ? "$true" : "$false";
+    const script = `
+$enable = ${enableFlag}
+$bytes = if ($enable) { [byte[]]@(2,0,0,0,0,0,0,0,0,0,0,0) } else { [byte[]]@(3,0,0,0,0,0,0,0,0,0,0,0) }
+$itemName = '${name.replace(/'/g, "''")}'
+$itemSource = '${source}'
+
+function Set-Approved {
+  param([string]$regPath,[string]$valName)
+  if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
+  Set-ItemProperty -Path $regPath -Name $valName -Value $bytes -Type Binary -ErrorAction Stop
+}
+
+switch ($itemSource) {
+  'HKCU\\Run' {
+    Set-Approved 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' $itemName
+  }
+  'HKLM\\Run' {
+    Set-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' $itemName
+  }
+  'Startup\\User' {
+    $sf = [System.Environment]::GetFolderPath('Startup')
+    $f = Get-ChildItem $sf -File -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -eq $itemName } | Select-Object -First 1
+    if ($f) { Set-Approved 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $f.Name }
+  }
+  'Startup\\All' {
+    $sf = [System.Environment]::GetFolderPath('CommonStartup')
+    $f = Get-ChildItem $sf -File -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -eq $itemName } | Select-Object -First 1
+    if ($f) { Set-Approved 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder' $f.Name }
+  }
+}
+Write-Output 'OK'
+`;
+    try {
+      await runPowerShell(script);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || "Toggle failed" });
+    }
+  });
+
   return httpServer;
 }
