@@ -105,6 +105,24 @@ export const getSettings = (): Promise<unknown> => fetchApi("/api/settings");
 export const saveSettings = (data: Record<string, unknown>): Promise<unknown> =>
   fetchApi("/api/settings", "POST", data);
 
+export type StartupItem = {
+  name: string;
+  command: string;
+  source: string;
+  enabled: boolean;
+  requiresAdmin: boolean;
+};
+
+export const getStartupItems = (): Promise<StartupItem[]> =>
+  fetchApi("/api/startup");
+
+export const toggleStartupItem = (
+  name: string,
+  source: string,
+  enabled: boolean
+): Promise<{ success: boolean }> =>
+  fetchApi("/api/startup/toggle", "POST", { name, source, enabled });
+
 export const checkUpdate = (): Promise<unknown> => fetchApi("/api/check-update");
 export const getAppVersion = (): Promise<string> => Promise.resolve("3.0.0");
 export const openUrl = (url: string): Promise<void> =>
