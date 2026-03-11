@@ -14,6 +14,7 @@ export interface IStorage {
   updateTweak(id: number, updates: UpdateTweakRequest): Promise<Tweak | undefined>;
   clearTweaks(): Promise<void>;
   removeTweaksByCategory(category: string): Promise<number>;
+  removeTweaksNotInSeed(seedTitles: string[]): Promise<number>;
   getSetting(key: string): Promise<string | undefined>;
   setSetting(key: string, value: string): Promise<void>;
   getAllSettings(): Promise<Record<string, string>>;
