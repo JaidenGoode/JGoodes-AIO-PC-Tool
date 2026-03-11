@@ -326,7 +326,7 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v Disab
   "Enable SSD TRIM Optimization": {
     requiresAdmin: true,
     enable: `fsutil behavior set DisableDeleteNotify 0`,
-    disable: `fsutil behavior set DisableDeleteNotify 0`,
+    disable: `fsutil behavior set DisableDeleteNotify 1`,
   },
 
   "Disable Web Search in Windows Search": {
@@ -439,7 +439,8 @@ reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MediaRouterCastAllowAllIPs
     disable: `reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v HardwareAccelerationModeEnabled /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v BackgroundModeEnabled /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MetricsReportingEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v ChromeCleanupEnabled /t REG_DWORD /d 1 /f`,
+reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v ChromeCleanupEnabled /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MediaRouterCastAllowAllIPs /t REG_DWORD /d 1 /f`,
   },
 
   "Debloat Opera GX": {
@@ -766,8 +767,8 @@ if (Test-Path $discordCfg) {
     $cfg | Add-Member -Force -NotePropertyName "OVERLAY" -NotePropertyValue $false
     $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
 }`,
-    disable: `# Restore Discord to Normal CPU priority
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
+    disable: `# Remove Discord CPU priority override (restore to Windows default)
+reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /f 2>$null
 # Restore hardware acceleration and overlay in Discord's settings.json
 $discordCfg = "$env:APPDATA\\discord\\settings.json"
 if (Test-Path $discordCfg) {
@@ -910,10 +911,8 @@ Stop-Service -Name wisvc -Force -ErrorAction SilentlyContinue`,
   // ── GAMING (additional) ────────────────────────────────────────────────────
   "Disable Teredo IPv6 Tunneling": {
     requiresAdmin: true,
-    enable: `netsh interface teredo set state disabled 2>$null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 1 /f`,
-    disable: `netsh interface teredo set state default 2>$null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v DisabledComponents /t REG_DWORD /d 0 /f`,
+    enable: `netsh interface teredo set state disabled 2>$null`,
+    disable: `netsh interface teredo set state default 2>$null`,
   },
 
   "Disable HPET (Platform Clock)": {
