@@ -11,9 +11,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  HardDrive, Cpu, Zap, RefreshCw, Network, ShieldCheck,
+  HardDrive, Zap, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
-  Globe, MonitorPlay, Layers, MemoryStick, Sparkles,
+  Globe, MonitorPlay, MemoryStick, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -234,12 +234,40 @@ export default function Utilities() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
 
-        {/* Disk Cleanup */}
-        <UtilCard icon={HardDrive} title="Disk Cleanup" description="Remove temporary files and free space" delay={0.04}>
+        {/* ── ROW 1: Maintenance ──────────────────────────────────────── */}
+
+        {/* Disk & Storage — cleanup + chkdsk + optimize all in one */}
+        <UtilCard icon={HardDrive} title="Disk & Storage" description="Cleanup, check, and optimize your drives" delay={0.04}>
           <RunButton action="disk-cleanup" label="Run Disk Cleanup" pending={isPending("disk-cleanup")} onRun={run} />
+          <RunButton action="defrag" label="Open Optimize Drives" pending={isPending("defrag")} onRun={run} />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="sm"
+                className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
+                data-testid="button-utility-checkdisk"
+              >
+                Schedule Check Disk (C:)
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-card border-border">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-bold">Schedule Check Disk?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-muted-foreground">
+                  chkdsk will run on C: at next restart. This can take several minutes.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => run("checkdisk")} className="bg-primary text-white text-sm">
+                  Schedule
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </UtilCard>
 
-        {/* SFC / DISM */}
+        {/* System Repair */}
         <UtilCard icon={ShieldCheck} title="System File Repair" description="Scan and repair Windows system files" delay={0.06}>
           <RunButton action="sfc" label="Run SFC Scan" pending={isPending("sfc")} onRun={run} />
           <AlertDialog>
@@ -256,7 +284,7 @@ export default function Utilities() {
               <AlertDialogHeader>
                 <AlertDialogTitle className="font-bold">Run DISM Repair?</AlertDialogTitle>
                 <AlertDialogDescription className="text-sm text-muted-foreground">
-                  DISM repairs the Windows image. This requires internet and can take 10-30 minutes.
+                  DISM repairs the Windows image. This requires internet and can take 10–30 minutes.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -302,78 +330,65 @@ export default function Utilities() {
           </AlertDialog>
         </UtilCard>
 
-        {/* Shell & Desktop Fixes */}
-        <UtilCard icon={RefreshCw} title="Shell & Desktop Fixes" description="Fix taskbar, desktop icons, and Explorer" delay={0.10}>
-          <RunButton action="restart-explorer" label="Restart Explorer" pending={isPending("restart-explorer")} onRun={run} />
-          <RunButton action="rebuild-icon-cache" label="Rebuild Icon Cache" pending={isPending("rebuild-icon-cache")} onRun={run} />
-        </UtilCard>
+        {/* ── ROW 2: Performance & Hardware ──────────────────────────── */}
 
-        {/* Check Disk */}
-        <UtilCard icon={Cpu} title="Check Disk" description="Scan drive C: for errors on next restart" delay={0.12}>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                size="sm"
-                className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
-                data-testid="button-utility-checkdisk"
-              >
-                Schedule Check Disk
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="font-bold">Schedule Check Disk?</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm text-muted-foreground">
-                  chkdsk will run on C: at next restart. This can take several minutes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => run("checkdisk")} className="bg-primary text-white text-sm">
-                  Schedule
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </UtilCard>
-
-        {/* Optimize & Defrag */}
-        <UtilCard icon={Layers} title="Optimize Drives" description="Defragment HDDs or TRIM/optimize SSDs" delay={0.13}>
-          <RunButton action="defrag" label="Open Optimize Drives" pending={isPending("defrag")} onRun={run} />
-        </UtilCard>
-
-        {/* Graphics & Display */}
-        <UtilCard icon={MonitorPlay} title="Graphics & Display" description="NVIDIA tools and DirectX diagnostics" delay={0.135}>
+        {/* Graphics & Display — NVIDIA + dxdiag + shader cache merged */}
+        <UtilCard icon={MonitorPlay} title="Graphics & Display" description="NVIDIA tools, diagnostics, and shader cache" delay={0.10}>
           <RunButton action="nvidia-cp" label="NVIDIA Control Panel" pending={isPending("nvidia-cp")} onRun={run} />
           <RunButton action="nvidia-app" label="NVIDIA App" pending={isPending("nvidia-app")} onRun={run} />
           <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
+          <div className="pt-1 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-1.5">Fixes game stutters from corrupt shader caches. GPU rebuilds on next launch.</p>
+            <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
+          </div>
         </UtilCard>
 
-        {/* Clear Shader Cache */}
-        <UtilCard icon={Sparkles} title="Clear Shader Cache" description="Flush NVIDIA, AMD, and DirectX shader caches" delay={0.138}>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Fixes game stutters, black screens, and crashes caused by corrupt shader caches. Your GPU rebuilds them on the next game launch — performance may dip briefly on first run.
-          </p>
-          <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
-        </UtilCard>
-
-        {/* Windows Update */}
-        <UtilCard icon={Globe} title="Windows Update" description="Open Windows Update settings directly" delay={0.14}>
-          <RunButton action="windows-update" label="Open Windows Update" pending={isPending("windows-update")} onRun={run} />
-        </UtilCard>
-
-        {/* Empty Standby Memory */}
-        <UtilCard icon={MemoryStick} title="Empty Standby Memory" description="Flush the Windows standby memory list to instantly free cached RAM before gaming" delay={0.145}>
+        {/* Memory & Explorer — standby memory + explorer refresh grouped */}
+        <UtilCard icon={MemoryStick} title="Memory & Explorer" description="Free RAM and refresh the Windows shell" delay={0.12}>
+          <p className="text-[10px] text-muted-foreground mb-1">Instantly flushes cached standby RAM — run before gaming for a clean memory state.</p>
           <RunButton action="empty-standby-memory" label="Empty Standby Memory" pending={isPending("empty-standby-memory")} onRun={run} />
+          <div className="pt-1 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-1.5">Fixes frozen taskbar, blank icons, or stuck Explorer.</p>
+            <RunButton action="restart-explorer" label="Restart Explorer" pending={isPending("restart-explorer")} onRun={run} />
+            <div className="mt-1.5">
+              <RunButton action="rebuild-icon-cache" label="Rebuild Icon Cache" pending={isPending("rebuild-icon-cache")} onRun={run} />
+            </div>
+          </div>
         </UtilCard>
 
-        {/* Toggles */}
-        <UtilCard icon={Zap} title="System Toggles" description="Quick-switch common Windows settings" delay={0.14}>
+        {/* Windows Update — open WU + mode selector together */}
+        <UtilCard icon={Globe} title="Windows Update" description="Open and configure Windows Update" delay={0.14}>
+          <RunButton action="windows-update" label="Open Windows Update" pending={isPending("windows-update")} onRun={run} />
+          <div className="pt-1 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-1.5">Update policy (Windows Pro only for Security mode)</p>
+            <Select
+              value={windowsUpdateMode}
+              onValueChange={(val) => {
+                setWindowsUpdateMode(val);
+                localStorage.setItem("util_win_update", val);
+                run(val);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs bg-secondary border-border/60" data-testid="select-windows-update">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border text-xs">
+                <SelectItem value="windows-update-default">Default — All Updates</SelectItem>
+                <SelectItem value="windows-update-security">Security Only (Pro)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </UtilCard>
+
+        {/* ── ROW 3: Settings & Info ──────────────────────────────────── */}
+
+        {/* Quick Toggles */}
+        <UtilCard icon={Zap} title="Quick Toggles" description="Flip common Windows settings on or off" delay={0.16}>
           <div className="space-y-3">
             {[
               {
                 key: "util_storage_sense", label: "Storage Sense",
-                desc: "Auto-cleanup old files",
+                desc: "Auto-cleanup old temp files",
                 value: storageSense, setter: setStorageSense,
                 onAction: "storage-sense-on", offAction: "storage-sense-off",
               },
@@ -385,7 +400,7 @@ export default function Utilities() {
               },
               {
                 key: "util_location", label: "Location Services",
-                desc: "Apps can use your location",
+                desc: "Allow apps to use your location",
                 value: locationServices, setter: setLocationServices,
                 onAction: "location-on", offAction: "location-off",
               },
@@ -404,26 +419,6 @@ export default function Utilities() {
               </div>
             ))}
           </div>
-        </UtilCard>
-
-        {/* Windows Update Mode */}
-        <UtilCard icon={Network} title="Windows Update Mode" description="Control how Windows installs updates" delay={0.16}>
-          <Select
-            value={windowsUpdateMode}
-            onValueChange={(val) => {
-              setWindowsUpdateMode(val);
-              localStorage.setItem("util_win_update", val);
-              run(val);
-            }}
-          >
-            <SelectTrigger className="h-8 text-xs bg-secondary border-border/60" data-testid="select-windows-update">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border text-xs">
-              <SelectItem value="windows-update-default">Default — All Updates</SelectItem>
-              <SelectItem value="windows-update-security">Security Only (Pro)</SelectItem>
-            </SelectContent>
-          </Select>
         </UtilCard>
 
         {/* CTT WinUtil + O&O ShutUp10++ + Winaero Tweaker — always side by side */}
