@@ -13,7 +13,7 @@ import {
 import {
   HardDrive, Zap, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
-  Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Activity, Settings2,
+  Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Activity, Settings2, Gamepad2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +80,8 @@ export default function Utilities() {
   const [shutup10Status, setShutup10Status] = useState<"idle" | "downloading" | "done" | "error">("idle");
   const [titusStatus, setTitusStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [winaerotStatus, setWinaerotStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
+  const [cortexStatus, setCortexStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [exitlagStatus, setExitlagStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -355,6 +357,175 @@ export default function Utilities() {
     setTimeout(() => setWinaerotStatus("idle"), 4000);
   };
 
+  const launchRazerCortex = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "Razer Cortex can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setCortexStatus("loading");
+    const script = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$exePath = $null`,
+      ``,
+      `# Check registry App Paths`,
+      `$regPaths = @(`,
+      `  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\RazerCortex.exe',`,
+      `  'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\RazerCortex.exe'`,
+      `)`,
+      `foreach ($rp in $regPaths) {`,
+      `  if (Test-Path $rp) {`,
+      `    $val = (Get-ItemProperty $rp -EA SilentlyContinue).'(default)'`,
+      `    if ($val -and (Test-Path $val)) { $exePath = $val; break }`,
+      `  }`,
+      `}`,
+      ``,
+      `# Check common install directories`,
+      `if (-not $exePath) {`,
+      `  $candidates = @(`,
+      `    "$env:LOCALAPPDATA\\Razer\\RazerCortex\\RazerCortex.exe",`,
+      `    "$env:ProgramFiles\\Razer\\Razer Cortex\\RazerCortex.exe",`,
+      `    "\${env:ProgramFiles(x86)}\\Razer\\Razer Cortex\\RazerCortex.exe",`,
+      `    "$env:ProgramData\\Razer\\RazerCortex\\RazerCortex.exe",`,
+      `    "$env:LOCALAPPDATA\\Programs\\Razer\\RazerCortex\\RazerCortex.exe"`,
+      `  )`,
+      `  foreach ($c in $candidates) {`,
+      `    if (Test-Path $c) { $exePath = $c; break }`,
+      `  }`,
+      `}`,
+      ``,
+      `# Scan uninstall registry`,
+      `if (-not $exePath) {`,
+      `  $uninstKeys = @(`,
+      `    'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall',`,
+      `    'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall',`,
+      `    'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall'`,
+      `  )`,
+      `  foreach ($uk in $uninstKeys) {`,
+      `    if (Test-Path $uk) {`,
+      `      $match = Get-ChildItem $uk -EA SilentlyContinue | Where-Object {`,
+      `        (Get-ItemProperty $_.PSPath -EA SilentlyContinue).DisplayName -like '*Razer Cortex*'`,
+      `      } | Select-Object -First 1`,
+      `      if ($match) {`,
+      `        $icon = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).DisplayIcon`,
+      `        if ($icon) { $icon = $icon -replace ',\\d+$',''; if (Test-Path $icon) { $exePath = $icon; break } }`,
+      `        $loc = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).InstallLocation`,
+      `        if ($loc) { $t = Join-Path $loc "RazerCortex.exe"; if (Test-Path $t) { $exePath = $t; break } }`,
+      `      }`,
+      `    }`,
+      `  }`,
+      `}`,
+      ``,
+      `if ($exePath) {`,
+      `  Start-Process -FilePath $exePath -WindowStyle Normal`,
+      `  exit 0`,
+      `} else {`,
+      `  Start-Process "https://www.razer.com/cortex"`,
+      `  exit 2`,
+      `}`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.exitCode === 2 || result.output?.includes("razer.com")) {
+        setCortexStatus("done");
+        toast({ title: "Razer Cortex not found", description: "Opening the download page — install it, then click the button again." });
+      } else if (result.success) {
+        setCortexStatus("done");
+        toast({ title: "Razer Cortex launched", description: "The app window should appear momentarily." });
+      } else {
+        setCortexStatus("error");
+        toast({ title: "Launch failed", description: result.error || "Could not find or launch Razer Cortex.", variant: "destructive" });
+      }
+    } catch {
+      setCortexStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setCortexStatus("idle"), 4000);
+  };
+
+  const launchExitLag = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "ExitLag can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setExitlagStatus("loading");
+    const script = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$exePath = $null`,
+      ``,
+      `# Check registry App Paths`,
+      `$regPaths = @(`,
+      `  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\ExitLag.exe',`,
+      `  'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\ExitLag.exe'`,
+      `)`,
+      `foreach ($rp in $regPaths) {`,
+      `  if (Test-Path $rp) {`,
+      `    $val = (Get-ItemProperty $rp -EA SilentlyContinue).'(default)'`,
+      `    if ($val -and (Test-Path $val)) { $exePath = $val; break }`,
+      `  }`,
+      `}`,
+      ``,
+      `# Check common install directories`,
+      `if (-not $exePath) {`,
+      `  $candidates = @(`,
+      `    "$env:ProgramFiles\\ExitLag\\ExitLag.exe",`,
+      `    "\${env:ProgramFiles(x86)}\\ExitLag\\ExitLag.exe",`,
+      `    "$env:LOCALAPPDATA\\Programs\\ExitLag\\ExitLag.exe",`,
+      `    "$env:LOCALAPPDATA\\ExitLag\\ExitLag.exe"`,
+      `  )`,
+      `  foreach ($c in $candidates) {`,
+      `    if (Test-Path $c) { $exePath = $c; break }`,
+      `  }`,
+      `}`,
+      ``,
+      `# Scan uninstall registry`,
+      `if (-not $exePath) {`,
+      `  $uninstKeys = @(`,
+      `    'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall',`,
+      `    'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall',`,
+      `    'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall'`,
+      `  )`,
+      `  foreach ($uk in $uninstKeys) {`,
+      `    if (Test-Path $uk) {`,
+      `      $match = Get-ChildItem $uk -EA SilentlyContinue | Where-Object {`,
+      `        (Get-ItemProperty $_.PSPath -EA SilentlyContinue).DisplayName -like '*ExitLag*'`,
+      `      } | Select-Object -First 1`,
+      `      if ($match) {`,
+      `        $icon = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).DisplayIcon`,
+      `        if ($icon) { $icon = $icon -replace ',\\d+$',''; if (Test-Path $icon) { $exePath = $icon; break } }`,
+      `        $loc = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).InstallLocation`,
+      `        if ($loc) { $t = Join-Path $loc "ExitLag.exe"; if (Test-Path $t) { $exePath = $t; break } }`,
+      `      }`,
+      `    }`,
+      `  }`,
+      `}`,
+      ``,
+      `if ($exePath) {`,
+      `  Start-Process -FilePath $exePath -WindowStyle Normal`,
+      `  exit 0`,
+      `} else {`,
+      `  Start-Process "https://www.exitlag.com/download"`,
+      `  exit 2`,
+      `}`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.exitCode === 2 || result.output?.includes("exitlag.com")) {
+        setExitlagStatus("done");
+        toast({ title: "ExitLag not found", description: "Opening the download page — install it, then click the button again." });
+      } else if (result.success) {
+        setExitlagStatus("done");
+        toast({ title: "ExitLag launched", description: "The app window should appear momentarily." });
+      } else {
+        setExitlagStatus("error");
+        toast({ title: "Launch failed", description: result.error || "Could not find or launch ExitLag.", variant: "destructive" });
+      }
+    } catch {
+      setExitlagStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setExitlagStatus("idle"), 4000);
+  };
+
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
     localStorage.setItem(key, String(value));
@@ -604,123 +775,216 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* ── ROW 4: Third-party Tools (full width) ───────────────────── */}
+        {/* ── ROW 4: Windows & Privacy Tools (full width) ──────────────── */}
         <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
 
           <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.22}>
-            <div className="space-y-2.5">
+            <div className="flex flex-col h-full space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Popular open-source utility by Chris Titus Tech. Offers one-click Windows debloat, program installation, system tweaks, and fixes — all in a clean GUI.
               </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
                 <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet access and will launch an elevated PowerShell window. Review changes before applying.</p>
               </div>
-              <Button
-                size="sm"
-                onClick={launchTitusTool}
-                disabled={titusStatus === "running"}
-                className={cn(
-                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                  titusStatus === "done"
-                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                    : titusStatus === "error"
-                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchTitusTool}
+                  disabled={titusStatus === "running"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    titusStatus === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : titusStatus === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-christitus"
+                >
+                  {titusStatus === "running" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching WinUtil...</>
+                  ) : titusStatus === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                  ) : titusStatus === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Zap className="h-3.5 w-3.5" /> Launch WinUtil</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
                 )}
-                data-testid="button-launch-christitus"
-              >
-                {titusStatus === "running" ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching WinUtil...</>
-                ) : titusStatus === "done" ? (
-                  <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                ) : titusStatus === "error" ? (
-                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                ) : (
-                  <><Zap className="h-3.5 w-3.5" /> Launch WinUtil</>
-                )}
-              </Button>
-              {!window.electronAPI && (
-                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-              )}
+              </div>
             </div>
           </UtilCard>
 
           <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.23}>
-            <div className="space-y-2.5">
+            <div className="flex flex-col h-full space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Free third-party tool by O&O Software. Provides granular control over 200+ Windows privacy settings beyond what this app covers — telemetry, Microsoft accounts, app permissions, diagnostics, and more.
               </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
                 <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads ~2MB from O&O's servers — takes 10–30s depending on your connection. Subsequent launches are instant (cached).</p>
               </div>
-              <Button
-                size="sm"
-                onClick={launchShutUp10}
-                disabled={shutup10Status === "downloading"}
-                className={cn(
-                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                  shutup10Status === "done"
-                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                    : shutup10Status === "error"
-                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchShutUp10}
+                  disabled={shutup10Status === "downloading"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    shutup10Status === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : shutup10Status === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-shutup10"
+                >
+                  {shutup10Status === "downloading" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
+                  ) : shutup10Status === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                  ) : shutup10Status === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Download className="h-3.5 w-3.5" /> Launch ShutUp10++</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
                 )}
-                data-testid="button-launch-shutup10"
-              >
-                {shutup10Status === "downloading" ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
-                ) : shutup10Status === "done" ? (
-                  <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                ) : shutup10Status === "error" ? (
-                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                ) : (
-                  <><Download className="h-3.5 w-3.5" /> Launch ShutUp10++</>
-                )}
-              </Button>
-              {!window.electronAPI && (
-                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-              )}
+              </div>
             </div>
           </UtilCard>
 
           <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.24}>
-            <div className="space-y-2.5">
+            <div className="flex flex-col h-full space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Free portable tool by Winaero. Unlocks hidden Windows settings not available through Settings or Group Policy — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
               </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
                 <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads a zip from winaerotweaker.com and extracts it to your Temp folder — takes 10–30s. Subsequent launches are instant (cached).</p>
               </div>
-              <Button
-                size="sm"
-                onClick={launchWinaerot}
-                disabled={winaerotStatus === "downloading"}
-                className={cn(
-                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                  winaerotStatus === "done"
-                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                    : winaerotStatus === "error"
-                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchWinaerot}
+                  disabled={winaerotStatus === "downloading"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    winaerotStatus === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : winaerotStatus === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-winaerot"
+                >
+                  {winaerotStatus === "downloading" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
+                  ) : winaerotStatus === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                  ) : winaerotStatus === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Download className="h-3.5 w-3.5" /> Launch Winaero Tweaker</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
                 )}
-                data-testid="button-launch-winaerot"
-              >
-                {winaerotStatus === "downloading" ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
-                ) : winaerotStatus === "done" ? (
-                  <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                ) : winaerotStatus === "error" ? (
-                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                ) : (
-                  <><Download className="h-3.5 w-3.5" /> Launch Winaero Tweaker</>
+              </div>
+            </div>
+          </UtilCard>
+
+        </div>
+
+        {/* ── ROW 4b: Gaming Optimization Tools (full width) ──────────── */}
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <UtilCard icon={Gamepad2} title="Razer Cortex" description="Game booster & FPS optimizer by Razer" delay={0.25}>
+            <div className="flex flex-col h-full space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Free game optimizer by Razer. Boosts FPS by suspending background processes while gaming, manages game launches, and includes system-level performance tools — no Razer hardware required.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-400/90 leading-relaxed">If not installed, opens the Razer Cortex download page in your browser. Install it, then click the button again to launch.</p>
+              </div>
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchRazerCortex}
+                  disabled={cortexStatus === "loading"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    cortexStatus === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : cortexStatus === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-razercortex"
+                >
+                  {cortexStatus === "loading" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching...</>
+                  ) : cortexStatus === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Done</>
+                  ) : cortexStatus === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Download className="h-3.5 w-3.5" /> Launch / Download Razer Cortex</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
                 )}
-              </Button>
-              {!window.electronAPI && (
-                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-              )}
+              </div>
+            </div>
+          </UtilCard>
+
+          <UtilCard icon={Zap} title="ExitLag" description="Gaming latency optimizer & connection tool" delay={0.26}>
+            <div className="flex flex-col h-full space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Paid tool that routes your game traffic through optimized servers worldwide to reduce latency, packet loss, and jitter. Works with 700+ games and provides real-time connection graphs.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-400/90 leading-relaxed">If not installed, opens the ExitLag download page in your browser. Install it, then click the button again to launch.</p>
+              </div>
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchExitLag}
+                  disabled={exitlagStatus === "loading"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    exitlagStatus === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : exitlagStatus === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-exitlag"
+                >
+                  {exitlagStatus === "loading" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching...</>
+                  ) : exitlagStatus === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Done</>
+                  ) : exitlagStatus === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Download className="h-3.5 w-3.5" /> Launch / Download ExitLag</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+                )}
+              </div>
             </div>
           </UtilCard>
 
