@@ -97,6 +97,17 @@ export class JsonStorage implements IStorage {
     });
   }
 
+  removeTweaksByCategory(category: string): Promise<number> {
+    return withLock(() => {
+      const store = loadStore();
+      const before = store.tweaks.length;
+      store.tweaks = store.tweaks.filter((t) => t.category !== category);
+      const removed = before - store.tweaks.length;
+      if (removed > 0) saveStore(store);
+      return removed;
+    });
+  }
+
   getSetting(key: string): Promise<string | undefined> {
     return Promise.resolve(loadStore().settings[key]);
   }
