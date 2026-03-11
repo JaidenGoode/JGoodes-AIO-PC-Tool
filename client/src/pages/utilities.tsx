@@ -545,13 +545,13 @@ export default function Utilities() {
                 data-testid="button-launch-shutup10"
               >
                 {shutup10Status === "downloading" ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading ~2MB &amp; Launching...</>
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
                 ) : shutup10Status === "done" ? (
                   <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
                 ) : shutup10Status === "error" ? (
                   <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
                 ) : (
-                  <><Download className="h-3.5 w-3.5" /> Download & Launch ShutUp10++</>
+                  <><Download className="h-3.5 w-3.5" /> Launch ShutUp10++</>
                 )}
               </Button>
               {!window.electronAPI && (
@@ -584,13 +584,13 @@ export default function Utilities() {
                 data-testid="button-launch-winaerot"
               >
                 {winaerotStatus === "downloading" ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading &amp; Launching...</>
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
                 ) : winaerotStatus === "done" ? (
                   <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
                 ) : winaerotStatus === "error" ? (
                   <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
                 ) : (
-                  <><Download className="h-3.5 w-3.5" /> Download & Launch Winaero Tweaker</>
+                  <><Download className="h-3.5 w-3.5" /> Launch Winaero Tweaker</>
                 )}
               </Button>
               {!window.electronAPI && (
