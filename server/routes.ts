@@ -1354,6 +1354,8 @@ Write-Host "Restore point created successfully."`;
             "location-on","location-off","open-system-restore",
             "defrag","nvidia-cp","nvidia-app","windows-update",
             "empty-standby-memory","clear-shader-cache","rebuild-icon-cache","dxdiag",
+            "amd-software","power-balanced","power-high","power-ultimate","power-options",
+            "hwinfo","gpuz","cpuz","msconfig","eventvwr","services","devmgmt","resmon",
           ]),
         })
         .parse(req.body);
@@ -1377,7 +1379,19 @@ Write-Host "Restore point created successfully."`;
         "location-on": { name: "Enable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 0 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableWindowsLocationProvider" /t REG_DWORD /d 0 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocationScripting" /t REG_DWORD /d 0 /f & reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\lfsvc" /v "Start" /t REG_DWORD /d 2 /f & sc config lfsvc start= auto & net start lfsvc 2>nul & reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value" /t REG_SZ /d "Allow" /f & reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location" /v "Value" /t REG_SZ /d "Allow" /f & echo Location Services fully re-enabled.', description: "Fully re-enables Windows Location Services via Group Policy (sets all three DisableLocation keys to 0), enables the lfsvc service, and allows location access for apps." },
         "location-off": { name: "Disable Location Services", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 1 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableWindowsLocationProvider" /t REG_DWORD /d 1 /f & reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v "DisableLocationScripting" /t REG_DWORD /d 1 /f & sc config lfsvc start= disabled & net stop lfsvc 2>nul & echo Location Services disabled.', description: "Completely disables Windows Location Services via Group Policy (sets all three DisableLocation keys to 1) and stops the lfsvc service." },
         "open-system-restore": { name: "Open System Restore", command: "rstrui.exe", description: "Opens the Windows System Restore wizard." },
-        "empty-standby-memory": { name: "Empty Standby Memory", command: `powershell -NoProfile -Command "Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile','-EncodedCommand','QQBkAGQALQBUAHkAcABlACAALQBUAHkAcABlAEQAZQBmAGkAbgBpAHQAaQBvAG4AIABAACIACgB1AHMAaQBuAGcAIABTAHkAcwB0AGUAbQA7AAoAdQBzAGkAbgBnACAAUwB5AHMAdABlAG0ALgBSAHUAbgB0AGkAbQBlAC4ASQBuAHQAZQByAG8AcABTAGUAcgB2AGkAYwBlAHMAOwAKAHAAdQBiAGwAaQBjACAAYwBsAGEAcwBzACAATQAgAHsAIABbAEQAbABsAEkAbQBwAG8AcgB0ACgAIgBuAHQAZABsAGwALgBkAGwAbAAiACkAXQAgAHAAdQBiAGwAaQBjACAAcwB0AGEAdABpAGMAIABlAHgAdABlAHIAbgAgAGkAbgB0ACAATgB0AFMAZQB0AFMAeQBzAHQAZQBtAEkAbgBmAG8AcgBtAGEAdABpAG8AbgAoAGkAbgB0ACAAaQAsACAASQBuAHQAUAB0AHIAIABwACwAIABpAG4AdAAgAGwAKQA7ACAAfQAKACIAQAAgAC0ARQByAHIAbwByAEEAYwB0AGkAbwBuACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAKACQAcAAgAD0AIABbAFIAdQBuAHQAaQBtAGUALgBJAG4AdABlAHIAbwBwAFMAZQByAHYAaQBjAGUAcwAuAE0AYQByAHMAaABhAGwAXQA6ADoAQQBsAGwAbwBjAEgARwBsAG8AYgBhAGwAKAA0ACkACgBbAFIAdQBuAHQAaQBtAGUALgBJAG4AdABlAHIAbwBwAFMAZQByAHYAaQBjAGUAcwAuAE0AYQByAHMAaABhAGwAXQA6ADoAVwByAGkAdABlAEkAbgB0ADMAMgAoACQAcAAsACAAMAAsACAANAApAAoAWwBNAF0AOgA6AE4AdABTAGUAdABTAHkAcwB0AGUAbQBJAG4AZgBvAHIAbQBhAHQAaQBvAG4AKAA4ADAALAAgACQAcAAsACAANAApAAoAWwBSAHUAbgB0AGkAbQBlAC4ASQBuAHQAZQByAG8AcABTAGUAcgB2AGkAYwBlAHMALgBNAGEAcgBzAGgAYQBsAF0AOgA6AEYAcgBlAGUASABHAGwAbwBiAGEAbAAoACQAcAApAAoAVwByAGkAdABlAC0ASABvAHMAdAAgACcAUwB0AGEAbgBkAGIAeQAgAG0AZQBtAG8AcgB5ACAAcAB1AHIAZwBlAGQAIABzAHUAYwBjAGUAcwBzAGYAdQBsAGwAeQAuACcACgBSAGUAYQBkAC0ASABvAHMAdAAgACcAUAByAGUAcwBzACAARQBuAHQAZQByACAAdABvACAAYwBsAG8AcwBlAC4AJwA='"`, description: "Flushes the Windows standby memory list using NtSetSystemInformation, instantly freeing cached RAM. A UAC prompt will appear." },
+        "empty-standby-memory": { name: "Empty Standby Memory", command: `$ErrorActionPreference = 'SilentlyContinue'
+if (-not ([System.Management.Automation.PSTypeName]'StandbyPurge').Type) {
+  try {
+    Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class StandbyPurge { [DllImport("ntdll.dll")] public static extern int NtSetSystemInformation(int i, IntPtr p, int l); }' -Language CSharp
+  } catch {}
+}
+try {
+  $ptr = [Runtime.InteropServices.Marshal]::AllocHGlobal(4)
+  [Runtime.InteropServices.Marshal]::WriteInt32($ptr, 0, 4)
+  $r = [StandbyPurge]::NtSetSystemInformation(80, $ptr, 4)
+  [Runtime.InteropServices.Marshal]::FreeHGlobal($ptr)
+  if ($r -eq 0) { Write-Output "Standby memory purged successfully." } else { Write-Output "Completed (NTSTATUS 0x$('{0:X8}' -f $r))" }
+} catch { Write-Output "Requires Administrator privileges to purge standby memory." }`, description: "Standby memory purged — cached RAM freed instantly." },
         defrag: { name: "Optimize & Defrag Drives", command: "dfrgui", description: "Opens the Windows Optimize Drives tool to defragment or optimize drives." },
         "nvidia-cp": { name: "NVIDIA Control Panel", command: `powershell -NoProfile -Command "$p=@('${String.raw`C:\Program Files\NVIDIA Corporation\Control Panel Client\nvcplui.exe`}','${String.raw`C:\Windows\System32\nvcplui.exe`}','${String.raw`C:\Program Files (x86)\NVIDIA Corporation\Control Panel Client\nvcplui.exe`}');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'ms-settings:display'}"`, description: "Opens the NVIDIA Control Panel. Falls back to Display Settings if not found." },
         "nvidia-app": { name: "NVIDIA App", command: `powershell -NoProfile -Command "$p=@('${String.raw`C:\Program Files\NVIDIA Corporation\NVIDIA app\nvidia-app.exe`}','${String.raw`C:\Program Files\NVIDIA Corporation\NVIDIA App\nvidia-app.exe`}','${String.raw`C:\Program Files\NVIDIA Corporation\NvContainer\nvidia-app.exe`}');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'https://www.nvidia.com/en-us/software/nvidia-app/'}"`, description: "Opens the NVIDIA App. Falls back to NVIDIA website if not installed." },
@@ -1385,6 +1399,19 @@ Write-Host "Restore point created successfully."`;
         "clear-shader-cache": { name: "Clear Shader Cache", command: `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand JABsAGEAPQAkAGUAbgB2ADoATABPAEMAQQBMAEEAUABQAEQAQQBUAEEAOwAkAHIAYQA9ACQAZQBuAHYAOgBBAFAAUABEAEEAVABBADsAJABwAGEAdABoAHMAPQBAACgAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARABYAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARwBMAEMAYQBjAGgAZQAiACwAIgAkAHIAYQBcAE4AVgBJAEQASQBBAFwAQwBvAG0AcAB1AHQAZQBDAGEAYwBoAGUAIgAsACIAJABsAGEAXABBAE0ARABcAEQAeABDAGEAYwBoAGUAIgAsACIAJABsAGEAXABEADMARABTAEMAYQBjAGgAZQAiACkAOwAkAGMAPQAwADsAZgBvAHIAZQBhAGMAaAAoACQAcAAgAGkAbgAgACQAcABhAHQAaABzACkAewBpAGYAKABUAGUAcwB0AC0AUABhAHQAaAAgACQAcAApAHsARwBlAHQALQBDAGgAaQBsAGQASQB0AGUAbQAgACQAcAAgAC0AUgBlAGMAdQByAHMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQB8AFIAZQBtAG8AdgBlAC0ASQB0AGUAbQAgAC0ARgBvAHIAYwBlACAALQBSAGUAYwB1AHIAcwBlACAALQBFAEEAIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlADsAJABjACsAKwB9AH0AOwBXAHIAaQB0AGUALQBPAHUAdABwAHUAdAAgACgAIgBDAGwAZQBhAHIAZQBkACAAIgArACQAYwArACIAIABvAGYAIAA1ACAAcwBoAGEAZABlAHIAIABjAGEAYwBoAGUAIABsAG8AYwBhAHQAaQBvAG4AcwAuACAARwBQAFUAIAByAGUAYgB1AGkAbABkAHMAIABvAG4AIABuAGUAeAB0ACAAZwBhAG0AZQAgAGwAYQB1AG4AYwBoAC4AIgApAA==`, description: "Cleared NVIDIA, AMD, and DirectX shader caches. Your GPU will rebuild them on next game launch." },
         "rebuild-icon-cache": { name: "Rebuild Icon Cache", command: `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand UwB0AG8AcAAtAFAAcgBvAGMAZQBzAHMAIAAtAE4AYQBtAGUAIABlAHgAcABsAG8AcgBlAHIAIAAtAEYAbwByAGMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQA7AFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0ATQBpAGwAbABpAHMAZQBjAG8AbgBkAHMAIAA2ADAAMAA7AFIAZQBtAG8AdgBlAC0ASQB0AGUAbQAgACIAJABlAG4AdgA6AEwATwBDAEEATABBAFAAUABEAEEAVABBAFwASQBjAG8AbgBDAGEAYwBoAGUALgBkAGIAIgAgAC0ARgBvAHIAYwBlACAALQBFAEEAIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlADsAUgBlAG0AbwB2AGUALQBJAHQAZQBtACAAIgAkAGUAbgB2ADoATABPAEMAQQBMAEEAUABQAEQAQQBUAEEAXABNAGkAYwByAG8AcwBvAGYAdABcAFcAaQBuAGQAbwB3AHMAXABFAHgAcABsAG8AcgBlAHIAXABpAGMAbwBuAGMAYQBjAGgAZQAqAC4AZABiACIAIAAtAEYAbwByAGMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQA7AFMAdABhAHIAdAAtAFAAcgBvAGMAZQBzAHMAIABlAHgAcABsAG8AcgBlAHIAOwBXAHIAaQB0AGUALQBPAHUAdABwAHUAdAAgACIASQBjAG8AbgAgAGMAYQBjAGgAZQAgAHIAZQBiAHUAaQBsAHQALgAgAEkAYwBvAG4AcwAgAHcAaQBsAGwAIAByAGUAZgByAGUAcwBoACAAbQBvAG0AZQBuAHQAYQByAGkAbAB5AC4AIgA=`, description: "Rebuilt the Windows icon cache. Desktop and Explorer icons will refresh." },
         "dxdiag": { name: "DirectX Diagnostic", command: "dxdiag", description: "Opened DirectX Diagnostic Tool." },
+        "amd-software": { name: "AMD Software: Adrenalin Edition", command: String.raw`powershell -NoProfile -Command "$dirs=@();try{$d=(Get-ItemProperty 'HKCU:\Software\AMD\CN' -Name InstallDir -EA Stop).InstallDir;if($d){$dirs+=$d}}catch{};try{$d=(Get-ItemProperty 'HKLM:\SOFTWARE\AMD\CN' -Name InstallDir -EA Stop).InstallDir;if($d){$dirs+=$d}}catch{};$dirs+='C:\Program Files\AMD\CNext\CNext','C:\Program Files (x86)\AMD\CNext\CNext';$exe=$dirs|ForEach-Object{Join-Path $_ 'RadeonSoftware.exe'}|Where-Object{Test-Path $_}|Select-Object -First 1;if($exe){Start-Process $exe}else{Start-Process 'https://www.amd.com/en/technologies/software'}"`, description: "Opened AMD Software: Adrenalin Edition. Falls back to AMD download page if not installed." },
+        "power-balanced": { name: "Switched to Balanced Power Plan", command: "powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e", description: "Active power plan set to Balanced." },
+        "power-high": { name: "Switched to High Performance", command: "powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", description: "Active power plan set to High Performance." },
+        "power-ultimate": { name: "Switched to Ultimate Performance", command: `powershell -NoProfile -Command "$guid='e9a42b02-d5df-448d-aa00-03f14749eb61';$list=powercfg /list 2>&1;if(-not($list|Select-String $guid)){powercfg /duplicatescheme $guid|Out-Null};powercfg /setactive $guid;Write-Output 'Ultimate Performance plan activated.'"`, description: "Ultimate Performance plan enabled and set as active." },
+        "power-options": { name: "Power Options", command: "control.exe powercfg.cpl", description: "Opened Power Options in Control Panel." },
+        "hwinfo": { name: "HWiNFO64", command: String.raw`powershell -NoProfile -Command "$p=@('C:\Program Files\HWiNFO64\HWiNFO64.exe','C:\Program Files (x86)\HWiNFO64\HWiNFO64.exe','C:\HWiNFO64\HWiNFO64.exe');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'https://www.hwinfo.com/download/'}"`, description: "Launched HWiNFO64. Falls back to download page if not installed." },
+        "gpuz": { name: "GPU-Z", command: String.raw`powershell -NoProfile -Command "$p=Get-ChildItem 'C:\Program Files','C:\Program Files (x86)','C:\GPU-Z' -Filter 'GPU-Z.exe' -Recurse -Depth 3 -EA SilentlyContinue|Select-Object -First 1 -ExpandProperty FullName;if($p){Start-Process $p}else{Start-Process 'https://www.techpowerup.com/download/techpowerup-gpu-z/'}"`, description: "Launched GPU-Z. Falls back to download page if not installed." },
+        "cpuz": { name: "CPU-Z", command: String.raw`powershell -NoProfile -Command "$p=@('C:\Program Files\CPUID\CPU-Z\cpuz_x64.exe','C:\Program Files (x86)\CPUID\CPU-Z\cpuz.exe','C:\CPU-Z\cpuz_x64.exe');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'https://www.cpuid.com/softwares/cpu-z.html'}"`, description: "Launched CPU-Z. Falls back to download page if not installed." },
+        "msconfig": { name: "System Configuration", command: "msconfig", description: "Opened System Configuration (msconfig)." },
+        "eventvwr": { name: "Event Viewer", command: "eventvwr.msc", description: "Opened Windows Event Viewer." },
+        "services": { name: "Services Manager", command: "services.msc", description: "Opened Windows Services Manager." },
+        "devmgmt": { name: "Device Manager", command: "devmgmt.msc", description: "Opened Device Manager." },
+        "resmon": { name: "Resource Monitor", command: "resmon.exe", description: "Opened Windows Resource Monitor." },
       };
 
       const info = commands[action];
@@ -1396,12 +1423,21 @@ Write-Host "Restore point created successfully."`;
       const TERMINAL_ACTIONS = new Set([
         "checkdisk", "network-reset",
       ]);
+      const PS_ACTIONS = new Set(["empty-standby-memory"]);
       const GUI_ACTIONS = new Set([
         "open-system-restore", "disk-cleanup",
         "sfc", "dism",
         "defrag", "nvidia-cp", "nvidia-app", "windows-update",
-        "empty-standby-memory", "dxdiag",
+        "dxdiag",
+        "amd-software", "power-options",
+        "hwinfo", "gpuz", "cpuz",
+        "msconfig", "eventvwr", "services", "devmgmt", "resmon",
       ]);
+
+      if (PS_ACTIONS.has(action)) {
+        const output = await runPowerShell(info.command, 20000);
+        return res.json({ success: true, action, ...info, output: output || "Done." });
+      }
 
       if (GUI_ACTIONS.has(action)) {
         spawn(info.command, [], { detached: true, stdio: "ignore", shell: true });

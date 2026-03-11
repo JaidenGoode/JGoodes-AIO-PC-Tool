@@ -13,7 +13,7 @@ import {
 import {
   HardDrive, Zap, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
-  Globe, MonitorPlay, MemoryStick, Sparkles,
+  Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Activity, Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -63,12 +63,19 @@ function RunButton({ action, label, pending, onRun }: {
   );
 }
 
+const PLANS = [
+  { id: "balanced", action: "power-balanced", label: "Balanced", desc: "Default — battery & performance" },
+  { id: "high", action: "power-high", label: "High Performance", desc: "Max clocks, higher power draw" },
+  { id: "ultimate", action: "power-ultimate", label: "Ultimate Performance", desc: "Server-grade, zero throttling" },
+] as const;
+
 export default function Utilities() {
   const { toast } = useToast();
   const [storageSense, setStorageSense] = useState(() => localStorage.getItem("util_storage_sense") === "true");
   const [fastStartup, setFastStartup] = useState(() => localStorage.getItem("util_fast_startup") === "true");
   const [locationServices, setLocationServices] = useState(() => localStorage.getItem("util_location") !== "false");
   const [windowsUpdateMode, setWindowsUpdateMode] = useState(() => localStorage.getItem("util_win_update") || "windows-update-default");
+  const [activePlan, setActivePlan] = useState<string>(() => localStorage.getItem("util_power_plan") || "");
   const [showSystemInfo, setShowSystemInfo] = useState(false);
   const [shutup10Status, setShutup10Status] = useState<"idle" | "downloading" | "done" | "error">("idle");
   const [titusStatus, setTitusStatus] = useState<"idle" | "running" | "done" | "error">("idle");
@@ -77,7 +84,7 @@ export default function Utilities() {
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
     onSuccess: (data) => {
-      const desc = data.output && data.output !== "Done." ? data.output : data.description;
+      const desc = data.output && data.output !== "Done." && data.output !== "Launched." ? data.output : data.description;
       toast({ title: data.name || "Done", description: desc || data.message || "" });
     },
     onError: (error: Error) => {
@@ -93,6 +100,12 @@ export default function Utilities() {
 
   const run = (action: string) => utilityMutation.mutate(action);
   const isPending = (action: string) => utilityMutation.isPending && (utilityMutation.variables as string) === action;
+
+  const runPlan = (planId: string, action: string) => {
+    setActivePlan(planId);
+    localStorage.setItem("util_power_plan", planId);
+    run(action);
+  };
 
   const launchShutUp10 = async () => {
     if (!window.electronAPI?.runScript) {
@@ -236,7 +249,6 @@ export default function Utilities() {
 
         {/* ── ROW 1: Maintenance ──────────────────────────────────────── */}
 
-        {/* Disk & Storage — cleanup + chkdsk + optimize all in one */}
         <UtilCard icon={HardDrive} title="Disk & Storage" description="Cleanup, check, and optimize your drives" delay={0.04}>
           <RunButton action="disk-cleanup" label="Run Disk Cleanup" pending={isPending("disk-cleanup")} onRun={run} />
           <RunButton action="defrag" label="Open Optimize Drives" pending={isPending("defrag")} onRun={run} />
@@ -267,7 +279,6 @@ export default function Utilities() {
           </AlertDialog>
         </UtilCard>
 
-        {/* System Repair */}
         <UtilCard icon={ShieldCheck} title="System File Repair" description="Scan and repair Windows system files" delay={0.06}>
           <RunButton action="sfc" label="Run SFC Scan" pending={isPending("sfc")} onRun={run} />
           <AlertDialog>
@@ -297,7 +308,6 @@ export default function Utilities() {
           </AlertDialog>
         </UtilCard>
 
-        {/* Network Tools */}
         <UtilCard icon={Network} title="Network Tools" description="Reset and repair network settings" delay={0.08}>
           <RunButton action="flush-dns" label="Flush DNS Cache" pending={isPending("flush-dns")} onRun={run} />
           <RunButton action="release-ip" label="Release IP Address" pending={isPending("release-ip")} onRun={run} />
@@ -332,8 +342,8 @@ export default function Utilities() {
 
         {/* ── ROW 2: Performance & Hardware ──────────────────────────── */}
 
-        {/* Graphics & Display — NVIDIA + dxdiag + shader cache merged */}
-        <UtilCard icon={MonitorPlay} title="Graphics & Display" description="NVIDIA tools, diagnostics, and shader cache" delay={0.10}>
+        {/* NVIDIA Graphics */}
+        <UtilCard icon={MonitorPlay} title="NVIDIA Graphics" description="NVIDIA Control Panel, App & diagnostics" delay={0.10}>
           <RunButton action="nvidia-cp" label="NVIDIA Control Panel" pending={isPending("nvidia-cp")} onRun={run} />
           <RunButton action="nvidia-app" label="NVIDIA App" pending={isPending("nvidia-app")} onRun={run} />
           <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
@@ -343,9 +353,20 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* Memory & Explorer — standby memory + explorer refresh grouped */}
-        <UtilCard icon={MemoryStick} title="Memory & Explorer" description="Free RAM and refresh the Windows shell" delay={0.12}>
-          <p className="text-[10px] text-muted-foreground mb-1">Instantly flushes cached standby RAM — run before gaming for a clean memory state.</p>
+        {/* AMD Radeon */}
+        <UtilCard icon={Cpu} title="AMD Radeon" description="AMD Software: Adrenalin Edition & GPU tools" delay={0.12}>
+          <p className="text-[10px] text-muted-foreground mb-1">AMD's all-in-one driver hub for performance tuning, overlay, and game optimization. Opens your installed version or the download page.</p>
+          <RunButton action="amd-software" label="AMD Software: Adrenalin" pending={isPending("amd-software")} onRun={run} />
+          <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
+          <div className="pt-1 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-1.5">Clears AMD & DirectX shader caches. GPU rebuilds on next game launch.</p>
+            <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
+          </div>
+        </UtilCard>
+
+        {/* Memory & Explorer */}
+        <UtilCard icon={MemoryStick} title="Memory & Explorer" description="Free RAM and refresh the Windows shell" delay={0.14}>
+          <p className="text-[10px] text-muted-foreground mb-1">Flushes the Windows standby list via NtSetSystemInformation — instant, silent, no popup. Run before gaming for a clean memory baseline.</p>
           <RunButton action="empty-standby-memory" label="Empty Standby Memory" pending={isPending("empty-standby-memory")} onRun={run} />
           <div className="pt-1 border-t border-border/30">
             <p className="text-[10px] text-muted-foreground mb-1.5">Fixes frozen taskbar, blank icons, or stuck Explorer.</p>
@@ -356,31 +377,7 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* Windows Update — open WU + mode selector together */}
-        <UtilCard icon={Globe} title="Windows Update" description="Open and configure Windows Update" delay={0.14}>
-          <RunButton action="windows-update" label="Open Windows Update" pending={isPending("windows-update")} onRun={run} />
-          <div className="pt-1 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Update policy (Windows Pro only for Security mode)</p>
-            <Select
-              value={windowsUpdateMode}
-              onValueChange={(val) => {
-                setWindowsUpdateMode(val);
-                localStorage.setItem("util_win_update", val);
-                run(val);
-              }}
-            >
-              <SelectTrigger className="h-8 text-xs bg-secondary border-border/60" data-testid="select-windows-update">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border text-xs">
-                <SelectItem value="windows-update-default">Default — All Updates</SelectItem>
-                <SelectItem value="windows-update-security">Security Only (Pro)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </UtilCard>
-
-        {/* ── ROW 3: Settings & Info ──────────────────────────────────── */}
+        {/* ── ROW 3: Settings ─────────────────────────────────────────── */}
 
         {/* Quick Toggles */}
         <UtilCard icon={Zap} title="Quick Toggles" description="Flip common Windows settings on or off" delay={0.16}>
@@ -421,11 +418,71 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* CTT WinUtil + O&O ShutUp10++ + Winaero Tweaker — always side by side */}
+        {/* Power Plans */}
+        <UtilCard icon={Power} title="Power Plans" description="Switch your active power plan" delay={0.18}>
+          <div className="space-y-1.5">
+            {PLANS.map((plan) => {
+              const isActive = activePlan === plan.id;
+              const pending = isPending(plan.action);
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => runPlan(plan.id, plan.action)}
+                  disabled={pending}
+                  data-testid={`button-power-${plan.id}`}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-all duration-150",
+                    isActive
+                      ? "bg-primary/10 border-primary/40 text-primary"
+                      : "bg-secondary/40 border-border/50 text-foreground hover:border-primary/30 hover:bg-primary/5"
+                  )}
+                >
+                  <div>
+                    <p className={cn("text-[12px] font-semibold", isActive ? "text-primary" : "text-foreground")}>{plan.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{plan.desc}</p>
+                  </div>
+                  {pending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+                  ) : isActive ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          <div className="pt-1 border-t border-border/30 mt-1">
+            <RunButton action="power-options" label="Open Power Options" pending={isPending("power-options")} onRun={run} />
+          </div>
+        </UtilCard>
+
+        {/* Windows Update */}
+        <UtilCard icon={Globe} title="Windows Update" description="Open and configure Windows Update" delay={0.20}>
+          <RunButton action="windows-update" label="Open Windows Update" pending={isPending("windows-update")} onRun={run} />
+          <div className="pt-1 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-1.5">Update policy (Windows Pro only for Security mode)</p>
+            <Select
+              value={windowsUpdateMode}
+              onValueChange={(val) => {
+                setWindowsUpdateMode(val);
+                localStorage.setItem("util_win_update", val);
+                run(val);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs bg-secondary border-border/60" data-testid="select-windows-update">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border text-xs">
+                <SelectItem value="windows-update-default">Default — All Updates</SelectItem>
+                <SelectItem value="windows-update-security">Security Only (Pro)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </UtilCard>
+
+        {/* ── ROW 4: Third-party Tools (full width) ───────────────────── */}
         <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
 
-          {/* Chris Titus Tech WinUtil — LEFT */}
-          <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.19}>
+          <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.22}>
             <div className="space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Popular open-source utility by Chris Titus Tech. Offers one-click Windows debloat, program installation, system tweaks, and fixes — all in a clean GUI.
@@ -464,8 +521,7 @@ export default function Utilities() {
             </div>
           </UtilCard>
 
-          {/* O&O ShutUp10++ — MIDDLE */}
-          <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.20}>
+          <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.23}>
             <div className="space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Free third-party tool by O&O Software. Provides granular control over 200+ Windows privacy settings beyond what this app covers — telemetry, Microsoft accounts, app permissions, diagnostics, and more.
@@ -504,8 +560,7 @@ export default function Utilities() {
             </div>
           </UtilCard>
 
-          {/* Winaero Tweaker — RIGHT */}
-          <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.21}>
+          <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.24}>
             <div className="space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Free portable tool by Winaero. Unlocks hidden Windows settings not available through Settings or Group Policy — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
@@ -546,8 +601,10 @@ export default function Utilities() {
 
         </div>
 
+        {/* ── ROW 5: Info & Advanced ──────────────────────────────────── */}
+
         {/* System Info */}
-        <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.20}>
+        <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.26}>
           <Button
             size="sm"
             variant="outline"
@@ -586,6 +643,33 @@ export default function Utilities() {
               )}
             </motion.div>
           )}
+        </UtilCard>
+
+        {/* Hardware Monitors */}
+        <UtilCard icon={Activity} title="Hardware Monitors" description="Launch system monitoring & diagnostics tools" delay={0.28}>
+          <RunButton action="hwinfo" label="HWiNFO64" pending={isPending("hwinfo")} onRun={run} />
+          <RunButton action="gpuz" label="GPU-Z" pending={isPending("gpuz")} onRun={run} />
+          <RunButton action="cpuz" label="CPU-Z" pending={isPending("cpuz")} onRun={run} />
+          <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 mt-1">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Launches from your install path. If not installed, opens the download page in your browser.
+            </p>
+          </div>
+        </UtilCard>
+
+        {/* Windows Admin Tools */}
+        <UtilCard icon={Settings2} title="Windows Admin Tools" description="Quick access to system management" delay={0.30}>
+          <RunButton action="msconfig" label="System Configuration (msconfig)" pending={isPending("msconfig")} onRun={run} />
+          <RunButton action="eventvwr" label="Event Viewer" pending={isPending("eventvwr")} onRun={run} />
+          <div className="pt-1 border-t border-border/30">
+            <RunButton action="services" label="Services Manager" pending={isPending("services")} onRun={run} />
+            <div className="mt-1.5">
+              <RunButton action="devmgmt" label="Device Manager" pending={isPending("devmgmt")} onRun={run} />
+            </div>
+            <div className="mt-1.5">
+              <RunButton action="resmon" label="Resource Monitor" pending={isPending("resmon")} onRun={run} />
+            </div>
+          </div>
         </UtilCard>
 
       </div>
