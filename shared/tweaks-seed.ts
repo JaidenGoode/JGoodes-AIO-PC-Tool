@@ -35,11 +35,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Windows Performance Counters",
-    description: "Disables background performance monitoring counters that constantly collect system metrics. Frees up minor CPU overhead.",
+    description: "Disables background performance monitoring counters that constantly collect system metrics. The Perflib counters run continuously even when nothing is querying them. Disabling them frees minor CPU overhead and reduces background data collection.",
     category: "performance",
     isActive: false,
-    warning: null,
-    featureBreaks: "Task Manager performance details may be reduced. Performance monitoring apps affected."
+    warning: "Task Manager's Performance tab and some third-party monitoring tools (HWInfo, MSI Afterburner, GPU-Z) may lose some counter data or display partial readings. If you rely on monitoring software for overclocking or system health, test before applying.",
+    featureBreaks: "Task Manager Performance tab may show limited data. Third-party monitoring tools that rely on Windows performance counters may show reduced metrics."
   },
   {
     title: "Disable Windows File Indexing",
@@ -232,7 +232,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Sets SystemResponsiveness to 0 in the Windows Multimedia SystemProfile. This removes the CPU reservation that Windows normally holds for background services and lets games use the maximum available CPU time. Default Windows value is 20 (decimal). Enabled: 0 — Disabled: 20.",
     category: "gaming",
     isActive: false,
-    warning: null,
+    warning: "Do NOT use this at the same time as 'System Responsiveness & Network Throttling' — both tweaks write the same SystemResponsiveness registry value and will conflict. Choose one: this tweak sets it to 0 (maximum for games); the other sets it to 10.",
     featureBreaks: "Background system tasks get less reserved CPU time. Revert restores Windows default SystemResponsiveness = 20."
   },
   {
@@ -240,8 +240,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "FORTNITE PLAYERS ONLY. Applies Image File Execution Options (IFEO) for FortniteClient-Win64-Shipping.exe: sets CPU priority class to High (5) and I/O priority to High (3). Ensures Fortnite gets elevated CPU and disk access priority over background processes. No effect if Fortnite is not installed.",
     category: "gaming",
     isActive: false,
-    warning: "FORTNITE PLAYERS ONLY — skip this tweak if you do not play Fortnite. High CPU priority (not Realtime) is used — safe and stable. Revert returns Fortnite to Normal priority.",
-    featureBreaks: "Background applications receive lower CPU scheduling while Fortnite is running. No system stability risk — High priority is below Realtime."
+    warning: "FORTNITE PLAYERS ONLY — skip this tweak if you do not play Fortnite. High CPU priority (not Realtime) is used — safe and stable. Revert removes the IFEO override entirely, returning Fortnite to its Windows default (no priority override).",
+    featureBreaks: "Background applications receive lower CPU scheduling while Fortnite is running. No system stability risk — High priority is well below Realtime. Revert deletes the IFEO keys, fully restoring the Windows default state."
   },
   {
     title: "Global Timer Resolution for Gaming",
@@ -296,8 +296,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Stops and disables four background Xbox services that run even if you don't use Xbox features: XboxGipSvc, XblAuthManager, XblGameSave, and XboxNetApiSvc. These silently consume RAM and CPU cycles in the background on every Windows install.",
     category: "gaming",
     isActive: false,
-    warning: null,
-    featureBreaks: "Xbox Live features, Xbox controller remapping via Xbox Accessories app, and Xbox Live game saves won't function. Can be re-enabled at any time in Services.msc."
+    warning: "Do NOT apply if you use Xbox Play Anywhere games, Xbox Live cloud saves, or the Xbox Accessories app to configure your Xbox controller. Reverting re-enables all four services.",
+    featureBreaks: "Xbox Live features, Xbox controller remapping via Xbox Accessories app, and Xbox Live game saves will not function until reverted. Can be re-enabled at any time in Services.msc or via the Revert button."
   },
 
   // ── SYSTEM ───────────────────────────────────────────────────────────────────
@@ -306,8 +306,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Completely disables the IPv6 networking protocol stack on all network adapters. Forces all connections to use IPv4 only.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Services and websites that use IPv6 exclusively may be unreachable. Most consumer networks are IPv4 so impact is minimal."
+    warning: "Some ISPs (particularly in regions with limited IPv4 availability) and some VPN services assign IPv6 as the primary address — disabling IPv6 on these connections can break internet access or cause DNS failures. Check your connection type before applying. If your internet stops working after applying, revert immediately.",
+    featureBreaks: "IPv6-only services or websites may be unreachable. Some VPN configurations that rely on IPv6 tunneling will not function. Most consumer IPv4 networks are unaffected."
   },
   {
     title: "Prefer IPv4 over IPv6",
@@ -335,11 +335,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Windows TCP Auto-Tuning",
-    description: "Disables Windows TCP receive window auto-tuning which can sometimes cause higher latency on certain network configurations. Can improve stability and consistency of network connections.",
+    description: "Disables Windows TCP receive window auto-tuning which dynamically adjusts the TCP receive window size. Auto-tuning can sometimes over-compensate on certain networks and cause latency spikes. Disabling it sets a fixed receive window, which can improve consistency and reduce jitter in online games.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Large file downloads may be slightly slower. Most beneficial for gaming latency. Reversible with: netsh int tcp set global autotuninglevel=normal"
+    warning: "May reduce large file download speeds on high-latency connections (e.g. satellite internet or very long-distance servers). Test your download speeds after applying — if throughput drops significantly, revert. Broadband cable and fibre connections are generally unaffected.",
+    featureBreaks: "Large file download throughput may be reduced on high-latency connections. Gaming latency consistency typically improves. Revert restores Windows default (autotuninglevel=normal)."
   },
   {
     title: "Disable Startup Program Delay",
@@ -354,8 +354,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Stops Windows from automatically running maintenance tasks (disk defragmentation, Windows Defender scans, system diagnostics) in the background. These tasks can cause unexpected CPU and disk spikes during gaming or work.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Automatic maintenance disabled. Remember to occasionally run Disk Cleanup and Windows Defender manually. Automatic defrag disabled (schedule manually if needed for HDD)."
+    warning: "Automatic Windows Defender scans will no longer run on their own — you must open Windows Security and run manual scans periodically. Also disable scheduled defragmentation manually if needed for HDDs. This is safe if you are disciplined about running occasional scans and maintenance manually.",
+    featureBreaks: "Automatic maintenance disabled. Windows Defender scheduled scans stop. Disk Cleanup and defragmentation must be run manually. Recommended: run a manual Defender scan at least once a week."
   },
   {
     title: "Disable Power Throttling",
@@ -559,11 +559,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Optimize TCP/IP Network Stack",
-    description: "Applies multiple TCP/IP optimizations: sets optimal TTL value (64), enables Path MTU Discovery for automatic packet size optimization, enables Selective ACK (SACK) for faster error recovery, and optimizes TCP data retransmission. Improves overall network throughput and reduces latency.",
+    description: "Applies multiple TCP/IP optimizations: sets TTL to 64 (standard for most internet traffic), enables Path MTU Discovery for automatic packet size optimization, enables Selective ACK (SACK) for faster error recovery, and tunes TCP retransmission. Improves overall network throughput and reduces latency on broadband connections.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Network behavior is optimized for modern connections. Safe for all network types."
+    warning: "Path MTU Discovery relies on ICMP packets — if your router or firewall blocks all ICMP, this may cause connection stalls to certain servers. Also, changing TTL from Windows default (128) to 64 is generally safe but may affect traceroute hop-count fingerprinting. Test your connection after applying.",
+    featureBreaks: "TTL changed from Windows default 128 to 64. ICMP-blocking firewalls may interfere with Path MTU Discovery. All optimizations are reversible — revert restores Windows defaults."
   },
   {
     title: "Optimize DNS Resolution",
@@ -617,11 +617,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Enable Receive Side Scaling (RSS)",
-    description: "Enables Receive Side Scaling which distributes incoming network packet processing across multiple CPU cores instead of funneling all traffic through a single core. On high-speed connections (100Mbps+) a single core can become a bottleneck. RSS eliminates this and reduces CPU latency spikes during heavy online gaming or streaming.",
+    description: "Enables Receive Side Scaling which distributes incoming network packet processing across multiple CPU cores instead of funneling all traffic through a single core. On high-speed connections (100Mbps+) a single core can become a bottleneck. RSS eliminates this and reduces CPU latency spikes during heavy online gaming or streaming. RSS is enabled by default in Windows 10/11 — this tweak ensures it is on and explicitly enables it on all physical adapters.",
     category: "network",
     isActive: false,
     warning: null,
-    featureBreaks: "No negative effects. Improves multi-core CPU utilization for network traffic. Effective on connections of 100Mbps and above."
+    featureBreaks: "No negative effects. Improves multi-core CPU utilization for network traffic. Effective on connections of 100Mbps and above. Revert also keeps RSS enabled (Windows default) — RSS remains functional after reverting."
   },
   {
     title: "Disable Delivery Optimization Service",
@@ -668,11 +668,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   // ── SERVICES (Windows Service Optimization) ───────────────────────────────
   {
     title: "Disable BranchCache (PeerDistSvc)",
-    description: "Disables the BranchCache service which caches content from remote file and web servers on a local network. Only used in enterprise/corporate environments with branch offices.",
+    description: "Disables the BranchCache service which caches content from remote file and web servers on a local network for branch office environments. BranchCache allows multiple PCs in an office to share downloaded content locally instead of each re-downloading from a remote server. Completely irrelevant for home and gaming PCs.",
     category: "services",
     isActive: false,
-    warning: null,
-    featureBreaks: "BranchCache peer-to-peer content caching disabled. No effect on home networks."
+    warning: "CORPORATE USERS: If your workplace uses BranchCache to cache intranet content or files at a branch office location, disabling this will cause each PC to download content directly from the server instead of using the local cache. No impact on home networks.",
+    featureBreaks: "BranchCache peer-to-peer content caching disabled. Corporate branch office content caching will not function. No effect on home networks, gaming, or internet access."
   },
   {
     title: "Disable iSCSI Initiator (MSiSCSI)",
@@ -716,11 +716,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Remote Registry (RemoteRegistry)",
-    description: "Disables the Remote Registry service which allows remote users to modify Windows registry settings on this computer over the network. Disabling this improves security by preventing remote registry access.",
+    description: "Disables the Remote Registry service which allows remote users and tools to read and modify Windows registry settings on this computer over the network. On a personal PC this is a security risk with no legitimate benefit — disabling it closes this remote access channel.",
     category: "services",
     isActive: false,
-    warning: null,
-    featureBreaks: "Remote registry editing over the network disabled. Improves security with no downside for personal use."
+    warning: "Some GPU monitoring and overclocking tools (including certain remote instances of EVGA Precision, MSI Afterburner server mode, and IT management software) communicate via the Remote Registry service. If a specific tool stops working after applying, try reverting this tweak first.",
+    featureBreaks: "Remote registry access from other PCs on the network is blocked. Improves security. No effect on local registry tools (regedit, registry-modifying apps)."
   },
   {
     title: "Disable Smart Card Removal Policy (SCPolicySvc)",
@@ -740,11 +740,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Windows Remote Management (WinRM)",
-    description: "Disables the Windows Remote Management (WS-Management) service used for remote PowerShell sessions and server management. Only needed in enterprise IT administration environments.",
+    description: "Disables the Windows Remote Management (WS-Management) service used for remote PowerShell sessions and server management. Only needed in enterprise IT administration environments. On personal or gaming PCs, this service runs idle with no purpose.",
     category: "services",
     isActive: false,
-    warning: null,
-    featureBreaks: "Remote PowerShell sessions and WinRM-based management tools disabled. No effect on personal use."
+    warning: "Do NOT disable if you use PowerShell Remoting (Enter-PSSession, Invoke-Command) to remotely manage other PCs, or if you rely on any IT management software (Ansible, Microsoft Endpoint Manager, SCCM) that communicates over WinRM.",
+    featureBreaks: "PowerShell remoting and WinRM-based remote management tools disabled. No effect on local PowerShell, gaming, or any standard desktop application."
   },
   {
     title: "Disable Offline Files (CscService)",
@@ -828,11 +828,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable IP Helper Service (iphlpsvc)",
-    description: "Disables the IP Helper service which provides automatic IPv6 connectivity (Teredo, 6to4, ISATAP tunnel management) and assists with network configuration. On networks that do not use these legacy IPv6 tunneling technologies, the service runs permanently in the background for no benefit.",
+    description: "Disables the IP Helper service which provides automatic IPv6 connectivity via Teredo, 6to4, and ISATAP tunnel management. On modern home networks with native IPv4 broadband and no requirement for legacy IPv6 tunneling, this service runs permanently for no benefit.",
     category: "services",
     isActive: false,
-    warning: "If you rely on automatic IPv6 tunnel connectivity (Teredo/6to4) for Xbox Live or specific VPN setups, this may affect those connections.",
-    featureBreaks: "IPv6 tunneling assistance and automatic transition technology management disabled. Native IPv4 and IPv6 connections are unaffected."
+    warning: "Do NOT disable if you use Xbox Live connectivity that requires Teredo NAT traversal, or if your VPN client uses 6to4/ISATAP tunneling. Also note: some VPN clients and Windows network diagnostic tools rely on this service. If your VPN or internet connection fails after applying, revert this tweak first.",
+    featureBreaks: "Automatic IPv6 tunneling (Teredo, 6to4, ISATAP) disabled. Xbox Live NAT traversal that relies on Teredo may be affected. Native IPv4 and direct IPv6 connections are completely unaffected."
   },
   {
     title: "Disable Diagnostic Policy Service (DPS)",
@@ -891,42 +891,42 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Disables Interrupt Moderation (also called Interrupt Coalescing) on physical network adapters. Interrupt Moderation batches multiple network interrupt signals before triggering the CPU, adding latency to every packet. Disabling it ensures each packet triggers an immediate CPU interrupt — critical for competitive gaming and low-latency applications.",
     category: "network",
     isActive: false,
-    warning: null,
-    featureBreaks: "Slightly higher CPU utilization from the network adapter under heavy load. Reduces latency but increases CPU interrupts. Ideal for gaming; less impactful for large file transfers."
+    warning: "LAPTOP USERS: Disabling interrupt moderation increases the frequency of CPU interrupts from your network adapter, which can slightly raise power consumption. Only apply on laptops when plugged in. Desktop users have no drawback. On some budget or older NIC models this setting may have no effect if the driver does not expose the interrupt moderation property.",
+    featureBreaks: "Slightly higher CPU utilization from the network adapter under heavy load. Reduces latency but increases CPU interrupt frequency. Ideal for competitive gaming on desktop; test on laptops."
   },
 
   // ── SERVICES (Windows Service Optimization) ───────────────────────────────
   {
     title: "Disable Secondary Logon (seclogon)",
-    description: "Disables the Secondary Logon service which enables the Run as different user functionality. Most home and gaming PC users never use this feature — the service sits idle consuming memory and is an unnecessary attack surface.",
+    description: "Disables the Secondary Logon service which enables the Run as different user functionality. Most home and gaming PC users never use this feature — the service sits idle consuming memory and is an unnecessary attack surface for privilege escalation exploits.",
     category: "services",
     isActive: false,
-    warning: null,
-    featureBreaks: "The Run as different user right-click option will not work. No effect for personal or gaming use."
+    warning: "Some software installers and enterprise tools use the 'Run as different user' or 'Run as administrator' flow that relies on Secondary Logon. If any of your applications fail to launch or show UAC errors after applying, re-enable this service.",
+    featureBreaks: "Right-click 'Run as different user' option will not work. Some software installers that use this method for elevated installs may fail. Standard UAC 'Run as administrator' via your own account is unaffected."
   },
   {
     title: "Disable WMI Performance Adapter (wmiApSrv)",
     description: "Disables the WMI Performance Adapter which provides performance counter information through Windows Management Instrumentation. Only required by third-party performance monitoring and enterprise management software — not needed for gaming or standard use.",
     category: "services",
     isActive: false,
-    warning: null,
-    featureBreaks: "Third-party performance monitoring tools that query WMI counters may not read data. No effect on gaming or standard applications."
+    warning: "If you use hardware monitoring tools such as HWiNFO, AIDA64, Open Hardware Monitor, or enterprise WMI-based management software, those tools may lose access to certain WMI performance data. Also affects Windows Task Manager's ability to display some CPU and process counter values.",
+    featureBreaks: "Third-party WMI-based monitoring tools may show missing or partial performance data. Task Manager may display limited metrics. No effect on gaming, browsing, or standard desktop use."
   },
   {
     title: "Disable TCP/IP NetBIOS Helper (lmhosts)",
     description: "Disables the TCP/IP NetBIOS Helper service which enables legacy NetBIOS over TCP/IP hostname resolution — a pre-DNS Windows networking remnant from the 1990s. On modern networks using DNS for name resolution, this service provides zero benefit and runs permanently in the background.",
     category: "services",
     isActive: false,
-    warning: null,
-    featureBreaks: "Legacy NetBIOS hostname resolution disabled. Modern network shares accessed by IP or DNS name are fully unaffected."
+    warning: "CORPORATE/VPN USERS: Some VPN setups and Windows domain environments use NetBIOS for internal hostname resolution (e.g. accessing \\\\servername\\share by name rather than IP). If you work from home via VPN and access company network shares, verify your VPN uses DNS before disabling this.",
+    featureBreaks: "Legacy NetBIOS hostname resolution disabled. Network shares must be accessed by IP address or DNS name rather than NetBIOS name. Modern home and gaming networks are completely unaffected."
   },
   {
     title: "Disable Telephony Service (TapiSrv)",
     description: "Disables the Telephony (TAPI) service which manages physical telephone lines, modems, and dial-up connections. On any PC without a physical modem or legacy dial-up hardware, this service runs at startup permanently for no reason.",
     category: "services",
     isActive: false,
-    warning: null,
-    featureBreaks: "Modem, dial-up, and TAPI-based VoIP applications will not work. No effect on broadband internet or modern VoIP apps like Discord, Teams, or Zoom."
+    warning: "Do NOT disable if you use a physical USB or internal modem, dial-up internet connection, or any TAPI-based VoIP software (older business phone systems). Modern VoIP applications like Discord, Teams, Zoom, and Google Meet do NOT use TAPI and are completely unaffected.",
+    featureBreaks: "Physical modem, dial-up connections, and legacy TAPI-based VoIP apps will not work. Modern broadband internet, Discord, Teams, Zoom, and all standard internet communication are unaffected."
   },
   {
     title: "Disable Still Image Service (StiSvc)",
@@ -967,8 +967,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Configures Windows to zero out the page file (virtual memory swap file) every time the PC shuts down. This prevents sensitive data that was in RAM (passwords, encryption keys, document contents) from persisting in the page file on disk after shutdown. Also ensures a clean page file state on every boot.",
     category: "performance",
     isActive: false,
-    warning: "Adds a few seconds to shutdown time as Windows clears the page file. Only noticeable on systems with large page files.",
-    featureBreaks: "Shutdown takes slightly longer. Page file is wiped clean on every shutdown — improves security and ensures fresh virtual memory on boot."
+    warning: "This will significantly extend shutdown time on systems with large amounts of RAM. Clearing the page file takes roughly 10-30 seconds per 8GB of page file size — on a 32GB RAM system with a full page file, shutdown can take 2-5 minutes longer. Only recommended for users who store sensitive data and prioritize security over fast shutdowns.",
+    featureBreaks: "Shutdown time significantly increases based on your page file size. Page file is wiped clean on every shutdown. Improves security by preventing data recovery from the swap file."
   },
   {
     title: "Disable Transparency Effects",
