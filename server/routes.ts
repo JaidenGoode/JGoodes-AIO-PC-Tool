@@ -60,17 +60,25 @@ async function seedTweaksIfNeeded() {
       const removed = await storage.removeTweaksByCategory("privacy");
       if (removed > 0) console.log(`[seed] Removed ${removed} legacy privacy tweaks`);
 
-      const existingTitles = new Set((await storage.getTweaks()).map((t) => t.title));
+      const freshExisting = await storage.getTweaks();
+      const existingTitles = new Set(freshExisting.map((t) => t.title));
+      const existingByTitle = new Map(freshExisting.map((t) => [t.title, t]));
       let added = 0;
+      let categoryUpdated = 0;
       for (const tweak of TWEAKS_SEED) {
         if (!existingTitles.has(tweak.title)) {
           await storage.createTweak(tweak);
           added++;
+        } else {
+          const existing = existingByTitle.get(tweak.title);
+          if (existing && existing.category !== tweak.category) {
+            await storage.updateTweak(existing.id, { category: tweak.category });
+            categoryUpdated++;
+          }
         }
       }
-      if (added > 0) {
-        console.log(`[seed] Added ${added} new tweaks`);
-      }
+      if (added > 0) console.log(`[seed] Added ${added} new tweaks`);
+      if (categoryUpdated > 0) console.log(`[seed] Updated category for ${categoryUpdated} tweaks`);
     }
   } catch (err) {
     console.error("[seed] Failed to seed tweaks:", err);
