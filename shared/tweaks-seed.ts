@@ -176,7 +176,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Sets NetworkThrottlingIndex to 10 and SystemResponsiveness to 10 in the Windows Multimedia System Profile registry keys. NetworkThrottlingIndex prevents Windows from aggressively throttling network packets for multimedia apps, and SystemResponsiveness reserves less CPU for background tasks — both reduce latency and improve real-time gaming performance.",
     category: "gaming",
     isActive: false,
-    warning: null,
+    warning: "Do not use this at the same time as 'System Responsiveness for Games' — both tweaks write the same SystemResponsiveness registry value. If both are applied, whichever runs last wins. Choose one: this tweak sets SystemResponsiveness to 10; the other sets it to 0.",
     featureBreaks: "Slightly more CPU time allocated to foreground tasks. Background downloads/tasks may be marginally slower during gaming."
   },
   {
@@ -237,11 +237,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Fortnite Process High Priority",
-    description: "FORTNITE PLAYERS ONLY. Applies Image File Execution Options (IFEO) for FortniteClient-Win64-Shipping.exe: sets CPU priority class to Realtime (3) and I/O priority to High (3). Ensures Fortnite always gets maximum CPU and disk access priority over every other process. No effect if Fortnite is not installed.",
+    description: "FORTNITE PLAYERS ONLY. Applies Image File Execution Options (IFEO) for FortniteClient-Win64-Shipping.exe: sets CPU priority class to High (5) and I/O priority to High (3). Ensures Fortnite gets elevated CPU and disk access priority over background processes. No effect if Fortnite is not installed.",
     category: "gaming",
     isActive: false,
-    warning: "FORTNITE PLAYERS ONLY — skip this tweak if you do not play Fortnite. ⚠️ Realtime CPU priority is the highest possible level. If Fortnite crashes or freezes, the system may become temporarily unresponsive until the process is killed.",
-    featureBreaks: "All other applications get lower CPU priority while Fortnite is running. Background apps may feel sluggish in-game."
+    warning: "FORTNITE PLAYERS ONLY — skip this tweak if you do not play Fortnite. High CPU priority (not Realtime) is used — safe and stable. Revert returns Fortnite to Normal priority.",
+    featureBreaks: "Background applications receive lower CPU scheduling while Fortnite is running. No system stability risk — High priority is below Realtime."
   },
   {
     title: "Global Timer Resolution for Gaming",
