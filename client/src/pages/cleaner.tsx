@@ -6,7 +6,7 @@ import {
   Globe, HardDrive, RotateCcw, ScanLine, Sparkles,
   CheckSquare, Square, Loader2, CheckCircle2, AlertCircle,
   Cpu, RefreshCw, Database, Layers, Archive, History,
-  MessageSquare, Music, Gamepad2, Download, Film,
+  MessageSquare, Music, Gamepad2, Download, Film, Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -106,8 +106,9 @@ export default function CleanerPage() {
     },
     onSuccess: (data) => {
       setScanData(data);
+      // Auto-select only categories that were found AND have autoSelect !== false
       const foundIds = new Set(
-        data.categories.filter((c) => c.found).map((c) => c.id)
+        data.categories.filter((c) => c.found && c.autoSelect !== false).map((c) => c.id)
       );
       setSelected(foundIds);
       setState("scanned");
@@ -470,13 +471,22 @@ export default function CleanerPage() {
                       )} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[13px] font-semibold text-foreground leading-none">{cat.name}</span>
                         {!cat.found && (
                           <span className="text-[10px] text-muted-foreground/40 font-mono">Nothing found</span>
                         )}
+                        {cat.autoSelect === false && cat.found && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 leading-none shrink-0">
+                            <Info className="h-2.5 w-2.5" />
+                            Manual
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-0.5">{cat.description}</p>
+                      {cat.warnNote && cat.found && (
+                        <p className="text-[10px] text-amber-400/70 mt-0.5 leading-relaxed">{cat.warnNote}</p>
+                      )}
                       {cat.found && (
                         <div className="mt-1.5">
                           <UsageBar pct={pct} active={isSelected} />
