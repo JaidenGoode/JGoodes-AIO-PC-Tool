@@ -72,6 +72,7 @@ export default function Utilities() {
   const [showSystemInfo, setShowSystemInfo] = useState(false);
   const [shutup10Status, setShutup10Status] = useState<"idle" | "downloading" | "done" | "error">("idle");
   const [titusStatus, setTitusStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [winaerotStatus, setWinaerotStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -167,6 +168,53 @@ export default function Utilities() {
       toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
     }
     setTimeout(() => setTitusStatus("idle"), 5000);
+  };
+
+  const launchWinaerot = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({
+        title: "Desktop app required",
+        description: "Winaero Tweaker can only launch from the installed desktop app.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setWinaerotStatus("downloading");
+    const script = [
+      `$ErrorActionPreference = 'Stop'`,
+      `$destDir = Join-Path $env:TEMP "WinaeroTweaker"`,
+      `$zip = Join-Path $env:TEMP "WinaeroTweaker.zip"`,
+      `$exe = Join-Path $destDir "WinaeroTweaker.exe"`,
+      `if (-not (Test-Path $exe)) {`,
+      `  try {`,
+      `    $wc = New-Object System.Net.WebClient`,
+      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")`,
+      `    $wc.DownloadFile("https://winaerotweaker.com/download/", $zip)`,
+      `    if (Test-Path $destDir) { Remove-Item $destDir -Recurse -Force }`,
+      `    Expand-Archive -Path $zip -DestinationPath $destDir -Force`,
+      `  } catch {`,
+      `    Write-Error "Download failed: $_"`,
+      `    exit 1`,
+      `  }`,
+      `}`,
+      `$exeFound = Get-ChildItem $destDir -Filter "WinaeroTweaker.exe" -Recurse | Select-Object -First 1`,
+      `if (-not $exeFound) { Write-Error "WinaeroTweaker.exe not found after extraction"; exit 1 }`,
+      `Start-Process -FilePath $exeFound.FullName -WindowStyle Normal`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.success) {
+        setWinaerotStatus("done");
+        toast({ title: "Winaero Tweaker launched", description: "The app window should appear momentarily." });
+      } else {
+        setWinaerotStatus("error");
+        toast({ title: "Launch failed", description: "Could not download or launch Winaero Tweaker. Check your internet connection.", variant: "destructive" });
+      }
+    } catch {
+      setWinaerotStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setWinaerotStatus("idle"), 4000);
   };
 
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
@@ -378,8 +426,8 @@ export default function Utilities() {
           </Select>
         </UtilCard>
 
-        {/* CTT WinUtil + O&O ShutUp10++ — always side by side */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* CTT WinUtil + O&O ShutUp10++ + Winaero Tweaker — always side by side */}
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
 
           {/* Chris Titus Tech WinUtil — LEFT */}
           <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.19}>
@@ -421,7 +469,7 @@ export default function Utilities() {
             </div>
           </UtilCard>
 
-          {/* O&O ShutUp10++ — RIGHT */}
+          {/* O&O ShutUp10++ — MIDDLE */}
           <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.20}>
             <div className="space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -453,6 +501,46 @@ export default function Utilities() {
                   <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
                 ) : (
                   <><Download className="h-3.5 w-3.5" /> Download & Launch ShutUp10++</>
+                )}
+              </Button>
+              {!window.electronAPI && (
+                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+              )}
+            </div>
+          </UtilCard>
+
+          {/* Winaero Tweaker — RIGHT */}
+          <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.21}>
+            <div className="space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Free portable tool by Winaero. Unlocks hidden Windows settings not available through Settings or Group Policy — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads a zip from winaerotweaker.com and extracts it to your Temp folder — takes 10–30s. Subsequent launches are instant (cached).</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={launchWinaerot}
+                disabled={winaerotStatus === "downloading"}
+                className={cn(
+                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                  winaerotStatus === "done"
+                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                    : winaerotStatus === "error"
+                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                )}
+                data-testid="button-launch-winaerot"
+              >
+                {winaerotStatus === "downloading" ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading &amp; Launching...</>
+                ) : winaerotStatus === "done" ? (
+                  <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                ) : winaerotStatus === "error" ? (
+                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                ) : (
+                  <><Download className="h-3.5 w-3.5" /> Download & Launch Winaero Tweaker</>
                 )}
               </Button>
               {!window.electronAPI && (
