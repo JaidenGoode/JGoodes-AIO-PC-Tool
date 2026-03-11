@@ -745,7 +745,7 @@ $d['Disable Notification Center']=creg 'HKCU:\Software\Microsoft\Windows\Current
 $d['Reduce Keyboard Input Delay']=creg 'HKCU:\Control Panel\Keyboard' 'KeyboardDelay' '0'
 $d['Increase Network Buffer Size']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' 'SizReqBuf' 65535
 $d['Optimize TCP/IP Network Stack']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters' 'DefaultTTL' 64
-$d['Optimize DNS Resolution']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'MaxCacheTtl' 86400
+$d['Optimize DNS Resolution']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'MaxNegativeCacheTtl' 5
 $d['Unlock Reserved Network Bandwidth']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched' 'NonBestEffortLimit' 0
 $d['Increase Browser Connection Limits']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' 'MaxConnectionsPerServer' 16
 
