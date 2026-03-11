@@ -369,10 +369,7 @@ function getCleanCategories(): CleanCategory[] {
         id: "deliveryopt",
         name: "Delivery Optimization Cache",
         description: "Windows P2P update distribution cache used to share updates with other PCs",
-        paths: [
-          "C:\\Windows\\ServiceProfiles\\NetworkService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization\\Cache",
-          "C:\\Windows\\SoftwareDistribution\\DeliveryOptimization",
-        ],
+        paths: [],
       },
       {
         id: "adobe",
@@ -983,9 +980,18 @@ $d | ConvertTo-Json -Compress`;
           let totalCount = 0;
 
           if (cat.id === "recycle" && process.platform === "win32") {
-            // Shell.Application CSIDL_BITBUCKET — current user's bin across all drives
+            // Enumerate $RECYCLE.BIN\{SID} on every drive — reliable across all Windows versions
             const raw = await runPowerShell(
-              `try{$p=(New-Object -ComObject Shell.Application).Namespace(10).Self.Path;$r=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object -Property Length -Sum -EA SilentlyContinue;Write-Output "$([long]$r.Sum) $($r.Count)"}catch{Write-Output "0 0"}`,
+              `try{$sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value;$tot=0;$cnt=0;Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|ForEach-Object{try{$rb=$_.Root+'$RECYCLE.BIN'+[IO.Path]::DirectorySeparatorChar+$sid;if(Test-Path $rb -EA SilentlyContinue){$items=Get-ChildItem $rb -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum;if($s){$tot+=[long]$s};$cnt+=$items.Count}}catch{}};Write-Output "$tot $cnt"}catch{Write-Output "0 0"}`,
+              8000
+            ).catch(() => "0 0");
+            const parts = raw.trim().split(/\s+/);
+            totalSize += Math.max(0, parseInt(parts[0]) || 0);
+            totalCount += Math.max(0, parseInt(parts[1]) || 0);
+          } else if (cat.id === "deliveryopt" && process.platform === "win32") {
+            // Get-DeliveryOptimizationStatus is available on Win10 1709+ and works without admin
+            const raw = await runPowerShell(
+              `try{$st=Get-DeliveryOptimizationStatus -EA Stop;$sz=($st|Measure-Object -Property FileSizeInCache -Sum -EA SilentlyContinue).Sum;if(-not $sz){$sz=0};Write-Output "$sz $($st.Count)"}catch{try{$items=Get-ChildItem 'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization' -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum;if(-not $s){$s=0};Write-Output "$s $($items.Count)"}catch{Write-Output "0 0"}}`,
               8000
             ).catch(() => "0 0");
             const parts = raw.trim().split(/\s+/);
@@ -1072,11 +1078,12 @@ $d | ConvertTo-Json -Compress`;
         if (!cat) continue;
         let freed = 0;
 
-        const isWin        = process.platform === "win32";
-        const isWupdate    = id === "wupdate"    && isWin;
-        const isRecycle    = id === "recycle"    && isWin;
-        const isPrefetch   = id === "prefetch"   && isWin;
-        const isThumbnails = id === "thumbnails" && isWin;
+        const isWin          = process.platform === "win32";
+        const isWupdate      = id === "wupdate"      && isWin;
+        const isRecycle      = id === "recycle"      && isWin;
+        const isPrefetch     = id === "prefetch"     && isWin;
+        const isThumbnails   = id === "thumbnails"   && isWin;
+        const isDeliveryOpt  = id === "deliveryopt"  && isWin;
 
         if (isWupdate) {
           // Stop only wuauserv and bits — minimal disruption
@@ -1089,14 +1096,18 @@ $d | ConvertTo-Json -Compress`;
         }
 
         if (isRecycle) {
-          // Get current user's recycle bin size via PowerShell Shell namespace (accurate, current-user only)
+          // Measure using same drive-enumeration approach as scan
           const sizeRaw = await runPowerShell(
-            `try{$s=(New-Object -ComObject Shell.Application).Namespace(10).Self.Path;$b=(Get-ChildItem $s -Recurse -Force -EA SilentlyContinue|Measure-Object -Property Length -Sum).Sum;if($b){$b}else{0}}catch{0}`,
+            `try{$sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value;$tot=0;Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|ForEach-Object{try{$rb=$_.Root+'$RECYCLE.BIN'+[IO.Path]::DirectorySeparatorChar+$sid;if(Test-Path $rb -EA SilentlyContinue){$s=(Get-ChildItem $rb -Recurse -Force -EA SilentlyContinue|Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum;if($s){$tot+=[long]$s}}}catch{}};$tot}catch{0}`,
             8000
           ).catch(() => "0");
           freed += Math.max(0, parseInt(sizeRaw.trim()) || 0);
-          // Clear ONLY current user's recycle bin — safe, does not touch other users
           await runPowerShell(`Clear-RecycleBin -Force -ErrorAction SilentlyContinue`, 8000).catch(() => {});
+        } else if (isDeliveryOpt) {
+          // Measure size first, then stop DoSvc, wipe cache, restart service
+          const psScript = `try{$st=Get-DeliveryOptimizationStatus -EA SilentlyContinue;$sz=0;if($st){$m=($st|Measure-Object -Property FileSizeInCache -Sum -EA SilentlyContinue).Sum;if($m){$sz=[long]$m}};Stop-Service DoSvc -Force -EA SilentlyContinue;Remove-Item 'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\Cache' -Recurse -Force -EA SilentlyContinue;Remove-Item 'C:\\Windows\\SoftwareDistribution\\DeliveryOptimization\\FileSharingCache' -Recurse -Force -EA SilentlyContinue;Start-Service DoSvc -EA SilentlyContinue;Write-Output $sz}catch{Write-Output 0}`;
+          const result = await runPowerShell(psScript, 15000).catch(() => "0");
+          freed += Math.max(0, parseInt(result.trim()) || 0);
         } else if (isThumbnails) {
           // thumbcache_*.db files are locked by Explorer.exe — stop Explorer, delete, restart
           const psScript = `
