@@ -713,7 +713,7 @@ $d['Disable IPv6']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Paramete
 try{$ipv6v=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' -EA Stop).DisabledComponents;$d['Prefer IPv4 over IPv6']=if($ipv6v -eq 32){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
 # SSD TRIM: detection omitted — apply/revert both set DisableDeleteNotify=0 (Windows default), DB is authoritative
 $d['Disable Web Search in Windows Search']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0
-try{$tcp=((netsh int tcp show global 2>$null) -join ' ');$d['Disable Windows TCP Auto-Tuning']=if($tcp -match 'Auto-Tuning.+disabled'){1}else{0}}catch{$d['Disable Windows TCP Auto-Tuning']=0}
+# TCP Auto-Tuning: detection omitted — netsh reports enabled on Win11 default even when reverted, DB is authoritative
 $d['Disable Startup Program Delay']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0
 $d['Disable Windows Automatic Maintenance']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance' 'MaintenanceDisabled' 1
 $d['Disable Power Throttling']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling' 'PowerThrottlingOff' 1
@@ -858,7 +858,7 @@ try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Set TSC Sync Policy (Precise Game
 $d['Disable GameInput Service (gaminputsvc)']=csvc 'gaminputsvc'
 
 # Network (Razer Cortex Speed Up style)
-try{$tcpg=(netsh int tcp show global 2>$null) -join ' ';$d['Enable TCP Fast Open']=if($tcpg -imatch 'Fast Open.*Enabled'){1}else{0}}catch{$d['Enable TCP Fast Open']=0}
+# TCP Fast Open: detection omitted — Win11 has Fast Open enabled by default so detection always fires, DB is authoritative
 try{
   $imOff=0
   Get-NetAdapter -Physical -EA Stop | ForEach-Object {
