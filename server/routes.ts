@@ -343,16 +343,6 @@ function getCleanCategories(): CleanCategory[] {
         ],
       },
       {
-        id: "spotify",
-        name: "Spotify Cache",
-        description: "Spotify local audio and image cache (can grow to several GB)",
-        paths: [
-          path.join(local, "Spotify", "Storage"),
-          path.join(local, "Spotify", "Data"),
-          path.join(roaming, "Spotify", "Storage"),
-        ],
-      },
-      {
         id: "gamelaunchers",
         name: "Game Launcher Cache",
         description: "Steam store page cache and Epic Games Launcher web cache files",
@@ -370,19 +360,6 @@ function getCleanCategories(): CleanCategory[] {
         name: "Delivery Optimization Cache",
         description: "Windows P2P update distribution cache used to share updates with other PCs",
         paths: [],
-      },
-      {
-        id: "adobe",
-        name: "Adobe Media Cache",
-        description: "Adobe Premiere, After Effects, and Media Encoder preview and media cache files (can be many GB)",
-        paths: [
-          path.join(roaming, "Adobe", "Common", "Media Cache"),
-          path.join(roaming, "Adobe", "Common", "Media Cache Files"),
-          path.join(local, "Adobe", "Common", "Media Cache"),
-          path.join(local, "Adobe", "Common", "Media Cache Files"),
-          path.join(local, "Adobe", "After Effects CC", "media cache"),
-          path.join(roaming, "Adobe", "After Effects CC", "media cache"),
-        ],
       },
       {
         id: "recycle",
