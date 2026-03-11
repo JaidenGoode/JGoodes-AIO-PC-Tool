@@ -246,6 +246,14 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive fewer scheduler slots while a game is running. No side effects outside of gaming."
   },
   {
+    title: "CPU Priority for Games",
+    description: "Sets the CPU Priority value in the Windows Multimedia SystemProfile Tasks\\Games entry to 6 (High). This raises the CPU scheduling priority for any process registered as a game, ensuring it gets more CPU time over background tasks. Default Windows value is 2.",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Background applications receive fewer CPU scheduling slots while a game is running. No side effects outside of gaming."
+  },
+  {
     title: "High Scheduling Category for Gaming",
     description: "Sets the Scheduling Category for the Windows Multimedia SystemProfile Tasks\\Games entry to High. This tells the Windows scheduler to give game processes a higher-priority scheduling tier, reducing latency and improving frame consistency compared to the default Medium category.",
     category: "gaming",
