@@ -319,7 +319,6 @@ function getCleanCategories(): CleanCategory[] {
           path.join(local, "Spotify", "Storage"),
           path.join(local, "Spotify", "Data"),
           path.join(roaming, "Spotify", "Storage"),
-          path.join(roaming, "Spotify", "Users"),
         ],
       },
       {
@@ -967,16 +966,15 @@ $d | ConvertTo-Json -Compress`;
           let totalCount = 0;
 
           if (cat.id === "recycle" && process.platform === "win32") {
-            // Native Node.js: read $Recycle.Bin on all drives directly
-            const drives = ["C:", "D:", "E:", "F:", "G:"];
-            for (const drv of drives) {
-              const binPath = `${drv}\\$Recycle.Bin`;
-              try {
-                const sub = await getDirSize(binPath);
-                totalSize += sub.size;
-                totalCount += sub.count;
-              } catch {}
-            }
+            // Use PowerShell Shell.Application namespace to get CURRENT USER's recycle bin size only
+            // (matches exactly what Clear-RecycleBin will clean)
+            const raw = await runPowerShell(
+              `try{$p=(New-Object -ComObject Shell.Application).Namespace(10).Self.Path;$r=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object -Property Length -Sum -EA SilentlyContinue;Write-Output "$([long]$r.Sum) $($r.Count)"}catch{Write-Output "0 0"}`,
+              8000
+            ).catch(() => "0 0");
+            const parts = raw.trim().split(/\s+/);
+            totalSize += Math.max(0, parseInt(parts[0]) || 0);
+            totalCount += Math.max(0, parseInt(parts[1]) || 0);
           } else if (cat.globDir && cat.globPattern) {
             try {
               await fs.promises.access(cat.globDir);
@@ -1047,30 +1045,49 @@ $d | ConvertTo-Json -Compress`;
         if (!cat) continue;
         let freed = 0;
 
-        const isWupdate = id === "wupdate" && process.platform === "win32";
-        const isRecycle = id === "recycle" && process.platform === "win32";
+        const isWin        = process.platform === "win32";
+        const isWupdate    = id === "wupdate"    && isWin;
+        const isRecycle    = id === "recycle"    && isWin;
+        const isPrefetch   = id === "prefetch"   && isWin;
+        const isThumbnails = id === "thumbnails" && isWin;
 
         if (isWupdate) {
-          // Stop both Windows Update and BITS (Background Intelligent Transfer) so no file is locked
-          await runCmd("net stop wuauserv 2>nul & net stop bits 2>nul & net stop cryptSvc 2>nul & net stop msiserver 2>nul", 12000).catch(() => {});
+          // Stop only wuauserv and bits — minimal disruption
+          await runCmd("net stop wuauserv 2>nul & net stop bits 2>nul", 12000).catch(() => {});
+        }
+
+        if (isPrefetch) {
+          // Stop SysMain (SuperFetch) to release locks on prefetch files
+          await runCmd("net stop SysMain 2>nul", 8000).catch(() => {});
         }
 
         if (isRecycle) {
-          // Native: enumerate $Recycle.Bin on all drives for size, then use rd to empty
-          try {
-            const drives = ["C:", "D:", "E:", "F:", "G:"];
-            for (const drv of drives) {
-              const binPath = `${drv}\\$Recycle.Bin`;
-              try {
-                const { size } = await getDirSize(binPath);
-                freed += size;
-              } catch {}
-            }
-          } catch {}
-          // Use cmd rd to wipe recycle bin natively (no PS, no COM)
-          await runCmd("for %d in (C D E F G) do @if exist %d:\\$Recycle.Bin rd /s /q %d:\\$Recycle.Bin 2>nul", 12000).catch(() => {});
-          // Also use the shell API via PowerShell as a fallback/supplement
+          // Get current user's recycle bin size via PowerShell Shell namespace (accurate, current-user only)
+          const sizeRaw = await runPowerShell(
+            `try{$s=(New-Object -ComObject Shell.Application).Namespace(10).Self.Path;$b=(Get-ChildItem $s -Recurse -Force -EA SilentlyContinue|Measure-Object -Property Length -Sum).Sum;if($b){$b}else{0}}catch{0}`,
+            8000
+          ).catch(() => "0");
+          freed += Math.max(0, parseInt(sizeRaw.trim()) || 0);
+          // Clear ONLY current user's recycle bin — safe, does not touch other users
           await runPowerShell(`Clear-RecycleBin -Force -ErrorAction SilentlyContinue`, 8000).catch(() => {});
+        } else if (isThumbnails) {
+          // thumbcache_*.db files are locked by Explorer.exe — stop Explorer, delete, restart
+          const psScript = `
+$dir = "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer"
+$files = @(Get-ChildItem $dir -Filter 'thumbcache_*.db' -File -ErrorAction SilentlyContinue)
+$total = ($files | Measure-Object -Property Length -Sum -ErrorAction SilentlyContinue).Sum
+if (-not $total) { $total = 0 }
+if ($files.Count -gt 0) {
+    Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 800
+    foreach ($f in $files) { Remove-Item $f.FullName -Force -ErrorAction SilentlyContinue }
+    Start-Sleep -Milliseconds 300
+    Start-Process explorer
+}
+[string]$total`.trim();
+          const result = await runPowerShell(psScript, 12000).catch(() => "0");
+          const lines = result.trim().split(/\r?\n/);
+          freed += Math.max(0, parseInt(lines[lines.length - 1] || "0") || 0);
         } else if (cat.globDir && cat.globPattern) {
           try {
             await fs.promises.access(cat.globDir);
@@ -1100,7 +1117,13 @@ $d | ConvertTo-Json -Compress`;
         }
 
         if (isWupdate) {
-          await runCmd("net start cryptSvc 2>nul & net start bits 2>nul & net start wuauserv 2>nul & net start msiserver 2>nul", 12000).catch(() => {});
+          // Restart only the two services we stopped
+          await runCmd("net start bits 2>nul & net start wuauserv 2>nul", 12000).catch(() => {});
+        }
+
+        if (isPrefetch) {
+          // Restart SysMain (SuperFetch) after prefetch clean
+          await runCmd("net start SysMain 2>nul", 5000).catch(() => {});
         }
 
         totalFreed += freed;
