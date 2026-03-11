@@ -350,6 +350,8 @@ export default function Tweaks() {
         if (data.type === "done") {
           clearTimeout(safetyTimeout);
           setIsRunning(false);
+          cleanupRef.current?.();
+          cleanupRef.current = null;
           setScriptOutput((prev) => [
             ...prev,
             {
@@ -363,7 +365,15 @@ export default function Tweaks() {
             old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: false } : t) : old
           );
           bulkMutation.mutate({ titles, isActive: false });
-          triggerDetect(800);
+          // First pass at 3s — gives services time to fully stop before re-detecting.
+          // 800ms was too fast: service tweaks (SysMain, WSearch, etc.) can take 2-4s to stop,
+          // causing the detect to re-mark them as active and undo the revert in the UI.
+          triggerDetect(3000);
+          // Second pass at 8s — catches anything that took longer to settle.
+          setTimeout(() => triggerDetect(0), 8000);
+          if (data.code === 0) {
+            setTimeout(() => { setShowRunDialog(false); setScriptOutput([]); }, 2500);
+          }
         } else if (data.text) {
           setScriptOutput((prev) => [...prev, { type: data.type, text: data.text ?? "" }]);
           if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
