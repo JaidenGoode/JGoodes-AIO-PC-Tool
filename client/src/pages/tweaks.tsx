@@ -1113,18 +1113,21 @@ export default function Tweaks() {
                             {isOptimized ? "Undo CMD" : "View CMD"}
                           </button>
                         )}
-                        {isOptimized && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRevertOne(tweak); }}
-                            disabled={isRunning}
-                            className="flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded border border-red-500/40 bg-red-500/8 text-red-400 hover:bg-red-500/18 hover:border-red-500/60 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-                            data-testid={`button-revert-one-${tweak.id}`}
-                            title={`Revert "${tweak.title}" back to Windows default`}
-                          >
-                            <RotateCcw className="h-2.5 w-2.5" />
-                            Revert
-                          </button>
-                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRevertOne(tweak); }}
+                          disabled={isRunning}
+                          className={cn(
+                            "flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed",
+                            isOptimized
+                              ? "border-red-500/40 bg-red-500/8 text-red-400 hover:bg-red-500/18 hover:border-red-500/60"
+                              : "border-border/30 bg-secondary/40 text-muted-foreground hover:border-red-500/30 hover:bg-red-500/8 hover:text-red-400"
+                          )}
+                          data-testid={`button-revert-one-${tweak.id}`}
+                          title={`Revert "${tweak.title}" back to Windows default`}
+                        >
+                          <RotateCcw className="h-2.5 w-2.5" />
+                          Revert
+                        </button>
                         {isSelected && !isOptimized && (
                           <div className="flex items-center gap-1 text-primary">
                             <CheckSquare className="h-3 w-3" />
