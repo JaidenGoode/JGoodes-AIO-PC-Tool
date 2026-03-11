@@ -817,11 +817,14 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 
   "Disable Delivery Optimization Service": {
     requiresAdmin: true,
-    enable: `Set-Service -Name DoSvc -StartupType Disabled -ErrorAction SilentlyContinue
+    // Set-Service silently fails on DoSvc (protected service on Win10/11) — sc.exe config is required
+    // DODownloadMode 100 = Bypass (fully disables DO); deleting the policy key on revert lets Windows use its own default
+    enable: `sc.exe config DoSvc start= disabled 2>$null
 Stop-Service -Name DoSvc -Force -ErrorAction SilentlyContinue
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 0 /f`,
-    disable: `Set-Service -Name DoSvc -StartupType Automatic -ErrorAction SilentlyContinue
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 3 /f`,
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 100 /f`,
+    disable: `sc.exe config DoSvc start= auto 2>$null
+Start-Service -Name DoSvc -ErrorAction SilentlyContinue
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /f 2>$null`,
   },
 
   "Disable Windows Connect Now (wcncsvc)": {
