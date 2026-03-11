@@ -1,23 +1,24 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStartupItems, toggleStartupItem, type StartupItem } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   MonitorCheck, RefreshCw, Loader2, ShieldAlert,
   MonitorPlay, FolderOpen, AppWindow, AlertTriangle,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, Search, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SOURCE_META: Record<string, { label: string; short: string; icon: React.ElementType; color: string }> = {
-  "HKCU\\Run":    { label: "User Run Key",       short: "User Run",     icon: AppWindow,    color: "bg-primary/10 text-primary border-primary/20" },
-  "HKLM\\Run":    { label: "System Run Key",      short: "System Run",   icon: AppWindow,    color: "bg-muted text-muted-foreground border-border" },
-  "Startup\\User":{ label: "User Startup Folder", short: "User Folder",  icon: FolderOpen,   color: "bg-primary/10 text-primary border-primary/20" },
-  "Startup\\All": { label: "System Startup Folder", short: "Sys Folder", icon: FolderOpen,   color: "bg-muted text-muted-foreground border-border" },
+  "HKCU\\Run":    { label: "User Run Key",         short: "User Run",     icon: AppWindow,  color: "bg-primary/10 text-primary border-primary/20" },
+  "HKLM\\Run":    { label: "System Run Key",        short: "System Run",   icon: AppWindow,  color: "bg-muted text-muted-foreground border-border" },
+  "HKLM\\Run32":  { label: "System Run Key (32-bit)", short: "Sys Run32",  icon: AppWindow,  color: "bg-muted/80 text-muted-foreground border-border/60" },
+  "Startup\\User":{ label: "User Startup Folder",   short: "User Folder",  icon: FolderOpen, color: "bg-primary/10 text-primary border-primary/20" },
+  "Startup\\All": { label: "All-Users Startup Folder", short: "Sys Folder",icon: FolderOpen, color: "bg-muted text-muted-foreground border-border" },
 };
 
 function SkeletonRow() {
@@ -119,6 +120,7 @@ export default function Startup() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [togglingKeys, setTogglingKeys] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
 
   const { data: items = [], isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["/api/startup"],
@@ -160,8 +162,19 @@ export default function Startup() {
     toggleMutation.mutate({ name: item.name, source: item.source, enabled: newEnabled });
   }, [toggleMutation]);
 
+  // Sort alphabetically, then filter by search query
+  const sortedAndFiltered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    if (!q) return sorted;
+    return sorted.filter(
+      (i) => i.name.toLowerCase().includes(q) || i.command.toLowerCase().includes(q)
+    );
+  }, [items, search]);
+
   const enabledCount  = items.filter((i) => i.enabled).length;
   const disabledCount = items.filter((i) => !i.enabled).length;
+  const isFiltered    = search.trim().length > 0;
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -193,23 +206,48 @@ export default function Startup() {
           </Button>
         </div>
 
-        {/* Summary strip */}
+        {/* Summary strip + search bar */}
         {!isLoading && !isError && items.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-4 mt-3 pt-3 border-t border-border/40"
+            className="mt-3 pt-3 border-t border-border/40 space-y-2.5"
           >
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <span className="font-semibold text-foreground">{items.length}</span> startup items found
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="font-semibold text-foreground">{items.length}</span>
+                {isFiltered
+                  ? <> total — <span className="text-primary font-semibold">{sortedAndFiltered.length} matching</span></>
+                  : " startup items found"
+                }
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-primary font-semibold">
+                <CheckCircle2 className="h-3 w-3" />
+                {enabledCount} enabled
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <XCircle className="h-3 w-3" />
+                {disabledCount} disabled
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-primary font-semibold">
-              <CheckCircle2 className="h-3 w-3" />
-              {enabledCount} enabled
-            </div>
-            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <XCircle className="h-3 w-3" />
-              {disabledCount} disabled
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or path…"
+                className="h-8 pl-8 pr-8 text-xs bg-secondary border-border/60 focus-visible:border-primary/40"
+                data-testid="input-startup-search"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                  data-testid="button-startup-search-clear"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           </motion.div>
         )}
@@ -249,10 +287,16 @@ export default function Startup() {
               </p>
             </div>
           </div>
+        ) : sortedAndFiltered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 gap-2 text-center px-8">
+            <Search className="h-5 w-5 text-muted-foreground/40" />
+            <p className="text-[12px] text-muted-foreground">No items match <span className="text-foreground font-semibold">"{search}"</span></p>
+            <button onClick={() => setSearch("")} className="text-[11px] text-primary hover:underline">Clear search</button>
+          </div>
         ) : (
-          <div className="rounded-b-xl overflow-hidden">
+          <div className="overflow-hidden">
             <AnimatePresence initial={false}>
-              {items.map((item) => (
+              {sortedAndFiltered.map((item) => (
                 <StartupRow
                   key={`${item.source}::${item.name}`}
                   item={item}
@@ -269,7 +313,7 @@ export default function Startup() {
       <div className="flex-none px-4 py-2.5 border-t border-border/40 flex items-center gap-2">
         <CheckCircle2 className="h-3 w-3 text-primary/60 shrink-0" />
         <p className="text-[10px] text-muted-foreground/50">
-          Safe — uses Windows StartupApproved (same as Task Manager). Original entries are never deleted. Changes take effect after next restart.
+          Safe — uses Windows StartupApproved (same as Task Manager). Reads HKCU/HKLM Run keys + 32-bit WOW6432 + Startup folders. Nothing is ever deleted. Changes take effect after next restart.
         </p>
       </div>
     </div>
