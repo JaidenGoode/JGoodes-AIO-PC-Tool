@@ -120,10 +120,12 @@ export default function Utilities() {
     const script = [
       `$ErrorActionPreference = 'Stop'`,
       `$dest = Join-Path $env:TEMP "OOSU10.exe"`,
-      `if (-not (Test-Path $dest)) {`,
+      `$needDl = (-not (Test-Path $dest)) -or ((Get-Item $dest -EA SilentlyContinue).Length -lt 102400)`,
+      `if ($needDl) {`,
+      `  if (Test-Path $dest) { Remove-Item $dest -Force -EA SilentlyContinue }`,
       `  try {`,
       `    $wc = New-Object System.Net.WebClient`,
-      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0")`,
+      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")`,
       `    $wc.DownloadFile("https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe", $dest)`,
       `  } catch {`,
       `    Write-Error "Download failed: $_"`,
@@ -131,6 +133,7 @@ export default function Utilities() {
       `  }`,
       `}`,
       `if (-not (Test-Path $dest)) { Write-Error "File not found after download"; exit 1 }`,
+      `if ((Get-Item $dest).Length -lt 102400) { Write-Error "File invalid or blocked by antivirus — delete $dest and retry"; exit 1 }`,
       `Start-Process -FilePath $dest -WindowStyle Normal`,
     ].join("\r\n");
 
