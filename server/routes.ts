@@ -127,7 +127,7 @@ async function getDirSize(
   try {
     const items = await fs.promises.readdir(dirPath);
     await Promise.all(
-      items.slice(0, 500).map(async (item) => {
+      items.slice(0, 5000).map(async (item) => {
         const full = path.join(dirPath, item);
         try {
           const stat = await fs.promises.lstat(full);
@@ -184,7 +184,8 @@ async function deleteContents(dirPath: string): Promise<number> {
             } else {
               await runCmd(`del /f /q "${full}" 2>nul`, 5000);
             }
-            freed += itemSize;
+            // Only count as freed if the entry is actually gone now
+            try { await fs.promises.access(full); } catch { freed += itemSize; }
           } catch {}
         }
       } catch {}
@@ -200,9 +201,13 @@ interface CleanCategory {
   paths: string[];
   globDir?: string;
   globPattern?: string;
-  // Scans/cleans a specific named subdir within each child of the listed parent dirs.
-  // e.g. Firefox: parent=Profiles dir, subdir="cache2" → cleans only cache inside each profile.
+  // Scans/cleans a named subdir inside every profile-like child of each parent dir.
+  // e.g. Chrome: parent=User Data, subdir="Cache\Cache_Data" → catches Default + Profile N automatically.
   subDirScan?: { parent: string; subdir: string }[];
+  // false = do NOT auto-check after scan (user must opt in). Default: true.
+  autoSelect?: boolean;
+  // Optional caution note shown in the UI row for this category.
+  warnNote?: string;
 }
 
 // Expands subDirScan entries into actual on-disk cache paths
@@ -260,29 +265,24 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "browser",
         name: "Browser Cache",
-        description: "Chrome, Edge, and Opera GX browser cache files (Default + extra profiles)",
+        description: "Chrome, Edge, and Opera GX browser cache — all profiles auto-detected",
+        // subDirScan detects every Chrome/Edge profile (Default, Profile 1, Profile 2, …) automatically
+        subDirScan: [
+          { parent: path.join(local, "Google", "Chrome", "User Data"),    subdir: path.join("Cache", "Cache_Data") },
+          { parent: path.join(local, "Google", "Chrome", "User Data"),    subdir: "Code Cache" },
+          { parent: path.join(local, "Google", "Chrome", "User Data"),    subdir: "GPUCache" },
+          { parent: path.join(local, "Microsoft", "Edge", "User Data"),   subdir: path.join("Cache", "Cache_Data") },
+          { parent: path.join(local, "Microsoft", "Edge", "User Data"),   subdir: "Code Cache" },
+          { parent: path.join(local, "Microsoft", "Edge", "User Data"),   subdir: "GPUCache" },
+        ],
+        // Opera GX uses a single stable profile — keep as explicit paths
         paths: [
-          // Google Chrome — Default profile + extra profiles
-          path.join(local, "Google", "Chrome", "User Data", "Default", "Cache", "Cache_Data"),
-          path.join(local, "Google", "Chrome", "User Data", "Default", "Code Cache"),
-          path.join(local, "Google", "Chrome", "User Data", "Default", "GPUCache"),
-          path.join(local, "Google", "Chrome", "User Data", "Profile 1", "Cache", "Cache_Data"),
-          path.join(local, "Google", "Chrome", "User Data", "Profile 1", "Code Cache"),
-          path.join(local, "Google", "Chrome", "User Data", "Profile 1", "GPUCache"),
-          path.join(local, "Google", "Chrome", "User Data", "Profile 2", "Cache", "Cache_Data"),
-          path.join(local, "Google", "Chrome", "User Data", "Profile 2", "Code Cache"),
-          path.join(local, "Google", "Chrome", "User Data", "Profile 2", "GPUCache"),
-          // Microsoft Edge
-          path.join(local, "Microsoft", "Edge", "User Data", "Default", "Cache", "Cache_Data"),
-          path.join(local, "Microsoft", "Edge", "User Data", "Default", "Code Cache"),
-          path.join(local, "Microsoft", "Edge", "User Data", "Default", "GPUCache"),
-          // Opera GX — checks both AppData\Roaming and AppData\Local
           path.join(roaming, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
           path.join(roaming, "Opera Software", "Opera GX Stable", "Code Cache"),
           path.join(roaming, "Opera Software", "Opera GX Stable", "GPUCache"),
-          path.join(local, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
-          path.join(local, "Opera Software", "Opera GX Stable", "Code Cache"),
-          path.join(local, "Opera Software", "Opera GX Stable", "GPUCache"),
+          path.join(local,   "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
+          path.join(local,   "Opera Software", "Opera GX Stable", "Code Cache"),
+          path.join(local,   "Opera Software", "Opera GX Stable", "GPUCache"),
         ],
       },
       {
@@ -316,7 +316,9 @@ function getCleanCategories(): CleanCategory[] {
       {
         id: "shadercache",
         name: "DirectX Shader Cache",
-        description: "DirectX 12 and GPU vendor shader caches built by games and apps (rebuilt automatically on next launch)",
+        description: "DirectX 12, NVIDIA, AMD, and Intel GPU shader caches — rebuilt automatically on next game launch",
+        autoSelect: false,
+        warnNote: "GPU rebuilds these on first game launch after cleaning — may cause brief stutter on first run. Use to fix persistent game crashes or black screens.",
         paths: [
           path.join(local, "D3DSCache"),
           path.join(local, "Microsoft", "DirectX Shader Cache"),
@@ -983,8 +985,7 @@ $d | ConvertTo-Json -Compress`;
           let totalCount = 0;
 
           if (cat.id === "recycle" && process.platform === "win32") {
-            // Use PowerShell Shell.Application namespace to get CURRENT USER's recycle bin size only
-            // (matches exactly what Clear-RecycleBin will clean)
+            // Shell.Application CSIDL_BITBUCKET — current user's bin across all drives
             const raw = await runPowerShell(
               `try{$p=(New-Object -ComObject Shell.Application).Namespace(10).Self.Path;$r=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object -Property Length -Sum -EA SilentlyContinue;Write-Output "$([long]$r.Sum) $($r.Count)"}catch{Write-Output "0 0"}`,
               8000
@@ -993,6 +994,7 @@ $d | ConvertTo-Json -Compress`;
             totalSize += Math.max(0, parseInt(parts[0]) || 0);
             totalCount += Math.max(0, parseInt(parts[1]) || 0);
           } else if (cat.globDir && cat.globPattern) {
+            // Glob pattern scan (e.g. thumbcache_*.db)
             try {
               await fs.promises.access(cat.globDir);
               const entries = await fs.promises.readdir(cat.globDir);
@@ -1001,22 +1003,30 @@ $d | ConvertTo-Json -Compress`;
                 if (pattern.test(entry)) {
                   try {
                     const stat = await fs.promises.stat(path.join(cat.globDir, entry));
-                    if (stat.isFile()) {
-                      totalSize += stat.size;
-                      totalCount++;
-                    }
+                    if (stat.isFile()) { totalSize += stat.size; totalCount++; }
                   } catch {}
                 }
               }
             } catch {}
           } else {
+            // subDirScan: expand each {parent, subdir} into per-profile paths
+            if (cat.subDirScan && cat.subDirScan.length > 0) {
+              const expanded = await expandSubDirScan(cat.subDirScan);
+              for (const p of expanded) {
+                try {
+                  await fs.promises.access(p);
+                  const { size, count } = await getDirSize(p);
+                  totalSize += size; totalCount += count;
+                } catch {}
+              }
+            }
+            // Regular explicit paths
             for (const p of cat.paths) {
               const expanded = expandPath(p);
               try {
                 await fs.promises.access(expanded);
                 const { size, count } = await getDirSize(expanded);
-                totalSize += size;
-                totalCount += count;
+                totalSize += size; totalCount += count;
               } catch {}
             }
           }
@@ -1029,6 +1039,8 @@ $d | ConvertTo-Json -Compress`;
             sizeHuman: fmtSize(totalSize),
             fileCount: totalCount,
             found: totalSize > 0 || totalCount > 0,
+            autoSelect: cat.autoSelect !== false,
+            warnNote: cat.warnNote ?? null,
           };
         })
       );
@@ -1106,6 +1118,7 @@ if ($files.Count -gt 0) {
           const lines = result.trim().split(/\r?\n/);
           freed += Math.max(0, parseInt(lines[lines.length - 1] || "0") || 0);
         } else if (cat.globDir && cat.globPattern) {
+          // Glob-pattern clean (e.g. thumbcache_*.db files)
           try {
             await fs.promises.access(cat.globDir);
             const entries = await fs.promises.readdir(cat.globDir);
@@ -1116,14 +1129,27 @@ if ($files.Count -gt 0) {
                 try {
                   const stat = await fs.promises.stat(full);
                   if (stat.isFile()) {
-                    freed += stat.size;
+                    const sz = stat.size;
                     await fs.promises.rm(full, { force: true });
+                    // Verify gone before counting
+                    try { await fs.promises.access(full); } catch { freed += sz; }
                   }
                 } catch {}
               }
             }
           } catch {}
         } else {
+          // subDirScan paths (browser profiles, etc.)
+          if (cat.subDirScan && cat.subDirScan.length > 0) {
+            const expandedPaths = await expandSubDirScan(cat.subDirScan);
+            for (const p of expandedPaths) {
+              try {
+                await fs.promises.access(p);
+                freed += await deleteContents(p);
+              } catch {}
+            }
+          }
+          // Explicit paths
           for (const p of cat.paths) {
             const expanded = expandPath(p);
             try {
@@ -1134,8 +1160,8 @@ if ($files.Count -gt 0) {
         }
 
         if (isWupdate) {
-          // Restart only the two services we stopped
-          await runCmd("net start bits 2>nul & net start wuauserv 2>nul", 12000).catch(() => {});
+          // Restart in same order as stop: wuauserv first, then bits
+          await runCmd("net start wuauserv 2>nul & net start bits 2>nul", 12000).catch(() => {});
         }
 
         if (isPrefetch) {
@@ -1644,22 +1670,13 @@ function Read-RunKey {
 }
 
 # HKCU 64-bit Run
-Read-RunKey `
-  'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' `
-  'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' `
-  'HKCU\\Run' $false
+Read-RunKey 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' 'HKCU\\Run' $false
 
 # HKLM 64-bit Run
-Read-RunKey `
-  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' `
-  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' `
-  'HKLM\\Run' $true
+Read-RunKey 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' 'HKLM\\Run' $true
 
-# HKLM 32-bit Run (WOW6432Node) — many 32-bit apps register here
-Read-RunKey `
-  'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run' `
-  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32' `
-  'HKLM\\Run32' $true
+# HKLM 32-bit Run (WOW6432Node) - many 32-bit apps register here
+Read-RunKey 'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run' 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32' 'HKLM\\Run32' $true
 
 # User Startup Folder
 try {
