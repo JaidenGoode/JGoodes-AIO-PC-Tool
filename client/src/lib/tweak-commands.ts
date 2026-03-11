@@ -347,7 +347,9 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v Disabl
 
   "Debloat Microsoft Edge": {
     requiresAdmin: true,
-    enable: `# === Annoyances ===
+    enable: `# Applies browser-level policies only. Does NOT affect the WebView2 runtime
+# (used by apps like Teams, Discord, etc.) — WebView2 uses a separate policy path.
+# === Annoyances ===
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutoImportAtFirstRun /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PersonalizationReportingEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SpotlightExperiencesAndRecommendationsEnabled /t REG_DWORD /d 0 /f
@@ -372,6 +374,7 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v WebWidgetAllowed /t REG_D
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v StartupBoostEnabled /t REG_DWORD /d 0 /f
 # === New Tab Page ===
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePrerenderEnabled /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePinnedTabsEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageQuickLinksEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageBackgroundEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageContentEnabled /t REG_DWORD /d 0 /f
@@ -404,6 +407,7 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v WebWidgetAllowed /t REG_D
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v StartupBoostEnabled /t REG_DWORD /d 1 /f
 # === New Tab Page — restore defaults ===
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePrerenderEnabled /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePinnedTabsEnabled /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageQuickLinksEnabled /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageBackgroundEnabled /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageContentEnabled /t REG_DWORD /d 1 /f
