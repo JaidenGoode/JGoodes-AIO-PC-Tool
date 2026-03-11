@@ -229,11 +229,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "System Responsiveness for Games",
-    description: "Sets SystemResponsiveness to 0 in the Windows Multimedia SystemProfile. This removes the CPU reservation that Windows normally holds for background services and lets games use the maximum available CPU time. Default Windows value is 14 (decimal). Enabled: 0 — Disabled: 14.",
+    description: "Sets SystemResponsiveness to 0 in the Windows Multimedia SystemProfile. This removes the CPU reservation that Windows normally holds for background services and lets games use the maximum available CPU time. Default Windows value is 20 (decimal). Enabled: 0 — Disabled: 20.",
     category: "gaming",
     isActive: false,
     warning: null,
-    featureBreaks: "Background system tasks get less reserved CPU time. Revert restores Windows default SystemResponsiveness = 14."
+    featureBreaks: "Background system tasks get less reserved CPU time. Revert restores Windows default SystemResponsiveness = 20."
   },
   {
     title: "Fortnite Process High Priority",
