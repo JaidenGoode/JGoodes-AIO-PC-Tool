@@ -1329,7 +1329,7 @@ Write-Host "Restore point created successfully."`;
             "fast-startup-on","fast-startup-off","windows-update-default","windows-update-security",
             "location-on","location-off","open-system-restore",
             "defrag","nvidia-cp","nvidia-app","windows-update",
-            "empty-standby-memory",
+            "empty-standby-memory","clear-shader-cache","rebuild-icon-cache","dxdiag",
           ]),
         })
         .parse(req.body);
@@ -1358,6 +1358,9 @@ Write-Host "Restore point created successfully."`;
         "nvidia-cp": { name: "NVIDIA Control Panel", command: `powershell -NoProfile -Command "$p=@('${String.raw`C:\Program Files\NVIDIA Corporation\Control Panel Client\nvcplui.exe`}','${String.raw`C:\Windows\System32\nvcplui.exe`}','${String.raw`C:\Program Files (x86)\NVIDIA Corporation\Control Panel Client\nvcplui.exe`}');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'ms-settings:display'}"`, description: "Opens the NVIDIA Control Panel. Falls back to Display Settings if not found." },
         "nvidia-app": { name: "NVIDIA App", command: `powershell -NoProfile -Command "$p=@('${String.raw`C:\Program Files\NVIDIA Corporation\NVIDIA app\nvidia-app.exe`}','${String.raw`C:\Program Files\NVIDIA Corporation\NVIDIA App\nvidia-app.exe`}','${String.raw`C:\Program Files\NVIDIA Corporation\NvContainer\nvidia-app.exe`}');$f=$p|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f}else{Start-Process 'https://www.nvidia.com/en-us/software/nvidia-app/'}"`, description: "Opens the NVIDIA App. Falls back to NVIDIA website if not installed." },
         "windows-update": { name: "Windows Update", command: "start ms-settings:windowsupdate", description: "Opens Windows Update settings." },
+        "clear-shader-cache": { name: "Clear Shader Cache", command: `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand JABsAGEAPQAkAGUAbgB2ADoATABPAEMAQQBMAEEAUABQAEQAQQBUAEEAOwAkAHIAYQA9ACQAZQBuAHYAOgBBAFAAUABEAEEAVABBADsAJABwAGEAdABoAHMAPQBAACgAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARABYAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARwBMAEMAYQBjAGgAZQAiACwAIgAkAHIAYQBcAE4AVgBJAEQASQBBAFwAQwBvAG0AcAB1AHQAZQBDAGEAYwBoAGUAIgAsACIAJABsAGEAXABBAE0ARABcAEQAeABDAGEAYwBoAGUAIgAsACIAJABsAGEAXABEADMARABTAEMAYQBjAGgAZQAiACkAOwAkAGMAPQAwADsAZgBvAHIAZQBhAGMAaAAoACQAcAAgAGkAbgAgACQAcABhAHQAaABzACkAewBpAGYAKABUAGUAcwB0AC0AUABhAHQAaAAgACQAcAApAHsARwBlAHQALQBDAGgAaQBsAGQASQB0AGUAbQAgACQAcAAgAC0AUgBlAGMAdQByAHMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQB8AFIAZQBtAG8AdgBlAC0ASQB0AGUAbQAgAC0ARgBvAHIAYwBlACAALQBSAGUAYwB1AHIAcwBlACAALQBFAEEAIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlADsAJABjACsAKwB9AH0AOwBXAHIAaQB0AGUALQBPAHUAdABwAHUAdAAgACgAIgBDAGwAZQBhAHIAZQBkACAAIgArACQAYwArACIAIABvAGYAIAA1ACAAcwBoAGEAZABlAHIAIABjAGEAYwBoAGUAIABsAG8AYwBhAHQAaQBvAG4AcwAuACAARwBQAFUAIAByAGUAYgB1AGkAbABkAHMAIABvAG4AIABuAGUAeAB0ACAAZwBhAG0AZQAgAGwAYQB1AG4AYwBoAC4AIgApAA==`, description: "Cleared NVIDIA, AMD, and DirectX shader caches. Your GPU will rebuild them on next game launch." },
+        "rebuild-icon-cache": { name: "Rebuild Icon Cache", command: `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand UwB0AG8AcAAtAFAAcgBvAGMAZQBzAHMAIAAtAE4AYQBtAGUAIABlAHgAcABsAG8AcgBlAHIAIAAtAEYAbwByAGMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQA7AFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0ATQBpAGwAbABpAHMAZQBjAG8AbgBkAHMAIAA2ADAAMAA7AFIAZQBtAG8AdgBlAC0ASQB0AGUAbQAgACIAJABlAG4AdgA6AEwATwBDAEEATABBAFAAUABEAEEAVABBAFwASQBjAG8AbgBDAGEAYwBoAGUALgBkAGIAIgAgAC0ARgBvAHIAYwBlACAALQBFAEEAIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlADsAUgBlAG0AbwB2AGUALQBJAHQAZQBtACAAIgAkAGUAbgB2ADoATABPAEMAQQBMAEEAUABQAEQAQQBUAEEAXABNAGkAYwByAG8AcwBvAGYAdABcAFcAaQBuAGQAbwB3AHMAXABFAHgAcABsAG8AcgBlAHIAXABpAGMAbwBuAGMAYQBjAGgAZQAqAC4AZABiACIAIAAtAEYAbwByAGMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQA7AFMAdABhAHIAdAAtAFAAcgBvAGMAZQBzAHMAIABlAHgAcABsAG8AcgBlAHIAOwBXAHIAaQB0AGUALQBPAHUAdABwAHUAdAAgACIASQBjAG8AbgAgAGMAYQBjAGgAZQAgAHIAZQBiAHUAaQBsAHQALgAgAEkAYwBvAG4AcwAgAHcAaQBsAGwAIAByAGUAZgByAGUAcwBoACAAbQBvAG0AZQBuAHQAYQByAGkAbAB5AC4AIgA=`, description: "Rebuilt the Windows icon cache. Desktop and Explorer icons will refresh." },
+        "dxdiag": { name: "DirectX Diagnostic", command: "dxdiag", description: "Opened DirectX Diagnostic Tool." },
       };
 
       const info = commands[action];
@@ -1373,7 +1376,7 @@ Write-Host "Restore point created successfully."`;
         "open-system-restore", "disk-cleanup",
         "sfc", "dism",
         "defrag", "nvidia-cp", "nvidia-app", "windows-update",
-        "empty-standby-memory",
+        "empty-standby-memory", "dxdiag",
       ]);
 
       if (GUI_ACTIONS.has(action)) {
