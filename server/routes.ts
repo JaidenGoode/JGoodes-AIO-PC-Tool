@@ -69,21 +69,33 @@ async function seedTweaksIfNeeded() {
       const existingTitles = new Set(freshExisting.map((t) => t.title));
       const existingByTitle = new Map(freshExisting.map((t) => [t.title, t]));
       let added = 0;
-      let categoryUpdated = 0;
+      let metaUpdated = 0;
       for (const tweak of TWEAKS_SEED) {
         if (!existingTitles.has(tweak.title)) {
           await storage.createTweak(tweak);
           added++;
         } else {
           const existing = existingByTitle.get(tweak.title);
-          if (existing && existing.category !== tweak.category) {
-            await storage.updateTweak(existing.id, { category: tweak.category });
-            categoryUpdated++;
+          if (existing) {
+            const needsUpdate =
+              existing.category !== tweak.category ||
+              existing.description !== tweak.description ||
+              existing.warning !== (tweak.warning ?? null) ||
+              existing.featureBreaks !== (tweak.featureBreaks ?? null);
+            if (needsUpdate) {
+              await storage.updateTweak(existing.id, {
+                category: tweak.category,
+                description: tweak.description,
+                warning: tweak.warning,
+                featureBreaks: tweak.featureBreaks,
+              });
+              metaUpdated++;
+            }
           }
         }
       }
       if (added > 0) console.log(`[seed] Added ${added} new tweaks`);
-      if (categoryUpdated > 0) console.log(`[seed] Updated category for ${categoryUpdated} tweaks`);
+      if (metaUpdated > 0) console.log(`[seed] Updated metadata for ${metaUpdated} tweaks`);
     }
   } catch (err) {
     console.error("[seed] Failed to seed tweaks:", err);
