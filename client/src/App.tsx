@@ -17,6 +17,7 @@ import RestorePoints from "@/pages/restore-points";
 import Utilities from "@/pages/utilities";
 import Settings from "@/pages/settings";
 import GitHub from "@/pages/github";
+import Startup from "@/pages/startup";
 
 function Router() {
   return (
@@ -27,6 +28,7 @@ function Router() {
         <Route path="/dns" component={DNSManager}/>
         <Route path="/cleaner" component={Cleaner}/>
         <Route path="/utilities" component={Utilities}/>
+        <Route path="/startup" component={Startup} />
         <Route path="/restore" component={RestorePoints} />
         <Route path="/settings" component={Settings} />
         <Route path="/github" component={GitHub} />
