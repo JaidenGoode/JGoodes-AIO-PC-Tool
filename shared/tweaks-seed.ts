@@ -108,6 +108,14 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Windows Search will be slower as it searches without an index. Typing in File Explorer search bar will be slower."
   },
   {
+    title: "Disable Background UWP Apps",
+    description: "Prevents Windows Store (UWP) apps such as Spotify, Photos, Mail, Maps, and News from running and consuming CPU and RAM in the background when you are not using them. Sets GlobalUserDisabled=1 in the BackgroundAccessApplications policy key — the cleanest, fully reversible single-value approach. Enabled: 1 — Disabled: 0 (Windows default).",
+    category: "performance",
+    isActive: false,
+    warning: null,
+    featureBreaks: "UWP apps will not refresh content or receive live tile updates in the background. Opening an app will always show up-to-date content once launched."
+  },
+  {
     title: "Disable Multiplane Overlay (MPO)",
     description: "Disables the GPU Multiplane Overlay feature which is known to cause stuttering, flickering, and frame pacing issues in many games on NVIDIA and AMD dedicated graphics cards. Only applies to systems with a discrete (dedicated) GPU.",
     category: "performance",
@@ -284,6 +292,14 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: "FORTNITE PLAYERS ONLY — skip this tweak if you do not play Fortnite. ⚠️ Realtime CPU priority is the highest possible level. If Fortnite crashes or freezes, the system may become temporarily unresponsive until the process is killed.",
     featureBreaks: "All other applications get lower CPU priority while Fortnite is running. Background apps may feel sluggish in-game."
+  },
+  {
+    title: "Global Timer Resolution for Gaming",
+    description: "Sets GlobalTimerResolutionRequests to 1 in the Windows kernel session manager. This allows any application or game to request Windows' highest available timer resolution (0.5ms instead of the 15.6ms default). Lower timer resolution means the CPU scheduler wakes up more frequently, resulting in tighter frame timing, reduced micro-stutter, and more consistent frame delivery. Enabled: 1 — Disabled: 0 (Windows default).",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Marginal increase in background CPU wake frequency at idle. No effect on stability or applications outside of gaming."
   },
   {
     title: "Disable Dynamic Tick",

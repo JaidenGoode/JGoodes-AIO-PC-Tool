@@ -18,6 +18,8 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Power Throttling":                      "High",
   "System Responsiveness for Games":               "High",
   "GPU Priority for Games":                        "High",
+  "Global Timer Resolution for Gaming":            "High",
+  "Disable Background UWP Apps":                   "Medium",
 
   // Medium — measurable improvement, may not be immediately obvious
   "Keep All CPU Cores Active (Unpark Cores)":      "Medium",
