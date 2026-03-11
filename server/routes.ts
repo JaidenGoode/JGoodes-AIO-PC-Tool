@@ -720,7 +720,7 @@ $d['Disable Phone Link & Mobile Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\W
 
 # Browser
 $d['Debloat Microsoft Edge']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'HubsSidebarEnabled' 0
-$d['Debloat Google Chrome']=creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'HardwareAccelerationModeEnabled' 0
+$d['Debloat Google Chrome']=creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'BackgroundModeEnabled' 0
 $d['Optimize Discord for Gaming']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Discord.exe\PerfOptions' 'CpuPriorityClass' 2
 
 # Opera GX: check hardware acceleration AND GX sounds disabled in Preferences
