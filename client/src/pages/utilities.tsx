@@ -198,8 +198,7 @@ export default function Utilities() {
             <AlertDialogTrigger asChild>
               <Button
                 size="sm"
-                variant="outline"
-                className="w-full h-7 text-xs border-border/60 hover:border-primary/30"
+                className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
                 data-testid="button-utility-dism"
               >
                 Run DISM Repair
