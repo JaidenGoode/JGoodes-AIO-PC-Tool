@@ -527,13 +527,23 @@ export default function Tweaks() {
     }
   };
 
-  const filteredTweaks = tweaks?.filter((tweak) => {
-    const matchesSearch =
-      tweak.title.toLowerCase().includes(search.toLowerCase()) ||
-      tweak.description.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || tweak.category.toLowerCase() === filter;
-    return matchesSearch && matchesFilter;
-  });
+  const IMPACT_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
+
+  const filteredTweaks = tweaks
+    ?.filter((tweak) => {
+      const matchesSearch =
+        tweak.title.toLowerCase().includes(search.toLowerCase()) ||
+        tweak.description.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = filter === "all" || tweak.category.toLowerCase() === filter;
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      const impA = getImpact(a.title);
+      const impB = getImpact(b.title);
+      const orderA = impA != null ? IMPACT_ORDER[impA] : 3;
+      const orderB = impB != null ? IMPACT_ORDER[impB] : 3;
+      return orderA - orderB;
+    });
 
   const optimizedCount = tweaks?.filter((t) => t.isActive).length || 0;
   const totalCount = tweaks?.length || 0;
