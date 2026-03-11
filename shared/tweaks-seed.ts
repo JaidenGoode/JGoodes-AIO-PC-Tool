@@ -173,11 +173,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "System Responsiveness & Network Throttling",
-    description: "Sets NetworkThrottlingIndex to 10 and SystemResponsiveness to 10 in the Windows Multimedia System Profile registry keys. NetworkThrottlingIndex prevents Windows from aggressively throttling network packets for multimedia apps, and SystemResponsiveness reserves less CPU for background tasks — both reduce latency and improve real-time gaming performance.",
+    description: "Sets NetworkThrottlingIndex to 0xFFFFFFFF (disabled) and SystemResponsiveness to 0 in the Windows Multimedia System Profile registry keys. Disabling NetworkThrottlingIndex removes all network packet throttling Windows applies to multimedia apps. SystemResponsiveness 0 removes the CPU reservation Windows holds for background services, giving games the maximum available CPU time. Enabled: NetworkThrottlingIndex=FFFFFFFF, SystemResponsiveness=0 — Disabled: NetworkThrottlingIndex=10, SystemResponsiveness=20.",
     category: "gaming",
     isActive: false,
-    warning: "Do not use this at the same time as 'System Responsiveness for Games' — both tweaks write the same SystemResponsiveness registry value. If both are applied, whichever runs last wins. Choose one: this tweak sets SystemResponsiveness to 10; the other sets it to 0.",
-    featureBreaks: "Slightly more CPU time allocated to foreground tasks. Background downloads/tasks may be marginally slower during gaming."
+    warning: null,
+    featureBreaks: "Background system tasks receive no reserved CPU time and network packets are never throttled while this is active. Background downloads/tasks may be marginally slower during gaming."
   },
   {
     title: "Win32 Priority Separation",
@@ -226,14 +226,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: null,
     featureBreaks: "Background applications receive fewer scheduling slots while a game is running. No side effects outside of gaming."
-  },
-  {
-    title: "System Responsiveness for Games",
-    description: "Sets SystemResponsiveness to 0 in the Windows Multimedia SystemProfile. This removes the CPU reservation that Windows normally holds for background services and lets games use the maximum available CPU time. Default Windows value is 20 (decimal). Enabled: 0 — Disabled: 20.",
-    category: "gaming",
-    isActive: false,
-    warning: "Do NOT use this at the same time as 'System Responsiveness & Network Throttling' — both tweaks write the same SystemResponsiveness registry value and will conflict. Choose one: this tweak sets it to 0 (maximum for games); the other sets it to 10.",
-    featureBreaks: "Background system tasks get less reserved CPU time. Revert restores Windows default SystemResponsiveness = 20."
   },
   {
     title: "Fortnite Process High Priority",

@@ -24,7 +24,7 @@ export const TWEAK_PRESETS: TweakPreset[] = [
     titles: [
       "Disable Mouse Acceleration",
       "Keep All CPU Cores Active (Unpark Cores)",
-      "System Responsiveness for Games",
+      "System Responsiveness & Network Throttling",
       "GPU Priority for Games",
       "Disable Network Power Saving",
       "Disable GameBar",
@@ -80,7 +80,7 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Disable Multiplane Overlay (MPO)",
       "Disable Hibernation",
       "Optimize Visual Effects for Performance",
-      "System Responsiveness for Games",
+      "System Responsiveness & Network Throttling",
       "GPU Priority for Games",
       "Disable Power Throttling",
       "Disable Startup Program Delay",

@@ -9,12 +9,6 @@ export const TWEAK_CONFLICTS: Record<string, string> = {
   "Disable IPv6":           "Prefer IPv4 over IPv6",
   "Prefer IPv4 over IPv6":  "Disable IPv6",
 
-  // Both write to the same SystemResponsiveness registry key under
-  // Multimedia\SystemProfile — the last one applied silently overwrites
-  // the other, making detection for the first one show as inactive.
-  "System Responsiveness for Games":              "System Responsiveness & Network Throttling",
-  "System Responsiveness & Network Throttling":   "System Responsiveness for Games",
-
   // Game Mode depends on Xbox infrastructure. Disabling Xbox Core Services
   // while Game Mode is on may cause Game Mode to silently fail.
   "Enable Game Mode":             "Disable Xbox Core Services",

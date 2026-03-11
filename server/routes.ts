@@ -662,7 +662,6 @@ $d['Disable Cortana']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Se
 $d['Disable Mouse Acceleration']=creg 'HKCU:\Control Panel\Mouse' 'MouseSpeed' '0'
 try{$cpm=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null) -join ' ');$d['Keep All CPU Cores Active (Unpark Cores)']=if($cpm -match 'Current AC Power Setting Index:\s*0x00000064'){1}else{0}}catch{$d['Keep All CPU Cores Active (Unpark Cores)']=0}
 $d['Win32 Priority Separation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'Win32PrioritySeparation' 36
-$d['System Responsiveness for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'SystemResponsiveness' 0
 $d['Disable GameBar']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
 $d['Disable GameBar Background Recording']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
 $d['Optimize for Windowed & Borderless Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'ForceEffectMode' 2
@@ -670,7 +669,7 @@ $d['Enable Game Mode']=creg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnab
 $d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers' 'HwSchMode' 2
 $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0'
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
-$d['System Responsiveness & Network Throttling']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile' 'NetworkThrottlingIndex' 10
+try{$_sp='HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile';$_nti=(Get-ItemProperty -Path $_sp -Name 'NetworkThrottlingIndex' -EA Stop).NetworkThrottlingIndex;$_sr=(Get-ItemProperty -Path $_sp -Name 'SystemResponsiveness' -EA Stop).SystemResponsiveness;$d['System Responsiveness & Network Throttling']=if(($_nti -eq -1 -or [uint32]$_nti -eq 4294967295) -and $_sr -eq 0){1}else{0}}catch{$d['System Responsiveness & Network Throttling']=0}
 $d['Maximum Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Latency Sensitive' 'True'
 $d['GPU Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'GPU Priority' 8
 try{$gpu=Get-PnpDevice -Class Display -Status OK|Where-Object{$_.FriendlyName -notmatch 'Microsoft|Remote|Basic'}|Select-Object -First 1;if($gpu){$p='HKLM:\SYSTEM\CurrentControlSet\Enum\'+$gpu.InstanceId+'\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties';if(Test-Path $p){$v=(Get-ItemProperty $p -EA SilentlyContinue).MSISupported;$d['Enable MSI Mode for GPU']=if($v -eq 1){1}else{0}}else{$d['Enable MSI Mode for GPU']=0}}else{$d['Enable MSI Mode for GPU']=0}}catch{$d['Enable MSI Mode for GPU']=0}
