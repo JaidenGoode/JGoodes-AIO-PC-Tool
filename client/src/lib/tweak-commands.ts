@@ -402,7 +402,7 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters" /v Disab
   "Enable SSD TRIM Optimization": {
     requiresAdmin: true,
     enable: `fsutil behavior set DisableDeleteNotify 0`,
-    disable: `fsutil behavior set DisableDeleteNotify 1`,
+    disable: `fsutil behavior set DisableDeleteNotify 0`,
   },
 
   "Disable Web Search in Windows Search": {
