@@ -13,7 +13,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Enable Hardware Accelerated GPU Scheduling (HAGS)": "High",
   "Disable SuperFetch / SysMain":                  "High",
   "Disable Windows File Indexing":                 "High",
-  "Disable Telemetry & Data Collection":           "High",
   "Optimize Visual Effects for Performance":       "High",
   "Disable Power Throttling":                      "High",
   "System Responsiveness for Games":               "High",
@@ -44,20 +43,11 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Instant Menu Response (Zero Delay)":            "Medium",
   "Disable NTFS Access Timestamps":                "Medium",
 
-  "Disable Windows Copilot & AI Features":          "Medium",
-  "Disable Lock Screen Suggestions & Ads":          "Medium",
-
   // Low — subtle, background improvements
   "Disable IPv6":                                  "Low",
   "Prefer IPv4 over IPv6":                         "Low",
   "Enable SSD TRIM Optimization":                  "Low",
   "Disable Windows Performance Counters":          "Low",
-  "Disable Advertising ID":                        "Low",
-  "Disable Activity History & Timeline":           "Low",
-  "Disable Customer Experience Improvement Program": "Low",
-  "Disable Windows Error Reporting":               "Low",
-  "Disable Clipboard History & Cloud Sync":        "Low",
-  "Disable Start Menu Suggestions & Tips":         "Low",
   "Debloat Microsoft Edge":                        "Low",
   "Debloat Google Chrome":                         "Low",
   "Debloat Opera GX":                              "Low",
