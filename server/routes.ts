@@ -56,7 +56,11 @@ async function seedTweaksIfNeeded() {
       }
       console.log(`[seed] Seeded ${TWEAKS_SEED.length} tweaks`);
     } else {
-      const existingTitles = new Set(existing.map((t) => t.title));
+      // Remove any tweaks that were previously seeded under removed categories
+      const removed = await storage.removeTweaksByCategory("privacy");
+      if (removed > 0) console.log(`[seed] Removed ${removed} legacy privacy tweaks`);
+
+      const existingTitles = new Set((await storage.getTweaks()).map((t) => t.title));
       let added = 0;
       for (const tweak of TWEAKS_SEED) {
         if (!existingTitles.has(tweak.title)) {
@@ -640,17 +644,6 @@ function csvc($n){
 }
 
 $d=[ordered]@{}
-
-# Privacy
-$d['Disable Telemetry & Data Collection']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection' 'AllowTelemetry' 0
-$d['Disable Advertising ID']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' 'Enabled' 0
-$d['Disable Activity History & Timeline']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0
-$d['Disable Customer Experience Improvement Program']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows' 'CEIPEnable' 0
-$d['Disable Windows Error Reporting']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting' 'Disabled' 1
-$d['Disable Clipboard History & Cloud Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'AllowClipboardHistory' 0
-$d['Disable Start Menu Suggestions & Tips']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SystemPaneSuggestionsEnabled' 0
-$d['Disable Windows Copilot & AI Features']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1
-$d['Disable Lock Screen Suggestions & Ads']=creg 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsSpotlightFeatures' 1
 
 # Performance
 try{$scheme=((powercfg /getactivescheme 2>$null) -join ' ');$d['Maximum Performance Power Plan']=if($scheme -match 'e9a42b02'){1}else{0}}catch{$d['Maximum Performance Power Plan']=0}
