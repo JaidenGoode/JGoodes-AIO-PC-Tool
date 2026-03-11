@@ -230,6 +230,14 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Slightly more CPU time allocated to foreground tasks. Background downloads/tasks may be marginally slower during gaming."
   },
   {
+    title: "Win32 Priority Separation",
+    description: "Sets Win32PrioritySeparation to 0x24 (short interval, fixed foreground boost). Controls how the Windows CPU scheduler splits time quanta between foreground and background processes. 0x24 gives the foreground application a fixed quantum boost with short intervals — ideal for gaming. Reverts to 0x26 (short interval, variable boost).",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Background processes receive less CPU time during gaming. Revert sets Win32PrioritySeparation back to 0x26."
+  },
+  {
     title: "Maximum Priority for Games",
     description: "Configures the Windows Multimedia SystemProfile Tasks\\Games entry to give games the highest possible scheduler priority: GPU Priority 8 (max), CPU Priority 6 (High), Scheduling Category High, SFIO Priority High, Background Only False, and Latency Sensitive True. Every process registered as a game gets maximum CPU, GPU, and disk access priority — reduces frame pacing issues and input lag.",
     category: "gaming",
@@ -238,12 +246,20 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive fewer scheduler slots while a game is running. No side effects outside of gaming."
   },
   {
-    title: "Minimum Priority for Background Processes",
-    description: "Sets Win32PrioritySeparation to foreground-boost mode: foreground applications (including your game) receive 3x more CPU time and shorter quanta than background processes. Idle background tasks like updates, antivirus scans, and system services are deprioritised while you game.",
+    title: "High Scheduling Category for Gaming",
+    description: "Sets the Scheduling Category for the Windows Multimedia SystemProfile Tasks\\Games entry to High. This tells the Windows scheduler to give game processes a higher-priority scheduling tier, reducing latency and improving frame consistency compared to the default Medium category.",
     category: "gaming",
     isActive: false,
     warning: null,
-    featureBreaks: "Background downloads, updates, and tasks will be slower while gaming. Revert restores Windows default (Win32PrioritySeparation = 2)."
+    featureBreaks: "Background applications receive fewer scheduling slots while a game is running. No side effects outside of gaming."
+  },
+  {
+    title: "Minimum Priority for Background Processes",
+    description: "Sets SystemResponsiveness to 0 in the Windows Multimedia SystemProfile. This removes the CPU reservation that Windows normally holds for background services and lets games use the maximum available CPU time. Default Windows value is 14 (decimal).",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Background system tasks get less reserved CPU time. Revert restores Windows default SystemResponsiveness = 14."
   },
   {
     title: "Fortnite Process High Priority",

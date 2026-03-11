@@ -6,6 +6,7 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Mouse Acceleration":                    "High",
   "Disable Multiplane Overlay (MPO)":              "High",
   "Maximum Priority for Games":                     "High",
+  "High Scheduling Category for Gaming":            "High",
   "System Responsiveness & Network Throttling":    "High",
   "Disable Dynamic Tick":                          "High",
   "Enable Hardware Accelerated GPU Scheduling (HAGS)": "High",
@@ -17,6 +18,7 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
 
   // Medium — measurable improvement, may not be immediately obvious
   "Keep All CPU Cores Active (Unpark Cores)":      "Medium",
+  "Win32 Priority Separation":                     "Medium",
   "Minimum Priority for Background Processes":     "Medium",
   "Disable GameBar":                               "Medium",
   "Disable GameBar Background Recording":          "Medium",
