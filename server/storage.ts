@@ -13,6 +13,7 @@ export interface IStorage {
   createTweak(tweak: InsertTweak): Promise<Tweak>;
   updateTweak(id: number, updates: UpdateTweakRequest): Promise<Tweak | undefined>;
   clearTweaks(): Promise<void>;
+  removeTweaksByCategory(category: string): Promise<number>;
   getSetting(key: string): Promise<string | undefined>;
   setSetting(key: string, value: string): Promise<void>;
   getAllSettings(): Promise<Record<string, string>>;
