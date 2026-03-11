@@ -60,7 +60,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   {
     title: "Disable Multiplane Overlay (MPO)",
     description: "Disables the GPU Multiplane Overlay feature which is known to cause stuttering, flickering, and frame pacing issues in many games on NVIDIA and AMD dedicated graphics cards. Only applies to systems with a discrete (dedicated) GPU.",
-    category: "performance",
+    category: "gaming",
     isActive: false,
     warning: "DISCRETE GPU REQUIRED: This tweak only applies to systems with a dedicated NVIDIA or AMD graphics card. If you only have Intel/AMD integrated graphics (no dedicated GPU), this tweak has no effect and can be skipped.",
     featureBreaks: "Overlapping windows may use slightly more GPU bandwidth. Fixes stuttering and flickering for most games with dedicated GPU."
@@ -158,7 +158,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   {
     title: "Instant Menu Response (Zero Delay)",
     description: "Sets the MenuShowDelay registry value to 0ms, removing the built-in delay before Windows context menus and dropdown menus appear. Makes UI feel more responsive.",
-    category: "gaming",
+    category: "system",
     isActive: false,
     warning: null,
     featureBreaks: "Menus appear instantly without animation delay. Purely visual change with no side effects."
@@ -286,7 +286,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   {
     title: "Disable Auto-Restart After Windows Updates",
     description: "Prevents Windows from automatically rebooting your PC after installing updates — even when you're in the middle of a game or important work. Windows normally schedules forced restarts and can interrupt active sessions. This tweak keeps your PC running until you choose to restart.",
-    category: "gaming",
+    category: "system",
     isActive: false,
     warning: null,
     featureBreaks: "Windows will not auto-restart after updates. You must restart manually to apply updates. Update restarts are still available from Windows Update settings."
