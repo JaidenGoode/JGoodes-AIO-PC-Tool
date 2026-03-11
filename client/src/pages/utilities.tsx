@@ -30,8 +30,8 @@ function UtilCard({
       transition={{ delay }}
       className="h-full"
     >
-      <div className="h-full p-4 rounded-xl border border-border bg-card hover:border-primary/25 transition-all duration-150">
-        <div className="flex items-center gap-2.5 mb-4">
+      <div className="h-full flex flex-col p-4 rounded-xl border border-border bg-card hover:border-primary/25 transition-all duration-150">
+        <div className="flex items-center gap-2.5 mb-4 shrink-0">
           <div className="p-1.5 rounded-lg bg-primary/10 shrink-0">
             <Icon className="h-3.5 w-3.5 text-primary" />
           </div>
@@ -40,7 +40,7 @@ function UtilCard({
             <p className="text-[11px] text-muted-foreground">{description}</p>
           </div>
         </div>
-        <div className="space-y-2">{children}</div>
+        <div className="flex-1 flex flex-col space-y-2">{children}</div>
       </div>
     </motion.div>
   );
@@ -779,7 +779,7 @@ export default function Utilities() {
         <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
 
           <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.22}>
-            <div className="flex flex-col h-full space-y-2.5">
+            <div className="flex flex-col flex-1 space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Popular open-source utility by Chris Titus Tech. Offers one-click Windows debloat, program installation, system tweaks, and fixes — all in a clean GUI.
               </p>
@@ -820,7 +820,7 @@ export default function Utilities() {
           </UtilCard>
 
           <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.23}>
-            <div className="flex flex-col h-full space-y-2.5">
+            <div className="flex flex-col flex-1 space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Free third-party tool by O&O Software. Provides granular control over 200+ Windows privacy settings beyond what this app covers — telemetry, Microsoft accounts, app permissions, diagnostics, and more.
               </p>
@@ -861,7 +861,7 @@ export default function Utilities() {
           </UtilCard>
 
           <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.24}>
-            <div className="flex flex-col h-full space-y-2.5">
+            <div className="flex flex-col flex-1 space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Free portable tool by Winaero. Unlocks hidden Windows settings not available through Settings or Group Policy — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
               </p>
@@ -907,7 +907,7 @@ export default function Utilities() {
         <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
 
           <UtilCard icon={Gamepad2} title="Razer Cortex" description="Game booster & FPS optimizer by Razer" delay={0.25}>
-            <div className="flex flex-col h-full space-y-2.5">
+            <div className="flex flex-col flex-1 space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Free game optimizer by Razer. Boosts FPS by suspending background processes while gaming, manages game launches, and includes system-level performance tools — no Razer hardware required.
               </p>
@@ -948,7 +948,7 @@ export default function Utilities() {
           </UtilCard>
 
           <UtilCard icon={Zap} title="ExitLag" description="Gaming latency optimizer & connection tool" delay={0.26}>
-            <div className="flex flex-col h-full space-y-2.5">
+            <div className="flex flex-col flex-1 space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Paid tool that routes your game traffic through optimized servers worldwide to reduce latency, packet loss, and jitter. Works with 700+ games and provides real-time connection graphs.
               </p>
