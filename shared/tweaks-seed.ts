@@ -718,4 +718,100 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Start menu tiles will no longer display live content (news headlines, weather, mail counts, etc.). Tile icons remain but become static. All other notification types (toast popups, system tray alerts) are unaffected."
   },
+  {
+    title: "Disable Windows Error Reporting",
+    description: "Disables the Windows Error Reporting service (WerSvc) which automatically generates crash dump files and uploads them to Microsoft whenever any program crashes. During gaming, if a background application crashes, WerSvc triggers a sudden spike in CPU and disk usage while writing minidump files — causing frame drops and stutters at the worst possible moment. Disabling it stops all crash dump generation and upload activity, reclaiming those resources for your game.",
+    category: "performance",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Crash reports will not be generated or submitted to Microsoft. If an app crashes, no minidump is created. No impact on game performance or application functionality."
+  },
+  {
+    title: "Disable Connected Telemetry (DiagTrack)",
+    description: "Disables the Connected User Experiences and Telemetry service (DiagTrack) — Microsoft's always-on background data collection engine that continuously monitors your system activity, writes telemetry data to disk, and uploads it over your internet connection at regular intervals. Even during gaming this service runs in the background consuming CPU cycles, generating disk I/O, and using upload bandwidth. Disabling it fully stops all of this background activity.",
+    category: "performance",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows will not collect or upload usage diagnostic data to Microsoft. No functional impact on games, applications, or Windows features."
+  },
+  {
+    title: "Disable Application Compatibility Telemetry",
+    description: "Disables Windows Application Insights Telemetry (AITEnable) and the Program Compatibility Assistant service (PcaSvc) which intercept every single process launch on your system to log app compatibility data. Every time you start a game or application, Windows silently records it and checks it against a cloud compatibility database — adding overhead to every program start. Disabling stops all per-launch monitoring and frees the associated background service.",
+    category: "performance",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows will no longer suggest automatic compatibility fixes for old software. No effect on modern games, Steam, Epic, or any current applications."
+  },
+  {
+    title: "Disable Application Experience Service",
+    description: "Disables the Application Experience (AeLookupSvc) service which performs a network lookup every time you launch any program to check whether it requires a compatibility shim. This creates a hidden network roundtrip and brief CPU stall on every application launch — including games. On slower connections or busy systems this delay is measurable. Disabling the service eliminates all per-launch compatibility network calls.",
+    category: "performance",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows will not apply automatic compatibility shims to older programs. No effect on modern applications, games, or Windows 10/11 software."
+  },
+  {
+    title: "Disable Windows Activity History",
+    description: "Stops Windows from secretly logging every application, document, and file you open for the Windows Timeline (Task View history) feature. Activity History creates constant background disk writes throughout every work and gaming session as Windows records your activity. It also periodically uploads this history to Microsoft's servers. Disabling stops all activity logging, disk writes, and uploads immediately.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows Timeline will no longer record activity — the Task View timeline history will be empty. No effect on file access, applications, or gaming functionality."
+  },
+  {
+    title: "Disable Windows Advertising ID",
+    description: "Disables the per-user advertising identifier that Windows assigns to track app usage across all installed applications for Microsoft's targeted advertising system. Background processes associated with ad profiling run silently during every session. Disabling the Advertising ID via both user registry and Group Policy stops all ad-tracking background activity.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Apps that display ads will show non-personalized ads instead of targeted ones. No functional impact on gaming, productivity apps, or system operation."
+  },
+  {
+    title: "Disable Windows Location Services",
+    description: "Disables the Windows Location Services platform via Group Policy, preventing all applications from accessing your physical location and stopping the location service from polling Wi-Fi, network, and GPS sensors in the background. The location platform runs silently on all Windows systems whether or not any app has requested location access, contributing to idle CPU usage and unnecessary background activity.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Apps requesting your location (maps, weather) will be denied access. The Windows automatic timezone detection feature may not function. No impact on gaming, browsing, or core Windows functionality."
+  },
+  {
+    title: "Disable Windows Content Delivery Manager",
+    description: "Stops the Windows Content Delivery Manager from silently installing sponsored apps, pushing lock screen advertisements, adding suggested apps to your Start menu, and pre-installing OEM bloatware in the background without any notification. Microsoft uses this mechanism post-installation to add unwanted software to your PC. Disabling it prevents any future silent installs and suppresses all Start menu suggestions.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows will no longer silently install suggested or sponsored apps. Lock screen tips, Start menu app suggestions, and OEM pre-installs will stop. No effect on installed apps, games, or the Windows Store."
+  },
+  {
+    title: "Disable Clipboard History Collection",
+    description: "Stops Windows from collecting and storing clipboard history (the Win+V clipboard manager) and prevents clipboard content from syncing across your devices via Microsoft's cloud clipboard service. Clipboard data can contain passwords, personal information, and sensitive content — disabling collection prevents it from being written to disk or uploaded to Microsoft's servers.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Win+V clipboard history will be empty and cloud clipboard sync across Windows devices is disabled. Standard Ctrl+C / Ctrl+V clipboard functionality works normally and is unaffected."
+  },
+  {
+    title: "Disable Virtualization-Based Security (VBS)",
+    description: "Disables Windows Virtualization-Based Security which runs a Hyper-V hypervisor underneath Windows to isolate certain security processes (HVCI, Credential Guard). While VBS improves security, it introduces 5–15% CPU overhead to ALL processes system-wide including games, because Windows itself is running inside a virtualization layer. Disabling VBS removes this overhead and gives games more direct access to hardware. Requires a system restart to take effect.",
+    category: "gaming",
+    isActive: false,
+    warning: "REQUIRES RESTART to take effect. Disables Hypervisor-Protected Code Integrity (HVCI) and Credential Guard. Not recommended for domain-joined or work PCs. For personal gaming PCs the performance gain typically outweighs the security trade-off.",
+    featureBreaks: "HVCI and Credential Guard security isolation features are disabled after restart. WSL2 and standard Hyper-V virtual machines continue to work normally. A full system restart is required before any performance change is felt."
+  },
+  {
+    title: "Raise System Timer IRQ Priority",
+    description: "Sets IRQ8Priority=1 in Windows Priority Control, elevating the hardware interrupt priority of the system timer (the CMOS/RTC clock that drives all high-resolution timer APIs). This gives Windows' high-resolution timer interrupt higher CPU scheduling weight, reducing the jitter and latency variance in timer callbacks. The result is more consistent frame times and reduced micro-stutters — especially noticeable at 144Hz and above where each frame is only 6.9ms.",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "No functional changes. Minor internal change to timer interrupt priority. Fully reversible by removing the registry value."
+  },
+  {
+    title: "Optimize AFD Network Socket Buffers",
+    description: "Increases the Windows Ancillary Function Driver (AFD) default socket send and receive buffer sizes from the Windows default of 8KB to 128KB. Larger socket buffers reduce the number of context switches and kernel system calls required to handle game network traffic — particularly beneficial for UDP-heavy online games. Fewer kernel interruptions means lower CPU overhead during online gaming and more consistent network latency.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Slightly more kernel memory allocated for network socket buffers (negligible on any modern PC with 4GB+ RAM). Beneficial for all online gaming. No negative effects on normal usage or browsing."
+  },
 ];

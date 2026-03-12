@@ -894,6 +894,166 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 }`,
   },
 
+  "Disable Windows Error Reporting": {
+    requiresAdmin: true,
+    // WerSvc default startup: Manual (3). Three-method approach: service stop, sc.exe config, direct registry write.
+    // Registry Disabled=1 suppresses WER even if service somehow starts again (e.g. triggered by another process).
+    enable: `sc.exe stop WerSvc 2>&1 | Out-Null
+sc.exe config WerSvc start= disabled 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WerSvc" /v Start /t REG_DWORD /d 4 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f`,
+    // Revert: remove Disabled flag, restore service to Manual (Windows default)
+    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /f 2>$null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WerSvc" /v Start /t REG_DWORD /d 3 /f
+sc.exe config WerSvc start= demand 2>&1 | Out-Null`,
+  },
+
+  "Disable Connected Telemetry (DiagTrack)": {
+    requiresAdmin: true,
+    // DiagTrack default startup: Automatic (2). Policy AllowTelemetry=0 blocks upload even if service restarts.
+    enable: `sc.exe stop DiagTrack 2>&1 | Out-Null
+sc.exe config DiagTrack start= disabled 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack" /v Start /t REG_DWORD /d 4 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f`,
+    // Revert: remove telemetry policy, restore DiagTrack to Automatic (Windows default)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /f 2>$null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack" /v Start /t REG_DWORD /d 2 /f
+sc.exe config DiagTrack start= auto 2>&1 | Out-Null`,
+  },
+
+  "Disable Application Compatibility Telemetry": {
+    requiresAdmin: true,
+    // PcaSvc default: Manual (3). AITEnable=0 disables Application Insights Telemetry collection.
+    // DisableInventory=1 stops Windows from building an installed-software inventory for compatibility.
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v AITEnable /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInventory /t REG_DWORD /d 1 /f
+sc.exe stop PcaSvc 2>&1 | Out-Null
+sc.exe config PcaSvc start= disabled 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PcaSvc" /v Start /t REG_DWORD /d 4 /f`,
+    // Revert: remove policy keys, restore PcaSvc to Manual (Windows default)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v AITEnable /f 2>$null
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInventory /f 2>$null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PcaSvc" /v Start /t REG_DWORD /d 3 /f
+sc.exe config PcaSvc start= demand 2>&1 | Out-Null`,
+  },
+
+  "Disable Application Experience Service": {
+    requiresAdmin: true,
+    // AeLookupSvc default: Manual (3). Disabling stops per-launch compatibility network lookups.
+    enable: `sc.exe stop AeLookupSvc 2>&1 | Out-Null
+sc.exe config AeLookupSvc start= disabled 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AeLookupSvc" /v Start /t REG_DWORD /d 4 /f`,
+    // Revert: restore AeLookupSvc to Manual (Windows default)
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AeLookupSvc" /v Start /t REG_DWORD /d 3 /f
+sc.exe config AeLookupSvc start= demand 2>&1 | Out-Null`,
+  },
+
+  "Disable Windows Activity History": {
+    requiresAdmin: true,
+    // Policy keys do not exist by default — delete on revert to restore Windows default behavior.
+    // EnableActivityFeed=0 stops logging. PublishUserActivities/UploadUserActivities=0 blocks upload.
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /t REG_DWORD /d 0 /f`,
+    // Revert: delete policy values to restore Windows default (activity logging enabled)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /f 2>$null
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /f 2>$null
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /f 2>$null`,
+  },
+
+  "Disable Windows Advertising ID": {
+    requiresAdmin: true,
+    // HKCU default: Enabled=1. HKLM policy enforces disable system-wide regardless of user setting.
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 1 /f`,
+    // Revert: restore HKCU to enabled (Windows default=1), delete policy key
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 1 /f
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /f 2>$null`,
+  },
+
+  "Disable Windows Location Services": {
+    requiresAdmin: true,
+    // Policy keys do not exist by default — delete on revert to restore Windows default (location enabled).
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /t REG_DWORD /d 1 /f`,
+    // Revert: delete policy keys to restore Windows default (location services enabled)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /f 2>$null
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /f 2>$null`,
+  },
+
+  "Disable Windows Content Delivery Manager": {
+    requiresAdmin: false,
+    // All values default to 1 in HKCU — set to 0 to disable, revert sets back to 1 (Windows default).
+    // Covers: silent app installs, feature management, OEM/pre-installed apps, lock screen content, suggested Start apps.
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v ContentDeliveryAllowed /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v FeatureManagementEnabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353698Enabled /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 0 /f`,
+    // Revert: restore all values to 1 (Windows default)
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v ContentDeliveryAllowed /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v FeatureManagementEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v OemPreInstalledAppsEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v PreInstalledAppsEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SilentInstalledAppsEnabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338388Enabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-353698Enabled /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager" /v SubscribedContent-338389Enabled /t REG_DWORD /d 1 /f`,
+  },
+
+  "Disable Clipboard History Collection": {
+    requiresAdmin: true,
+    // Policy keys do not exist by default — delete on revert to restore Windows default (clipboard history enabled).
+    // HKCU EnableClipboardHistory=0 also disables the user-side feature.
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_DWORD /d 0 /f`,
+    // Revert: delete policy keys, delete HKCU override (Windows default = clipboard history available)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /f 2>$null
+reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /f 2>$null
+reg delete "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /f 2>$null`,
+  },
+
+  "Disable Virtualization-Based Security (VBS)": {
+    requiresAdmin: true,
+    requiresRestart: true,
+    // All three DeviceGuard keys: EnableVirtualizationBasedSecurity=0 disables VBS,
+    // RequirePlatformSecurityFeatures=0 disables Secure Boot requirement for VBS,
+    // HypervisorEnforcedCodeIntegrity=0 disables HVCI (kernel code integrity enforcement).
+    // Keys do not exist by default on non-OEM systems — delete on revert to restore Windows default.
+    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 0 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
+    // Revert: delete all three keys to restore Windows default VBS/HVCI behavior
+    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /f 2>$null
+reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /f 2>$null
+reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /f 2>$null`,
+  },
+
+  "Raise System Timer IRQ Priority": {
+    requiresAdmin: true,
+    // IRQ8Priority=1 elevates the system timer interrupt (CMOS/RTC) priority.
+    // Key does not exist by default — delete on revert to restore Windows default.
+    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /t REG_DWORD /d 1 /f`,
+    // Revert: delete the key to restore Windows default (no IRQ8 priority override)
+    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /f 2>$null`,
+  },
+
+  "Optimize AFD Network Socket Buffers": {
+    requiresAdmin: true,
+    // Windows AFD default socket buffer: ~8KB. Setting to 131072 (128KB) reduces kernel/user context switches
+    // for network I/O, benefiting UDP-heavy online games.
+    // Keys do not exist by default — delete on revert to restore Windows AFD defaults.
+    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultReceiveWindow /t REG_DWORD /d 131072 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultSendWindow /t REG_DWORD /d 131072 /f`,
+    // Revert: delete both keys to restore AFD default buffer sizes
+    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultReceiveWindow /f 2>$null
+reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultSendWindow /f 2>$null`,
+  },
+
 };
 
 export function getTweakCommand(title: string): TweakCommand | null {

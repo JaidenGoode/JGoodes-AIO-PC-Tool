@@ -815,6 +815,26 @@ try{
   $d['Disable NIC Interrupt Moderation']=$imOff
 }catch{$d['Disable NIC Interrupt Moderation']=0}
 
+# New Performance tweaks
+$d['Disable Windows Error Reporting']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting' 'Disabled' 1
+$d['Disable Connected Telemetry (DiagTrack)']=csvc 'DiagTrack'
+$d['Disable Application Compatibility Telemetry']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat' 'AITEnable' 0
+$d['Disable Application Experience Service']=csvc 'AeLookupSvc'
+
+# New System tweaks
+$d['Disable Windows Activity History']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0
+$d['Disable Windows Advertising ID']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' 'Enabled' 0
+$d['Disable Windows Location Services']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors' 'DisableLocation' 1
+$d['Disable Windows Content Delivery Manager']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SilentInstalledAppsEnabled' 0
+$d['Disable Clipboard History Collection']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'AllowClipboardHistory' 0
+
+# New Gaming tweaks
+$d['Disable Virtualization-Based Security (VBS)']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard' 'EnableVirtualizationBasedSecurity' 0
+$d['Raise System Timer IRQ Priority']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'IRQ8Priority' 1
+
+# New Network tweaks
+$d['Optimize AFD Network Socket Buffers']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\AFD\Parameters' 'DefaultReceiveWindow' 131072
+
 $d | ConvertTo-Json -Compress`;
 
       // Run PS script — retry once if output is empty/missing
