@@ -857,6 +857,10 @@ try{
 $d['Exclude Driver Updates from Windows Update']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' 'ExcludeWUDriversInQualityUpdate' 1
 # CDPSvc: disabled = Start=4, Windows default = 2 (Automatic)
 $d['Disable Connected Devices Platform (CDPSvc)']=csvc 'CDPSvc'
+# Windows Copilot AI: Win11 23H2+ only — key is silently ignored on Win10/older Win11
+$d['Disable Windows Copilot AI Sidebar']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1
+# Windows 11 Widgets Panel: Win11 only — key is silently ignored on Win10
+$d['Disable Windows 11 Widgets Panel']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Dsh' 'AllowNewsAndInterests' 0
 
 $d | ConvertTo-Json -Compress`;
 

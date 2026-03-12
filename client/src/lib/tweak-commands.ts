@@ -1130,6 +1130,28 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWOR
 sc.exe config CDPSvc start= auto 2>&1 | Out-Null`,
   },
 
+  "Disable Windows Copilot AI Sidebar": {
+    requiresAdmin: true,
+    // Official Group Policy key: TurnOffWindowsCopilot=1 under HKLM.
+    // Affects Windows 11 23H2+ only — key is silently ignored on Windows 10 / Win11 < 23H2.
+    // Stops the BingCoPilot background browser process and removes the Copilot taskbar button.
+    // Detection: creg checks HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot TurnOffWindowsCopilot = 1
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f`,
+    // Revert: delete the policy value to re-enable Copilot (Windows default = Copilot enabled on 23H2+)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f 2>$null`,
+  },
+
+  "Disable Windows 11 Widgets Panel": {
+    requiresAdmin: true,
+    // Official Group Policy key: AllowNewsAndInterests=0 under HKLM\SOFTWARE\Policies\Microsoft\Dsh.
+    // Affects Windows 11 only — silently ignored on Windows 10.
+    // Stops the Widgets background fetch process and removes the Widgets taskbar button.
+    // Detection: creg checks HKLM:\SOFTWARE\Policies\Microsoft\Dsh AllowNewsAndInterests = 0
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f`,
+    // Revert: delete the policy value to restore Windows 11 Widgets (Windows default = Widgets enabled)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /f 2>$null`,
+  },
+
 };
 
 export function getTweakCommand(title: string): TweakCommand | null {

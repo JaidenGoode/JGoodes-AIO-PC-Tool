@@ -862,4 +862,20 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Windows Timeline, Continue on PC (cross-device handoff from Android/iOS), cross-device shared clipboard, and Phone Link backend connectivity are disabled. All standard local Windows features — clipboard, notifications, apps, networking — are completely unaffected."
   },
+  {
+    title: "Disable Windows Copilot AI Sidebar",
+    description: "Disables the Windows Copilot AI sidebar introduced in Windows 11 version 23H2 via the official Group Policy registry key. When Copilot is enabled, Windows runs a persistent background browser process that consumes RAM and makes continuous background network connections to Microsoft's AI servers — even when you never open the Copilot panel. Disabling it via the official Group Policy removes the Copilot button from the taskbar and completely stops its background process from running. If you are on Windows 10 or Windows 11 versions before 23H2, this tweak has absolutely no effect (the key is simply ignored).",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "The Windows Copilot AI sidebar is removed from the taskbar and its background process stops running. Copilot AI features are unavailable. Windows Search, Bing, and all other Windows features are completely unaffected. Has no effect on Windows 10 or Windows 11 versions before 23H2."
+  },
+  {
+    title: "Disable Windows 11 Widgets Panel",
+    description: "Disables the Windows 11 Widgets panel via the official Group Policy registry key, stopping the background Widgets service from continuously fetching news headlines, weather forecasts, stock prices, and activity feed data. The Widgets panel — shown as a weather icon on the taskbar — runs a persistent background process that makes frequent internet requests and consumes CPU and memory even when you never click it. Disabling it removes the Widgets button from the taskbar and eliminates all associated background network and CPU activity. If you are on Windows 10, this tweak has absolutely no effect.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "The Windows 11 Widgets panel (taskbar weather and news widget) is disabled and removed from the taskbar. Windows Search, notifications, and all other Windows features are completely unaffected. Has no effect on Windows 10."
+  },
 ];
