@@ -1054,6 +1054,82 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultS
 reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultSendWindow /f 2>$null`,
   },
 
+  "Foreground Application Priority Lock Timeout": {
+    requiresAdmin: false,
+    // ForegroundLockTimeout lives in HKCU — no admin required.
+    // Windows default: 200000 (microseconds = 0.2 seconds).
+    // Setting to 0 makes foreground priority boost begin instantly when you switch to a window.
+    // Detection: creg checks HKCU:\Control Panel\Desktop ForegroundLockTimeout = 0
+    enable: `reg add "HKCU\\Control Panel\\Desktop" /v ForegroundLockTimeout /t REG_DWORD /d 0 /f`,
+    // Revert: restore Windows default of 200000 microseconds (0x30D40 decimal)
+    disable: `reg add "HKCU\\Control Panel\\Desktop" /v ForegroundLockTimeout /t REG_DWORD /d 200000 /f`,
+  },
+
+  "Disable Print Spooler": {
+    requiresAdmin: true,
+    // Spooler default startup: Automatic (Start=2).
+    // Three-method approach: stop running service, sc.exe config, direct registry write.
+    // All three together ensure the service is fully disabled even if Windows tries to auto-start it.
+    enable: `sc.exe stop spooler 2>&1 | Out-Null
+sc.exe config spooler start= disabled 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\spooler" /v Start /t REG_DWORD /d 4 /f`,
+    // Revert: restore to Automatic (Start=2, Windows default), then start the service
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\spooler" /v Start /t REG_DWORD /d 2 /f
+sc.exe config spooler start= auto 2>&1 | Out-Null
+sc.exe start spooler 2>&1 | Out-Null`,
+  },
+
+  "NTFS MFT Zone Reservation": {
+    requiresAdmin: true,
+    // NtfsMftZoneReservation: Windows default = 1 (1/8th of volume = 12.5% reserved in zone 1).
+    // Setting to 2 increases to zone 2 (1/4 of volume = 25%) for drives with moderate file counts.
+    // Changes take effect immediately — no restart required.
+    // Detection: creg checks HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem NtfsMftZoneReservation = 2
+    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v NtfsMftZoneReservation /t REG_DWORD /d 2 /f`,
+    // Revert: restore Windows default of 1
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v NtfsMftZoneReservation /t REG_DWORD /d 1 /f`,
+  },
+
+  "Disable NIC Flow Control": {
+    requiresAdmin: true,
+    // Flow Control default: 3 (Rx & Tx enabled) on most NICs.
+    // Setting RegistryValue 0 = disabled on all physical adapters.
+    // Uses Get-NetAdapter -Physical to target only real NICs (not virtual/loopback adapters).
+    // SilentlyContinue on each adapter — if the NIC driver doesn't expose FlowControl property, skips gracefully.
+    enable: `Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
+  Set-NetAdapterAdvancedProperty -Name $_.Name -RegistryKeyword "FlowControl" -RegistryValue 0 -ErrorAction SilentlyContinue
+}`,
+    // Revert: restore to 3 (Rx & Tx Enabled) which is the industry-standard NIC default
+    disable: `Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
+  Set-NetAdapterAdvancedProperty -Name $_.Name -RegistryKeyword "FlowControl" -RegistryValue 3 -ErrorAction SilentlyContinue
+}`,
+  },
+
+  "Exclude Driver Updates from Windows Update": {
+    requiresAdmin: true,
+    // ExcludeWUDriversInQualityUpdate: Group Policy key that stops Windows Update from pushing
+    // device driver updates through Quality Update channels. Only affects driver updates —
+    // all security patches, cumulative updates, and OS feature updates are fully unaffected.
+    // Detection: creg checks HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate ExcludeWUDriversInQualityUpdate = 1
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /v ExcludeWUDriversInQualityUpdate /t REG_DWORD /d 1 /f`,
+    // Revert: delete the policy value to restore Windows Update default behavior (drivers included)
+    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /v ExcludeWUDriversInQualityUpdate /f 2>$null`,
+  },
+
+  "Disable Connected Devices Platform (CDPSvc)": {
+    requiresAdmin: true,
+    // CDPSvc default startup: Automatic (Start=2) on Windows 10/11.
+    // Three-method approach: stop running service, sc.exe config, direct registry write.
+    // This is distinct from the Phone Link policy (EnableCdp=0) — that restricts the feature
+    // at config level, while this disables the service process entirely.
+    enable: `sc.exe stop CDPSvc 2>&1 | Out-Null
+sc.exe config CDPSvc start= disabled 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 4 /f`,
+    // Revert: restore to Automatic (Start=2, Windows default)
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 2 /f
+sc.exe config CDPSvc start= auto 2>&1 | Out-Null`,
+  },
+
 };
 
 export function getTweakCommand(title: string): TweakCommand | null {

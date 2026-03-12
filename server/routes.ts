@@ -835,6 +835,29 @@ $d['Raise System Timer IRQ Priority']=creg 'HKLM:\SYSTEM\CurrentControlSet\Contr
 # New Network tweaks
 $d['Optimize AFD Network Socket Buffers']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\AFD\Parameters' 'DefaultReceiveWindow' 131072
 
+# 6 new professional tweaks
+# Foreground Priority Lock Timeout: HKCU, no admin — DWORD 0 means instant priority switch
+$d['Foreground Application Priority Lock Timeout']=creg 'HKCU:\Control Panel\Desktop' 'ForegroundLockTimeout' 0
+# Print Spooler: disabled = Start=4, Windows default = 2 (Automatic)
+$d['Disable Print Spooler']=csvc 'spooler'
+# NTFS MFT Zone Reservation: 2 = zone 2 (25% reserved), default = 1
+$d['NTFS MFT Zone Reservation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsMftZoneReservation' 2
+# NIC Flow Control: check all physical adapters — returns 1 if FlowControl=0 on any adapter
+try{
+  $fcOff=0
+  Get-NetAdapter -Physical -EA Stop | ForEach-Object {
+    try{
+      $fc=Get-NetAdapterAdvancedProperty -Name $_.Name -RegistryKeyword "FlowControl" -EA Stop
+      if($fc -and ($fc.RegistryValue -eq 0 -or $fc.RegistryValue -eq '0')){$fcOff=1}
+    }catch{}
+  }
+  $d['Disable NIC Flow Control']=$fcOff
+}catch{$d['Disable NIC Flow Control']=0}
+# Exclude Driver Updates from Windows Update: Group Policy DWORD = 1
+$d['Exclude Driver Updates from Windows Update']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' 'ExcludeWUDriversInQualityUpdate' 1
+# CDPSvc: disabled = Start=4, Windows default = 2 (Automatic)
+$d['Disable Connected Devices Platform (CDPSvc)']=csvc 'CDPSvc'
+
 $d | ConvertTo-Json -Compress`;
 
       // Run PS script — retry once if output is empty/missing

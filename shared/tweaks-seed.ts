@@ -814,4 +814,52 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Slightly more kernel memory allocated for network socket buffers (negligible on any modern PC with 4GB+ RAM). Beneficial for all online gaming. No negative effects on normal usage or browsing."
   },
+  {
+    title: "Foreground Application Priority Lock Timeout",
+    description: "Sets ForegroundLockTimeout to 0 in the Windows Desktop registry, making Windows instantly begin boosting the foreground application's CPU priority the moment it becomes the active window. The Windows default of 200,000 microseconds (0.2 seconds) creates a brief but measurable delay before a game receives its full foreground CPU scheduling priority after being clicked or alt-tabbed into. This is entirely separate from Win32PrioritySeparation — that tweak controls the *magnitude* of the priority boost, while ForegroundLockTimeout controls the *delay* before the boost begins. Setting to 0 eliminates that delay entirely.",
+    category: "gaming",
+    isActive: false,
+    warning: null,
+    featureBreaks: "No functional changes. Windows instantly prioritizes whichever window you focus. Fully reversible by restoring the default 200,000 microsecond value."
+  },
+  {
+    title: "Disable Print Spooler",
+    description: "Disables the Windows Print Spooler service which manages all printer communication and print job queuing. Even on systems with no printer attached, the Print Spooler runs as an Automatic background service and its interrupt handling routine causes documented DPC (Deferred Procedure Call) latency spikes. DPC spikes are a well-known source of micro-stutters in games — the CPU is briefly interrupted mid-frame to service the Spooler's timer routine. Disabling it eliminates these interruptions. Recommended by professional DPC latency analysis tools like LatencyMon and by gaming optimization guides.",
+    category: "performance",
+    isActive: false,
+    warning: "You cannot print while the Print Spooler is disabled. Re-enable this tweak before printing — printing resumes instantly after re-enabling.",
+    featureBreaks: "Printing is completely unavailable while applied. Re-enable the tweak before printing. Fax services also stop. All other functionality including networking, file sharing, and applications is fully unaffected."
+  },
+  {
+    title: "NTFS MFT Zone Reservation",
+    description: "Sets NtfsMftZoneReservation to zone 2 (12.5% of volume) via the Windows FileSystem registry key, instructing NTFS to reserve more contiguous space at the start of each volume for Master File Table growth. The MFT stores metadata entries for every file on the drive — when it runs out of pre-reserved space and fragments as the drive fills, file I/O performance degrades because the filesystem must jump to scattered locations to read/write file metadata. Zone 2 (12.5%) is Microsoft's recommended setting for drives with moderate file counts. Documented in Microsoft KB174619. No restart required.",
+    category: "performance",
+    isActive: false,
+    warning: null,
+    featureBreaks: "No functional changes whatsoever. NTFS behavior is identical from the user's perspective. The MFT simply has a larger pre-reserved contiguous growth area, preventing long-term fragmentation as the drive fills up."
+  },
+  {
+    title: "Disable NIC Flow Control",
+    description: "Disables IEEE 802.3x Flow Control on all physical network adapters. Flow Control allows your NIC to send PAUSE frames to your network switch, requesting it to temporarily stop sending data when the receive buffer is full. While designed to prevent overflow, these PAUSE frames introduce measurable latency spikes during bursts of incoming game traffic. Disabling Flow Control ensures the NIC never stalls packet delivery, maintaining consistent low latency throughout gaming sessions. Widely cited in professional gaming network optimization guides including Battle(non)sense.",
+    category: "network",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Your NIC will no longer send PAUSE frames to manage receive buffer overflow. On connections saturated beyond the NIC's receive capacity this could cause very minor packet drops, but on typical gaming connections this has no downside."
+  },
+  {
+    title: "Exclude Driver Updates from Windows Update",
+    description: "Configures Windows Update Group Policy to exclude device driver updates from automatic Windows Quality Update installation. By default, Windows Update silently downloads and installs GPU drivers, NIC drivers, audio drivers, and other device drivers during update cycles — sometimes pushing beta or newly-signed drivers that cause game crashes, display issues, or audio problems without warning. With this tweak applied, driver updates are excluded and you install them manually via Device Manager or your GPU manufacturer's software. All Windows security patches, cumulative updates, and feature updates continue normally.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "GPU, NIC, audio, and other device driver updates will no longer be automatically installed through Windows Update. Install drivers manually from NVIDIA/AMD/Intel or your manufacturer's website when needed. All Windows security patches and OS updates are completely unaffected."
+  },
+  {
+    title: "Disable Connected Devices Platform (CDPSvc)",
+    description: "Disables the Connected Devices Platform service (CDPSvc) which runs continuously in the background to enable cross-device Windows features — Windows Timeline history syncing across PCs, Continue on PC from mobile devices, cross-device clipboard sharing, and the communication backend for Phone Link. While the Disable Phone Link policy tweak restricts these features at a configuration level, the CDPSvc service process continues running and consuming memory and CPU cycles. Disabling the service removes the background process entirely, providing complete elimination of its resource usage.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Windows Timeline, Continue on PC (cross-device handoff from Android/iOS), cross-device shared clipboard, and Phone Link backend connectivity are disabled. All standard local Windows features — clipboard, notifications, apps, networking — are completely unaffected."
+  },
 ];
