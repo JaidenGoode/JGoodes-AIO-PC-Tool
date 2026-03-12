@@ -576,32 +576,36 @@ export default function Utilities() {
         </UtilCard>
 
         <UtilCard icon={ShieldCheck} title="System File Repair" description="Scan and repair Windows system files" delay={0.06}>
+          <p className="text-[10px] text-muted-foreground mb-1">Scans all protected Windows files and replaces corrupt ones with Microsoft-cached copies. Run first when experiencing crashes, missing DLLs, or BSOD errors.</p>
           <RunButton action="sfc" label="Run SFC Scan" pending={isPending("sfc")} onRun={run} />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                size="sm"
-                className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
-                data-testid="button-utility-dism"
-              >
-                Run DISM Repair
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="font-bold">Run DISM Repair?</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm text-muted-foreground">
-                  DISM repairs the Windows image. This requires internet and can take 10–30 minutes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => run("dism")} className="bg-primary text-white text-sm">
-                  Run DISM
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="pt-1 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-1.5">Repairs the Windows system image and component store. Use when SFC cannot fix issues. Requires internet — takes 10–30 minutes.</p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
+                  data-testid="button-utility-dism"
+                >
+                  Run DISM Repair
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-card border-border">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-bold">Run DISM Repair?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm text-muted-foreground">
+                    DISM repairs the Windows image and component store. Requires internet — can take 10–30 minutes.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => run("dism")} className="bg-primary text-white text-sm">
+                    Run DISM
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </UtilCard>
 
         <UtilCard icon={Network} title="Network Tools" description="Reset and repair network settings" delay={0.08}>
