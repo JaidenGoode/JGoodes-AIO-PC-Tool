@@ -61,8 +61,31 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v Hi
   },
 
   "Optimize Visual Effects for Performance": {
-    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f`,
-    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 0 /f`,
+    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 2 /f
+reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 0 /f
+reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d 0 /f
+reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarAnimations /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ListviewAlphaSelect /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ListviewShadow /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v IconsOnly /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v EnableAeroPeek /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v AlwaysHibernateThumbnails /t REG_DWORD /d 0 /f
+rem Smooth edges of screen fonts stays ON
+reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 2 /f
+reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f`,
+    disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" /v VisualFXSetting /t REG_DWORD /d 0 /f
+reg add "HKCU\\Control Panel\\Desktop" /v DragFullWindows /t REG_SZ /d 1 /f
+reg add "HKCU\\Control Panel\\Desktop" /v MenuShowDelay /t REG_SZ /d 400 /f
+reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarAnimations /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ListviewAlphaSelect /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v ListviewShadow /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v IconsOnly /t REG_DWORD /d 0 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v EnableAeroPeek /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Windows\\DWM" /v AlwaysHibernateThumbnails /t REG_DWORD /d 1 /f
+reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 2 /f
+reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f`,
   },
 
   "Disable Cortana": {
@@ -717,13 +740,17 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 
   "Disable Delivery Optimization Service": {
     requiresAdmin: true,
-    // Set-Service silently fails on DoSvc (protected service on Win10/11) — sc.exe config is required
-    // DODownloadMode 100 = Bypass (fully disables DO); deleting the policy key on revert lets Windows use its own default
-    enable: `sc.exe config DoSvc start= disabled 2>$null
-Stop-Service -Name DoSvc -Force -ErrorAction SilentlyContinue
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 100 /f`,
-    disable: `sc.exe config DoSvc start= auto 2>$null
-Start-Service -Name DoSvc -ErrorAction SilentlyContinue
+    // Three-method approach to handle protected service on all Windows 10/11 builds:
+    // 1. sc.exe config (standard, may silently fail on protected builds)
+    // 2. Direct registry write to Services\DoSvc Start key (bypasses protection, takes effect at next boot)
+    // 3. Policy DODownloadMode=0 (HTTP-only, disables all P2P sharing even if service still runs this session)
+    enable: `sc.exe stop DoSvc 2>&1 | Out-Null
+sc.exe config DoSvc start= disabled 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DoSvc" /v Start /t REG_DWORD /d 4 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 0 /f`,
+    disable: `sc.exe config DoSvc start= demand 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DoSvc" /v Start /t REG_DWORD /d 3 /f
+sc.exe start DoSvc 2>&1 | Out-Null
 reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /f 2>$null`,
   },
 

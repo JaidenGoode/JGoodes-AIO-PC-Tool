@@ -75,11 +75,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Optimize Visual Effects for Performance",
-    description: "Sets Windows to 'Adjust for best performance' mode which disables all visual effects including window animations, drop shadows, fading menus, smooth scrolling, and transparent glass effects. Reduces Desktop Window Manager CPU and GPU overhead, freeing resources for games and applications.",
+    description: "Disables all Windows visual effects for maximum performance — window animations, drop shadows, taskbar animations, thumbnail previews, menu fading, and transparent selection rectangles — while keeping 'Smooth edges of screen fonts' (ClearType) enabled so text stays crisp. Reduces Desktop Window Manager CPU and GPU overhead freeing resources for games.",
     category: "performance",
     isActive: false,
     warning: null,
-    featureBreaks: "Windows looks more basic — no animations, shadows, transparency, or fading effects. Appearance can be fully restored in Control Panel → System → Advanced → Performance Settings."
+    featureBreaks: "Windows looks more basic — no animations, shadows, or fading effects. Font rendering remains smooth. All effects can be restored in Control Panel → System → Advanced → Performance Settings."
   },
   {
     title: "Disable Cortana",
