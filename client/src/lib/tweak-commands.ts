@@ -159,7 +159,7 @@ reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_DSEBehavior /t REG_DWORD /d 2 /f`,
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 1 /f
 reg add "HKCU\\System\\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 1 /f
-reg delete "HKCU\\System\\GameConfigStore" /v GameDVR_DSEBehavior /f 2>$null`,
+reg add "HKCU\\System\\GameConfigStore" /v GameDVR_DSEBehavior /t REG_DWORD /d 0 /f`,
   },
 
   "Optimize for Windowed & Borderless Games": {
@@ -257,11 +257,11 @@ try {
     requiresAdmin: true,
     // CpuPriorityClass IFEO values: 1=Idle, 2=Below Normal, 3=Normal, 4=Above Normal, 5=High, 6=Real-time
     // IoPriority IFEO values: 0=Very Low, 1=Low, 2=Normal, 3=High
-    // Windows default: no IFEO PerfOptions entry at all — revert deletes the keys entirely
+    // Revert: set back to Normal priority (CpuPriorityClass=3, IoPriority=2) — Windows default for all processes
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 5 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f`,
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /f 2>$null`,
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 2 /f`,
   },
 
   "Global Timer Resolution for Gaming": {
@@ -523,7 +523,7 @@ reg add "HKLM\\SOFTWARE\\Microsoft\\Dfrg\\BootOptimizeFunction" /v OptimizeCompl
     requiresRestart: true,
     enable: `$ram = (Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1KB
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /t REG_DWORD /d $ram /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB /t REG_DWORD /d 3670016 /f`,
   },
 
   "Disable 8.3 Short File Names": {
@@ -633,10 +633,10 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Tcp132
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxSOACacheEntryTtlLimit /t REG_DWORD /d 300 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheTtl /t REG_DWORD /d 86400 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxNegativeCacheTtl /t REG_DWORD /d 5 /f`,
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheEntryTtlLimit /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxSOACacheEntryTtlLimit /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheTtl /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxNegativeCacheTtl /f 2>$null`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheEntryTtlLimit /t REG_DWORD /d 86400 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxSOACacheEntryTtlLimit /t REG_DWORD /d 300 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheTtl /t REG_DWORD /d 86400 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxNegativeCacheTtl /t REG_DWORD /d 5 /f`,
   },
 
   "Unlock Reserved Network Bandwidth": {
@@ -667,8 +667,8 @@ if (Test-Path $discordCfg) {
     $cfg | Add-Member -Force -NotePropertyName "OVERLAY" -NotePropertyValue $false
     $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
 }`,
-    disable: `# Remove Discord CPU priority override (restore to Windows default)
-reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /f 2>$null
+    disable: `# Restore Discord CPU priority to Normal (CpuPriorityClass=3 = Normal, Windows default)
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
 # Restore hardware acceleration and overlay in Discord's settings.json
 $discordCfg = "$env:APPDATA\\discord\\settings.json"
 if (Test-Path $discordCfg) {
@@ -752,7 +752,7 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v 
     disable: `sc.exe config DoSvc start= demand 2>&1 | Out-Null
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DoSvc" /v Start /t REG_DWORD /d 3 /f
 sc.exe start DoSvc 2>&1 | Out-Null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /f 2>$null`,
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 3 /f`,
   },
 
   "Disable Windows Connect Now (wcncsvc)": {
@@ -837,8 +837,8 @@ reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\Syst
     requiresAdmin: false,
     enable: `reg add "HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v DisableTileNotification /t REG_DWORD /d 1 /f
 reg add "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v NoTileApplicationNotification /t REG_DWORD /d 1 /f`,
-    disable: `reg delete "HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v DisableTileNotification /f 2>$null
-reg delete "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v NoTileApplicationNotification /f 2>$null`,
+    disable: `reg add "HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v DisableTileNotification /t REG_DWORD /d 0 /f
+reg add "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\PushNotifications" /v NoTileApplicationNotification /t REG_DWORD /d 0 /f`,
   },
 
   // ── GAMING (Razer Cortex Speed Up style) ──────────────────────────────────
@@ -903,8 +903,8 @@ Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
 sc.exe config WerSvc start= disabled 2>&1 | Out-Null
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WerSvc" /v Start /t REG_DWORD /d 4 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f`,
-    // Revert: remove Disabled flag, restore service to Manual (Windows default)
-    disable: `reg delete "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /f 2>$null
+    // Revert: set Disabled=0 (WER enabled, Windows default), restore service to Manual
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting" /v Disabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WerSvc" /v Start /t REG_DWORD /d 3 /f
 sc.exe config WerSvc start= demand 2>&1 | Out-Null`,
   },
@@ -916,8 +916,8 @@ sc.exe config WerSvc start= demand 2>&1 | Out-Null`,
 sc.exe config DiagTrack start= disabled 2>&1 | Out-Null
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack" /v Start /t REG_DWORD /d 4 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f`,
-    // Revert: remove telemetry policy, restore DiagTrack to Automatic (Windows default)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /f 2>$null
+    // Revert: set AllowTelemetry=3 (Full, Windows default for Home/Pro), restore DiagTrack to Automatic
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 3 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack" /v Start /t REG_DWORD /d 2 /f
 sc.exe config DiagTrack start= auto 2>&1 | Out-Null`,
   },
@@ -931,9 +931,9 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInve
 sc.exe stop PcaSvc 2>&1 | Out-Null
 sc.exe config PcaSvc start= disabled 2>&1 | Out-Null
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PcaSvc" /v Start /t REG_DWORD /d 4 /f`,
-    // Revert: remove policy keys, restore PcaSvc to Manual (Windows default)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v AITEnable /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInventory /f 2>$null
+    // Revert: set AITEnable=1 (enabled, Windows default), DisableInventory=0 (inventory on, Windows default), restore PcaSvc to Manual
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v AITEnable /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInventory /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PcaSvc" /v Start /t REG_DWORD /d 3 /f
 sc.exe config PcaSvc start= demand 2>&1 | Out-Null`,
   },
@@ -956,10 +956,10 @@ sc.exe config AeLookupSvc start= demand 2>&1 | Out-Null`,
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /t REG_DWORD /d 0 /f`,
-    // Revert: delete policy values to restore Windows default (activity logging enabled)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /f 2>$null`,
+    // Revert: set all three to 1 (enabled, Windows default — activity logging on)
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v EnableActivityFeed /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v PublishUserActivities /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserActivities /t REG_DWORD /d 1 /f`,
   },
 
   "Disable Windows Advertising ID": {
@@ -967,9 +967,9 @@ reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v UploadUserA
     // HKCU default: Enabled=1. HKLM policy enforces disable system-wide regardless of user setting.
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 1 /f`,
-    // Revert: restore HKCU to enabled (Windows default=1), delete policy key
+    // Revert: restore HKCU to enabled (Windows default=1), set policy to 0 (not disabled by policy)
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo" /v Enabled /t REG_DWORD /d 1 /f
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /f 2>$null`,
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Windows Location Services": {
@@ -977,9 +977,9 @@ reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v Di
     // Policy keys do not exist by default — delete on revert to restore Windows default (location enabled).
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /t REG_DWORD /d 1 /f`,
-    // Revert: delete policy keys to restore Windows default (location services enabled)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /f 2>$null`,
+    // Revert: set to 0 (enabled, Windows default — location services on)
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Windows Content Delivery Manager": {
@@ -1012,10 +1012,10 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryMana
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_DWORD /d 0 /f`,
-    // Revert: delete policy keys, delete HKCU override (Windows default = clipboard history available)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /f 2>$null
-reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /f 2>$null
-reg delete "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /f 2>$null`,
+    // Revert: set policy to 1 (clipboard history allowed, Windows default) and re-enable HKCU flag
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 1 /f
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 1 /f
+reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_DWORD /d 1 /f`,
   },
 
   "Disable Virtualization-Based Security (VBS)": {
@@ -1028,10 +1028,10 @@ reg delete "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /f 2
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
-    // Revert: delete all three keys to restore Windows default VBS/HVCI behavior
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /f 2>$null`,
+    // Revert: restore Windows default VBS/HVCI values (VBS=1 enabled, Secure Boot=1 required, HVCI=0 off by default)
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 1 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 1 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
   },
 
   "Raise System Timer IRQ Priority": {
@@ -1039,8 +1039,8 @@ reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v Hypervisor
     // IRQ8Priority=1 elevates the system timer interrupt (CMOS/RTC) priority.
     // Key does not exist by default — delete on revert to restore Windows default.
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /t REG_DWORD /d 1 /f`,
-    // Revert: delete the key to restore Windows default (no IRQ8 priority override)
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /f 2>$null`,
+    // Revert: set IRQ8Priority=0 (Windows default — no priority override)
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v IRQ8Priority /t REG_DWORD /d 0 /f`,
   },
 
   "Optimize AFD Network Socket Buffers": {
@@ -1050,9 +1050,9 @@ reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v Hypervisor
     // Keys do not exist by default — delete on revert to restore Windows AFD defaults.
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultReceiveWindow /t REG_DWORD /d 131072 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultSendWindow /t REG_DWORD /d 131072 /f`,
-    // Revert: delete both keys to restore AFD default buffer sizes
-    disable: `reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultReceiveWindow /f 2>$null
-reg delete "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultSendWindow /f 2>$null`,
+    // Revert: set both buffers back to 8192 bytes (Windows AFD default)
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultReceiveWindow /t REG_DWORD /d 8192 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AFD\\Parameters" /v DefaultSendWindow /t REG_DWORD /d 8192 /f`,
   },
 
   "Foreground Application Priority Lock Timeout": {
@@ -1113,8 +1113,8 @@ sc.exe start spooler 2>&1 | Out-Null`,
     // all security patches, cumulative updates, and OS feature updates are fully unaffected.
     // Detection: creg checks HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate ExcludeWUDriversInQualityUpdate = 1
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /v ExcludeWUDriversInQualityUpdate /t REG_DWORD /d 1 /f`,
-    // Revert: delete the policy value to restore Windows Update default behavior (drivers included)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /v ExcludeWUDriversInQualityUpdate /f 2>$null`,
+    // Revert: set to 0 (drivers included in Windows Update, Windows default)
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /v ExcludeWUDriversInQualityUpdate /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Connected Devices Platform (CDPSvc)": {
@@ -1139,8 +1139,8 @@ sc.exe start CDPSvc 2>&1 | Out-Null`,
     // Stops the BingCoPilot background browser process and removes the Copilot taskbar button.
     // Detection: creg checks HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot TurnOffWindowsCopilot = 1
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f`,
-    // Revert: delete the policy value to re-enable Copilot (Windows default = Copilot enabled on 23H2+)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /f 2>$null`,
+    // Revert: set to 0 (Copilot enabled, Windows default on 23H2+)
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Windows 11 Widgets Panel": {
@@ -1150,8 +1150,8 @@ sc.exe start CDPSvc 2>&1 | Out-Null`,
     // Stops the Widgets background fetch process and removes the Widgets taskbar button.
     // Detection: creg checks HKLM:\SOFTWARE\Policies\Microsoft\Dsh AllowNewsAndInterests = 0
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 0 /f`,
-    // Revert: delete the policy value to restore Windows 11 Widgets (Windows default = Widgets enabled)
-    disable: `reg delete "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /f 2>$null`,
+    // Revert: set to 1 (Widgets enabled, Windows default on Windows 11)
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 1 /f`,
   },
 
 };
