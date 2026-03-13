@@ -848,11 +848,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Connected Devices Platform (CDPSvc)",
-    description: "Disables the Connected Devices Platform service (CDPSvc) which runs continuously in the background to enable cross-device Windows features — Windows Timeline history syncing across PCs, Continue on PC from mobile devices, cross-device clipboard sharing, and the communication backend for Phone Link. While the Disable Phone Link policy tweak restricts these features at a configuration level, the CDPSvc service process continues running and consuming memory and CPU cycles. Disabling the service removes the background process entirely, providing complete elimination of its resource usage.",
+    description: "Sets the Connected Devices Platform service (CDPSvc) to Manual startup so it no longer runs continuously in the background. CDPSvc powers cross-device Windows features — Windows Timeline syncing, Continue on PC from mobile, cross-device clipboard, and Phone Link backend. Setting it to Manual stops it from auto-starting while still allowing Windows to start it on-demand when needed, saving background memory and CPU without the risks of full disablement.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Windows Timeline, Continue on PC (cross-device handoff from Android/iOS), cross-device shared clipboard, and Phone Link backend connectivity are disabled. All standard local Windows features — clipboard, notifications, apps, networking — are completely unaffected."
+    warning: "⚠️ MICROSOFT ACCOUNT WARNING: Do NOT fully disable CDPSvc on Windows 11 systems using a Microsoft Account. Full disablement causes 'User Profile Service failed the sign in' on next boot — your desktop loads as a blank temporary profile with no wallpaper, apps, or saved data visible. This tweak safely sets CDPSvc to Manual (not Disabled) to prevent that risk. If you experience any profile loading issues after applying, use the Revert button immediately and restart.",
+    featureBreaks: "CDPSvc will no longer auto-start in the background. Windows Timeline, Continue on PC (cross-device handoff from Android/iOS), cross-device shared clipboard, and Phone Link backend connectivity stop running automatically. All standard local Windows features — clipboard, notifications, apps, networking — are completely unaffected."
   },
   {
     title: "Disable Windows Copilot AI Sidebar",

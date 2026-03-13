@@ -1115,12 +1115,14 @@ sc.exe start spooler 2>&1 | Out-Null`,
   "Disable Connected Devices Platform (CDPSvc)": {
     requiresAdmin: true,
     // CDPSvc default startup: Automatic (Start=2) on Windows 10/11.
-    // Three-method approach: stop running service, sc.exe config, direct registry write.
-    // This is distinct from the Phone Link policy (EnableCdp=0) — that restricts the feature
-    // at config level, while this disables the service process entirely.
+    // SAFETY: Set to Manual (Start=3), NOT Disabled (Start=4).
+    // Fully disabling CDPSvc (Start=4) on Windows 11 with a Microsoft Account causes
+    // "User Profile Service failed the sign in" on next boot — the profile loads as a
+    // blank temporary profile with no wallpaper, apps, or account data.
+    // Manual allows Windows to start CDPSvc on-demand during profile load, preventing this.
     enable: `sc.exe stop CDPSvc 2>&1 | Out-Null
-sc.exe config CDPSvc start= disabled 2>&1 | Out-Null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 4 /f`,
+sc.exe config CDPSvc start= demand 2>&1 | Out-Null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 3 /f`,
     // Revert: restore to Automatic (Start=2, Windows default), then start the service
     disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 2 /f
 sc.exe config CDPSvc start= auto 2>&1 | Out-Null
