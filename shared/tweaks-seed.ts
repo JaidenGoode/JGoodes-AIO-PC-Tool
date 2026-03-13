@@ -93,11 +93,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   // ── GAMING ───────────────────────────────────────────────────────────────────
   {
     title: "Disable Mouse Acceleration",
-    description: "Turns off Windows Pointer Precision (mouse acceleration), giving a true 1:1 relationship between physical mouse movement and on-screen cursor movement. Essential for FPS gaming.",
+    description: "Turns off Windows Pointer Precision (mouse acceleration), giving a true 1:1 relationship between physical mouse movement and on-screen cursor movement. Essential for FPS gaming — without acceleration your cursor moves exactly as far as you physically move the mouse, no more, no less.",
     category: "gaming",
     isActive: false,
-    warning: null,
-    featureBreaks: "Mouse movement will feel different if you are used to acceleration. Requires re-adjustment of sensitivity."
+    warning: "Your mouse will feel different at first. The cursor moves less when you push quickly and more precisely matches your physical movement. This is the correct setting for gaming but takes a short adjustment period to recalibrate. Lower your in-game sensitivity slightly after enabling to compensate.",
+    featureBreaks: "Mouse aiming will feel different initially — requires a short adjustment period. Revert at any time to restore Windows default."
   },
   {
     title: "Keep All CPU Cores Active (Unpark Cores)",
@@ -109,19 +109,19 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Network Power Saving",
-    description: "Prevents Windows from reducing the power state of the network adapter to save energy, eliminating network latency spikes that occur when the adapter wakes from sleep.",
+    description: "Prevents Windows from reducing the power state of the network adapter to save energy, eliminating network latency spikes that occur when the adapter wakes from sleep. These spikes can cause brief stutters or lag spikes during online gaming when your NIC transitions between power states.",
     category: "gaming",
     isActive: false,
-    warning: null,
-    featureBreaks: "Slightly higher power draw from the network adapter. Beneficial for gaming and streaming."
+    warning: "LAPTOP USERS: Disabling network power management slightly increases battery drain as your Wi-Fi or Ethernet adapter stays fully powered at all times. Only apply on laptops when plugged into mains power. Desktop users can apply freely with no drawback.",
+    featureBreaks: "Slightly higher power draw from the network adapter. Eliminates power-state-related network latency spikes."
   },
   {
     title: "Disable GameBar",
     description: "Completely disables the Xbox GameBar overlay. Removes background GameBar processes and prevents it from hooking into games, freeing up minor system resources.",
     category: "gaming",
     isActive: false,
-    warning: null,
-    featureBreaks: "Cannot use GameBar overlay (Win+G). Screenshot/clip shortcuts via GameBar disabled."
+    warning: "If you use the GameBar (Win+G) to monitor FPS, CPU, or GPU usage while gaming, or to take screenshots and clips, disable this tweak — those features will stop working. Use Revert to restore GameBar at any time.",
+    featureBreaks: "Cannot use GameBar overlay (Win+G). Screenshot and clip shortcuts via GameBar disabled. FPS/CPU/GPU overlay from GameBar unavailable."
   },
   {
     title: "Disable GameBar Background Recording",
@@ -173,19 +173,19 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "System Responsiveness & Network Throttling",
-    description: "Sets NetworkThrottlingIndex to 0xFFFFFFFF (disabled) and SystemResponsiveness to 0 in the Windows Multimedia System Profile registry keys. Disabling NetworkThrottlingIndex removes all network packet throttling Windows applies to multimedia apps. SystemResponsiveness 0 removes the CPU reservation Windows holds for background services, giving games the maximum available CPU time. Enabled: NetworkThrottlingIndex=FFFFFFFF, SystemResponsiveness=0 — Disabled: NetworkThrottlingIndex=10, SystemResponsiveness=20.",
+    description: "Removes two Windows performance limiters from the Multimedia System Profile: (1) the network packet throttle that Windows applies to multimedia applications is fully disabled so game packets are never delayed, and (2) the background CPU reservation that Windows holds for system tasks is set to zero — giving games full access to every available CPU cycle. Both settings are restored to their exact Windows defaults when reverted.",
     category: "gaming",
     isActive: false,
     warning: null,
-    featureBreaks: "Background system tasks receive no reserved CPU time and network packets are never throttled while this is active. Background downloads/tasks may be marginally slower during gaming."
+    featureBreaks: "Background system tasks receive no reserved CPU time. Network packets are never throttled. Background downloads or tasks may feel marginally slower while gaming — this is intentional."
   },
   {
     title: "Win32 Priority Separation",
-    description: "Sets Win32PrioritySeparation to 0x24 (short interval, fixed foreground boost). Controls how the Windows CPU scheduler splits time quanta between foreground and background processes. 0x24 gives the foreground application a fixed quantum boost with short intervals — ideal for gaming. Reverts to 0x26 (short interval, variable boost).",
+    description: "Configures how the Windows CPU scheduler distributes processing time between the active foreground application and background tasks. The gaming-optimised setting gives your game a fixed, maximum CPU time boost with the shortest possible scheduling intervals — reducing micro-stutter and improving frame consistency. Revert restores the Windows default variable-boost scheduling value.",
     category: "gaming",
     isActive: false,
     warning: null,
-    featureBreaks: "Background processes receive less CPU time during gaming. Revert sets Win32PrioritySeparation back to 0x26."
+    featureBreaks: "Background processes receive less CPU scheduler time while a game is running. No effect outside of gaming sessions."
   },
   {
     title: "Maximum Priority for Games",
@@ -264,8 +264,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Prevents Windows from automatically rebooting your PC after installing updates — even when you're in the middle of a game or important work. Windows normally schedules forced restarts and can interrupt active sessions. This tweak keeps your PC running until you choose to restart.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Windows will not auto-restart after updates. You must restart manually to apply updates. Update restarts are still available from Windows Update settings."
+    warning: "IMPORTANT: After Windows installs updates, you must restart manually to apply them. If you ignore pending restarts for a long time, your PC may be missing critical security patches. Check Windows Update periodically and restart when updates are pending.",
+    featureBreaks: "Windows will not auto-restart after updates. You must restart manually to apply updates. Check Windows Update → Restart now when updates are pending."
   },
   {
     title: "Disable Xbox Core Services",
@@ -400,8 +400,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Automatically terminates programs that stop responding instead of waiting indefinitely. Reduces the hung-app timeout from 5 seconds to 1 second and sets Windows to auto-end tasks on shutdown, preventing the 'This app is preventing shutdown' dialog.",
     category: "performance",
     isActive: false,
-    warning: null,
-    featureBreaks: "Programs that temporarily freeze may be killed before they recover. Unsaved work in frozen apps may be lost."
+    warning: "Programs that temporarily freeze for more than 1 second will be force-closed automatically. If you use apps that sometimes take a moment to respond (like older software or heavy programs), they may be closed before they recover. Always save your work frequently.",
+    featureBreaks: "Programs that freeze for more than 1 second are force-closed. Unsaved work in a frozen app may be lost. Shutdown is faster as stuck programs are terminated immediately."
   },
   {
     title: "Disable Scheduled Disk Defragmentation",
@@ -471,11 +471,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   // ── SYSTEM (Cortex Desktop Menu & Misc Optimization) ──────────────────────
   {
     title: "Speed Up System Shutdown",
-    description: "Reduces the time Windows waits for applications and services to close during shutdown. Lowers WaitToKillServiceTimeout and WaitToKillAppTimeout from 5 seconds to 2 seconds, making shutdown and restart significantly faster.",
+    description: "Reduces the time Windows waits for applications and services to close during shutdown. Lowers the app and service close timeout from 5 seconds to 2 seconds, making shutdown and restart significantly faster.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Applications that need more than 2 seconds to save data during shutdown may be force-closed. Most apps save instantly."
+    warning: "Applications that take longer than 2 seconds to close may be force-terminated on shutdown. Always manually save your work before shutting down — most apps save instantly, but unsaved documents in slower apps could be lost.",
+    featureBreaks: "Apps that need more than 2 seconds to finish saving during shutdown may be force-closed. Safe for most modern applications."
   },
   {
     title: "Disable Taskbar & Menu Animations",
@@ -514,8 +514,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Disables the Windows Action Center / Notification Center toast notifications. Stops popup notifications from appearing in the bottom-right corner of the screen. Reduces interruptions during gaming and focused work.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "No toast notifications from any app. Important alerts from Windows may be missed. Notifications can be viewed in Action Center history."
+    warning: "ALL notifications from every app will be silenced — including security alerts, Windows Defender warnings, software updates, and message app popups. You will not be alerted to anything on screen while this is active. Revert this tweak if you need to stay informed of system alerts.",
+    featureBreaks: "No popup notifications from any app or Windows itself. Important system warnings will be invisible. Notifications remain in the Action Center icon if clicked."
   },
   {
     title: "Reduce Keyboard Input Delay",
@@ -723,8 +723,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Disables the Windows Error Reporting service (WerSvc) which automatically generates crash dump files and uploads them to Microsoft whenever any program crashes. During gaming, if a background application crashes, WerSvc triggers a sudden spike in CPU and disk usage while writing minidump files — causing frame drops and stutters at the worst possible moment. Disabling it stops all crash dump generation and upload activity, reclaiming those resources for your game.",
     category: "performance",
     isActive: false,
-    warning: null,
-    featureBreaks: "Crash reports will not be generated or submitted to Microsoft. If an app crashes, no minidump is created. No impact on game performance or application functionality."
+    warning: "If you regularly experience application crashes and want to report them or investigate why they happen, leave this enabled — disabling it means no crash information is saved or sent. For stable systems this is a safe disable.",
+    featureBreaks: "Crash reports will not be generated or submitted to Microsoft. If an app crashes, no minidump file is saved for debugging. No impact on game or application functionality."
   },
   {
     title: "Disable Connected Telemetry (DiagTrack)",
@@ -771,8 +771,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Disables the Windows Location Services platform via Group Policy, preventing all applications from accessing your physical location and stopping the location service from polling Wi-Fi, network, and GPS sensors in the background. The location platform runs silently on all Windows systems whether or not any app has requested location access, contributing to idle CPU usage and unnecessary background activity.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Apps requesting your location (maps, weather) will be denied access. The Windows automatic timezone detection feature may not function. No impact on gaming, browsing, or core Windows functionality."
+    warning: "Any app that uses your location — including weather apps, Maps, Find My Device, and location-based reminders — will lose access entirely. Windows automatic timezone detection may also stop working. If you rely on these features, skip this tweak or revert it when needed.",
+    featureBreaks: "All apps are denied location access. Weather apps and Maps will not know your location. Windows automatic timezone detection may stop. No impact on gaming, browsing, or general Windows functionality."
   },
   {
     title: "Disable Windows Content Delivery Manager",
@@ -787,8 +787,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Stops Windows from collecting and storing clipboard history (the Win+V clipboard manager) and prevents clipboard content from syncing across your devices via Microsoft's cloud clipboard service. Clipboard data can contain passwords, personal information, and sensitive content — disabling collection prevents it from being written to disk or uploaded to Microsoft's servers.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "Win+V clipboard history will be empty and cloud clipboard sync across Windows devices is disabled. Standard Ctrl+C / Ctrl+V clipboard functionality works normally and is unaffected."
+    warning: "The Win+V clipboard history (multi-item paste history) will stop working and be cleared. If you regularly press Win+V to paste previously copied text or images, you will lose that ability while this is active. Normal Ctrl+C and Ctrl+V still work perfectly.",
+    featureBreaks: "Win+V clipboard history stops working and is cleared. Cloud clipboard sync across Windows devices is disabled. Standard Ctrl+C / Ctrl+V clipboard works normally and is completely unaffected."
   },
   {
     title: "Disable Virtualization-Based Security (VBS)",
@@ -851,8 +851,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Configures Windows Update Group Policy to exclude device driver updates from automatic Windows Quality Update installation. By default, Windows Update silently downloads and installs GPU drivers, NIC drivers, audio drivers, and other device drivers during update cycles — sometimes pushing beta or newly-signed drivers that cause game crashes, display issues, or audio problems without warning. With this tweak applied, driver updates are excluded and you install them manually via Device Manager or your GPU manufacturer's software. All Windows security patches, cumulative updates, and feature updates continue normally.",
     category: "system",
     isActive: false,
-    warning: null,
-    featureBreaks: "GPU, NIC, audio, and other device driver updates will no longer be automatically installed through Windows Update. Install drivers manually from NVIDIA/AMD/Intel or your manufacturer's website when needed. All Windows security patches and OS updates are completely unaffected."
+    warning: "MANUAL DRIVER MANAGEMENT REQUIRED: After applying this, your GPU, audio, and network card drivers will NOT update automatically. You must download new drivers yourself from NVIDIA/AMD/Intel's website. If you miss driver updates for months, you may experience bugs, poor performance in new games, or missing features. Check for GPU driver updates at least once per month.",
+    featureBreaks: "GPU, audio, and network drivers will not auto-update via Windows Update. Must install manually from manufacturer websites. All Windows security patches, cumulative updates, and OS feature updates are completely unaffected and continue as normal."
   },
   {
     title: "Disable Connected Devices Platform (CDPSvc)",
