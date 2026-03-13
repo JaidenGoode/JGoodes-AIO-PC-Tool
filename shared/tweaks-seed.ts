@@ -767,14 +767,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Apps that display ads will show non-personalized ads instead of targeted ones. No functional impact on gaming, productivity apps, or system operation."
   },
   {
-    title: "Disable Windows Location Services",
-    description: "Disables the Windows Location Services platform via Group Policy, preventing all applications from accessing your physical location and stopping the location service from polling Wi-Fi, network, and GPS sensors in the background. The location platform runs silently on all Windows systems whether or not any app has requested location access, contributing to idle CPU usage and unnecessary background activity.",
-    category: "system",
-    isActive: false,
-    warning: "Any app that uses your location — including weather apps, Maps, Find My Device, and location-based reminders — will lose access entirely. Windows automatic timezone detection may also stop working. If you rely on these features, skip this tweak or revert it when needed.",
-    featureBreaks: "All apps are denied location access. Weather apps and Maps will not know your location. Windows automatic timezone detection may stop. No impact on gaming, browsing, or general Windows functionality."
-  },
-  {
     title: "Disable Windows Content Delivery Manager",
     description: "Stops the Windows Content Delivery Manager from silently installing sponsored apps, pushing lock screen advertisements, adding suggested apps to your Start menu, and pre-installing OEM bloatware in the background without any notification. Microsoft uses this mechanism post-installation to add unwanted software to your PC. Disabling it prevents any future silent installs and suppresses all Start menu suggestions.",
     category: "system",

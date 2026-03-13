@@ -824,7 +824,6 @@ $d['Disable Application Experience Service']=csvc 'AeLookupSvc'
 # New System tweaks
 $d['Disable Windows Activity History']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0
 $d['Disable Windows Advertising ID']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' 'Enabled' 0
-$d['Disable Windows Location Services']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors' 'DisableLocation' 1
 $d['Disable Windows Content Delivery Manager']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' 'SilentInstalledAppsEnabled' 0
 $d['Disable Clipboard History Collection']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'AllowClipboardHistory' 0
 

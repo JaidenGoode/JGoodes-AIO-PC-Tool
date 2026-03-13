@@ -974,16 +974,6 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v Disab
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AdvertisingInfo" /v DisabledByGroupPolicy /t REG_DWORD /d 0 /f`,
   },
 
-  "Disable Windows Location Services": {
-    requiresAdmin: true,
-    // Policy keys do not exist by default — delete on revert to restore Windows default (location enabled).
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /t REG_DWORD /d 1 /f`,
-    // Revert: set to 0 (enabled, Windows default — location services on)
-    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocation /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\LocationAndSensors" /v DisableLocationScripting /t REG_DWORD /d 0 /f`,
-  },
-
   "Disable Windows Content Delivery Manager": {
     requiresAdmin: false,
     // All values default to 1 in HKCU — set to 0 to disable, revert sets back to 1 (Windows default).
