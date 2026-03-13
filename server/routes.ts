@@ -732,7 +732,6 @@ $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\
 $d['Increase System I/O Performance']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'IoPageLockLimit' 983040
 
 # System (Cortex Desktop Menu & Network)
-$d['Speed Up System Shutdown']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control' 'WaitToKillServiceTimeout' '2000'
 $d['Disable Taskbar & Menu Animations']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAnimations' 0
 # Startup disk check: detect if C: is excluded from autocheck via chkntfs
 try{$cntfsOut=(chkntfs C: 2>&1) -join ' ';$d['Disable Startup Disk Check']=if($cntfsOut -match 'excluded|will not be checked|not scheduled'){1}else{0}}catch{$d['Disable Startup Disk Check']=0}
@@ -748,46 +747,15 @@ $d['Increase Browser Connection Limits']=creg 'HKCU:\Software\Microsoft\Windows\
 
 # Network
 $d['Disable Delivery Optimization Service']=csvc 'DoSvc'
-$d['Disable Windows Connect Now (wcncsvc)']=csvc 'wcncsvc'
-$d['Disable LLMNR Protocol']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient' 'EnableMulticast' 0
-$d['Disable mDNS Multicast']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'EnableMDNS' 0
-
-# NetBIOS: check all IP-enabled adapters via WMI
-try{
-  $nbOff=1
-  $nbAdapters=Get-WmiObject Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True' -EA Stop
-  foreach($nb in $nbAdapters){if($nb.TcpipNetbiosOptions -ne 2){$nbOff=0;break}}
-  $d['Disable NetBIOS over TCP/IP']=$nbOff
-}catch{$d['Disable NetBIOS over TCP/IP']=0}
 
 # SMBv1: detection omitted — disabled by Windows 10/11 default, apply/revert both keep it disabled, DB is authoritative
-
-# LSO: check LsoV2IPv4/LsoV2IPv6 — the correct Get-NetAdapterLso property names
-try{
-  $lsoOff=0
-  $lsoAdapters=Get-NetAdapter -Physical -EA Stop
-  foreach($la in $lsoAdapters){
-    try{
-      $lso=Get-NetAdapterLso -Name $la.Name -EA Stop
-      $v4=$lso.LsoV2IPv4; $v6=$lso.LsoV2IPv6
-      $v4off=($v4 -eq $false)-or($v4 -eq 0)-or("$v4" -eq 'Disabled')
-      $v6off=($v6 -eq $false)-or($v6 -eq 0)-or("$v6" -eq 'Disabled')
-      if($v4off -and $v6off){$lsoOff=1;break}
-    }catch{}
-  }
-  $d['Disable Large Send Offload (LSO)']=$lsoOff
-}catch{$d['Disable Large Send Offload (LSO)']=0}
 
 # RSS: detection omitted — enabled by Windows default, apply/revert both keep it enabled, DB is authoritative
 
 # Gaming (additional)
-try{$ter=(netsh interface teredo show state 2>$null) -join ' ';$d['Disable Teredo IPv6 Tunneling']=if($ter -match 'disabled'){1}else{0}}catch{$d['Disable Teredo IPv6 Tunneling']=0}
 try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Disable HPET (Platform Clock)']=if($bcd -match 'useplatformclock\s+No'){1}else{0}}catch{$d['Disable HPET (Platform Clock)']=0}
 $d['Disable Auto-Restart After Windows Updates']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' 'NoAutoRebootWithLoggedOnUsers' 1
-# Network (additional)
-try{$6t=(netsh interface 6to4 show state 2>$null) -join ' ';$d['Disable 6to4 & ISATAP Tunneling']=if($6t -match 'disabled'){1}else{0}}catch{$d['Disable 6to4 & ISATAP Tunneling']=0}
 # Performance (additional)
-$d['Clear Page File on Shutdown']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'ClearPageFileAtShutdown' 1
 $d['Disable Transparency Effects']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'EnableTransparency' 0
 $d['Increase Gaming Task Priority in System Scheduler']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Audio' 'Priority' 6
 $d['Disable Tile Notification System']=creg 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications' 'NoTileApplicationNotification' 1
@@ -800,7 +768,6 @@ try{
   $d['Disable USB Selective Suspend']=if($usbOut -match 'Current AC Power Setting Index: 0x00000000'){1}else{0}
 }catch{$d['Disable USB Selective Suspend']=0}
 try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Set TSC Sync Policy (Precise Game Timing)']=if($bcd -match 'tscsyncpolicy\s+Enhanced'){1}else{0}}catch{$d['Set TSC Sync Policy (Precise Game Timing)']=0}
-$d['Disable GameInput Service (gaminputsvc)']=csvc 'gaminputsvc'
 
 # Network (Razer Cortex Speed Up style)
 # TCP Fast Open: detection omitted — Win11 has Fast Open enabled by default so detection always fires, DB is authoritative
@@ -819,7 +786,6 @@ try{
 $d['Disable Windows Error Reporting']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting' 'Disabled' 1
 $d['Disable Connected Telemetry (DiagTrack)']=csvc 'DiagTrack'
 $d['Disable Application Compatibility Telemetry']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat' 'AITEnable' 0
-$d['Disable Application Experience Service']=csvc 'AeLookupSvc'
 
 # New System tweaks
 $d['Disable Windows Activity History']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableActivityFeed' 0
@@ -841,17 +807,6 @@ $d['Foreground Application Priority Lock Timeout']=creg 'HKCU:\Control Panel\Des
 $d['Disable Print Spooler']=csvc 'spooler'
 # NTFS MFT Zone Reservation: 2 = zone 2 (25% reserved), default = 1
 $d['NTFS MFT Zone Reservation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsMftZoneReservation' 2
-# NIC Flow Control: check all physical adapters — returns 1 if FlowControl=0 on any adapter
-try{
-  $fcOff=0
-  Get-NetAdapter -Physical -EA Stop | ForEach-Object {
-    try{
-      $fc=Get-NetAdapterAdvancedProperty -Name $_.Name -RegistryKeyword "FlowControl" -EA Stop
-      if($fc -and ($fc.RegistryValue -eq 0 -or $fc.RegistryValue -eq '0')){$fcOff=1}
-    }catch{}
-  }
-  $d['Disable NIC Flow Control']=$fcOff
-}catch{$d['Disable NIC Flow Control']=0}
 # Exclude Driver Updates from Windows Update: Group Policy DWORD = 1
 $d['Exclude Driver Updates from Windows Update']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' 'ExcludeWUDriversInQualityUpdate' 1
 # Windows Copilot AI: Win11 23H2+ only — key is silently ignored on Win10/older Win11

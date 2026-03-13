@@ -65,7 +65,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Increase System I/O Performance":               "Medium",
 
   // System (Cortex Desktop Menu & Network)
-  "Speed Up System Shutdown":                      "Medium",
   "Disable Taskbar & Menu Animations":             "Low",
   "Disable Startup Disk Check":                    "Low",
   "Reduce Taskbar Preview Delay":                  "Low",
@@ -79,14 +78,9 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Increase Browser Connection Limits":            "Medium",
 
   // Network
-  "Disable NetBIOS over TCP/IP":                   "Medium",
   "Disable SMBv1 Protocol":                        "Medium",
-  "Disable Large Send Offload (LSO)":              "Medium",
   "Enable Receive Side Scaling (RSS)":             "Medium",
   "Disable Delivery Optimization Service":         "High",
-  "Disable Windows Connect Now (wcncsvc)":         "Low",
-  "Disable LLMNR Protocol":                        "Medium",
-  "Disable mDNS Multicast":                        "Low",
 
   // Services (additional)
   "Disable Print Spooler (Spooler)":               "Medium",
@@ -113,25 +107,19 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Peer Networking Identity (p2pimsvc)":   "Low",
 
   // Gaming (additional)
-  "Disable Teredo IPv6 Tunneling":                 "Medium",
   "Disable HPET (Platform Clock)":                 "Medium",
   "Disable Auto-Restart After Windows Updates":    "Medium",
-
-  // Network (additional)
-  "Disable 6to4 & ISATAP Tunneling":               "Low",
 
   // Services (additional)
   "Disable IP Helper Service (iphlpsvc)":          "Low",
   "Disable Diagnostic Policy Service (DPS)":       "Low",
 
   // Performance (additional)
-  "Clear Page File on Shutdown":                   "Medium",
   "Disable Transparency Effects":                  "Low",
 
   // Gaming (Razer Cortex Speed Up style)
   "Disable USB Selective Suspend":                 "Medium",
   "Set TSC Sync Policy (Precise Game Timing)":     "Medium",
-  "Disable GameInput Service (gaminputsvc)":       "Low",
 
   // Network (Razer Cortex Speed Up style)
   "Enable TCP Fast Open":                          "Medium",

@@ -244,14 +244,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Marginally higher bandwidth usage due to smaller, more frequent packets. Benefit is lower and more consistent in-game ping."
   },
   {
-    title: "Disable Teredo IPv6 Tunneling",
-    description: "Disables Teredo — a legacy IPv6 tunneling technology that encapsulates IPv6 packets inside IPv4 UDP, creating background connections to Microsoft Teredo relay servers. On gaming PCs with a direct internet connection, Teredo adds latency, creates unnecessary outbound traffic, and is exploited as an attack surface. Disabling it forces direct connections.",
-    category: "gaming",
-    isActive: false,
-    warning: "If you use Xbox services, Xbox Play Anywhere, or some online games that require Teredo for NAT traversal (particularly Xbox-related titles), re-enable this if you experience connection issues.",
-    featureBreaks: "Teredo tunneling disabled. Some Xbox-related game connectivity features may require re-enabling. No effect on most gaming."
-  },
-  {
     title: "Disable HPET (Platform Clock)",
     description: "Disables the High Precision Event Timer (HPET) as the Windows platform clock source via boot configuration. HPET is a hardware timer that Windows uses for scheduling — on many modern CPUs (especially Intel and AMD Ryzen), switching away from HPET to the TSC (CPU's own clock) reduces timer overhead, improves timer resolution consistency, and can lower input latency and micro-stutter in games.",
     category: "gaming",
@@ -470,14 +462,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
 
   // ── SYSTEM (Cortex Desktop Menu & Misc Optimization) ──────────────────────
   {
-    title: "Speed Up System Shutdown",
-    description: "Reduces the time Windows waits for applications and services to close during shutdown. Lowers the app and service close timeout from 5 seconds to 2 seconds, making shutdown and restart significantly faster.",
-    category: "system",
-    isActive: false,
-    warning: "Applications that take longer than 2 seconds to close may be force-terminated on shutdown. Always manually save your work before shutting down — most apps save instantly, but unsaved documents in slower apps could be lost.",
-    featureBreaks: "Apps that need more than 2 seconds to finish saving during shutdown may be force-closed. Safe for most modern applications."
-  },
-  {
     title: "Disable Taskbar & Menu Animations",
     description: "Disables taskbar button animations, Start menu animations, and the MinAnimate window minimize/maximize effect. Reduces visual overhead and makes the desktop feel snappier and more responsive.",
     category: "system",
@@ -568,28 +552,12 @@ export const TWEAKS_SEED: TweakSeed[] = [
 
   // ── NETWORK ───────────────────────────────────────────────────────────────
   {
-    title: "Disable NetBIOS over TCP/IP",
-    description: "Disables the legacy NetBIOS over TCP/IP protocol on all network adapters. NetBIOS is a 1980s-era LAN protocol still running on every Windows PC by default, generating unnecessary broadcast traffic and exposing your PC's name to the local network. Home and gaming PCs have zero use for it.",
-    category: "network",
-    isActive: false,
-    warning: "CORPORATE/VPN USERS: If you connect to a work domain via VPN and access resources by hostname (e.g. \\\\server\\share), some corporate VPN configs rely on NetBIOS for name resolution. Disable only on personal/home-only PCs.",
-    featureBreaks: "Some very old file/printer sharing tools that rely on NetBIOS names may stop working. No effect on modern SMB2/SMB3 file sharing or internet connectivity."
-  },
-  {
     title: "Disable SMBv1 Protocol",
     description: "Disables the legacy SMBv1 file-sharing protocol and removes the SMBv1 Windows Optional Feature. SMBv1 is a 1990s-era protocol with no security, exploited directly by WannaCry and NotPetya ransomware. All modern devices (NAS drives, printers, PCs) use SMBv2 or SMBv3. SMBv1 has been disabled by default since Windows 10 Fall Creators Update (2017) — this tweak ensures it stays off.",
     category: "network",
     isActive: false,
     warning: "RESTART REQUIRED after applying. OLD NAS USERS: Devices manufactured before 2006 with unupdated firmware may only support SMBv1. Note: reverting this tweak keeps SMBv1 disabled (Windows 10/11 default) — to manually re-enable it you must use an admin PowerShell command.",
     featureBreaks: "Requires a system restart to take effect. NAS devices or printers with only SMBv1 support (pre-2006, unupdated firmware) will be inaccessible. Reverting keeps SMBv1 disabled (the modern Windows default). All modern devices unaffected."
-  },
-  {
-    title: "Disable Large Send Offload (LSO)",
-    description: "Disables Large Send Offload on the network adapter. LSO batches multiple TCP segments together before sending, improving throughput at the cost of added latency. For online gaming and real-time applications where low latency beats raw throughput, disabling LSO reduces ping variance and makes connection feel more consistent.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Large file upload speed may be marginally reduced on some connections. Ping consistency improves — net benefit for gaming and real-time applications."
   },
   {
     title: "Enable Receive Side Scaling (RSS)",
@@ -607,40 +575,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Your PC will no longer upload Windows update files to other PCs on the internet. Your own Windows updates download directly from Microsoft and are completely unaffected."
   },
-  {
-    title: "Disable Windows Connect Now (wcncsvc)",
-    description: "Disables the Windows Connect Now service which listens on the network for WPS-based device pairing requests. It's designed for initial Wi-Fi setup of printers and routers and has no purpose once your network is configured. Disabling removes an unnecessary network listener.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Cannot use Windows Connect Now wizard to automatically configure new wireless devices. Normal Wi-Fi, internet access, and printer usage are completely unaffected."
-  },
-  {
-    title: "Disable LLMNR Protocol",
-    description: "Disables Link-Local Multicast Name Resolution — a fallback name-resolution protocol that broadcasts DNS-style queries over the local network when DNS fails to resolve. LLMNR is trivially exploited by LLMNR poisoning attacks (Responder tool) which intercept credentials. Home PCs don't need it — DNS handles all name resolution.",
-    category: "network",
-    isActive: false,
-    warning: "DOMAIN USERS: If your PC is joined to a Windows domain and resolves internal hostnames, verify DNS is properly configured before disabling LLMNR, as some domain environments fall back to LLMNR.",
-    featureBreaks: "Local network name resolution falls back to DNS only. No effect on internet access, normal file sharing, or gaming."
-  },
-  {
-    title: "Disable mDNS Multicast",
-    description: "Disables Windows mDNS (Multicast DNS) which broadcasts .local domain lookup packets on your LAN to discover printers and devices. While useful for some setups, it generates constant background network chatter and announces your PC's presence on the network to all devices.",
-    category: "network",
-    isActive: false,
-    warning: "Do NOT disable if you use mDNS-based device discovery on your local network — this includes Apple AirPrint printers, Chromecast, Apple TV, Bonjour-dependent software, and some smart home devices.",
-    featureBreaks: "mDNS-based device auto-discovery disabled. AirPrint, Chromecast, and Bonjour-based printers may not be found automatically on the network."
-  },
-
-  {
-    title: "Disable 6to4 & ISATAP Tunneling",
-    description: "Disables 6to4 and ISATAP — two legacy IPv6 transition mechanisms that automatically tunnel IPv6 traffic over IPv4 networks. Like Teredo, these create unnecessary background network traffic and attempt connections to external relay infrastructure. On modern networks with native IPv4/IPv6 support, these tunneling methods serve no purpose.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Legacy IPv6 tunneling via 6to4 and ISATAP disabled. No effect on native IPv4 or IPv6 connections."
-  },
-
   // ── GAMING (Razer Cortex Speed Up style) ─────────────────────────────────
   {
     title: "Disable USB Selective Suspend",
@@ -658,15 +592,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: "Requires a system restart to take effect. Supported on all modern Intel and AMD Ryzen processors.",
     featureBreaks: "Restart required. Improves timer accuracy for games and high-refresh displays. No other effects."
   },
-  {
-    title: "Disable GameInput Service (gaminputsvc)",
-    description: "Disables the GameInput service introduced in Windows 11, which provides a unified input API layer. This service runs in the background on every Windows 11 install. Most games use DirectInput or XInput directly and do not need this service at all.",
-    category: "gaming",
-    isActive: false,
-    warning: "Some newer Windows 11 games that specifically use the GameInput API may experience controller input issues. Most games (Fortnite, Call of Duty, CS2, and all legacy titles) use DirectInput or XInput and are unaffected.",
-    featureBreaks: "GameInput API unavailable. Affects only games coded specifically to use the Windows 11 GameInput API. Standard XInput/DirectInput controller support is unaffected."
-  },
-
   // ── NETWORK (Razer Cortex Speed Up style) ────────────────────────────────
   {
     title: "Enable TCP Fast Open",
@@ -686,14 +611,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
 
   // ── PERFORMANCE (additional) ─────────────────────────────────────────────
-  {
-    title: "Clear Page File on Shutdown",
-    description: "Configures Windows to zero out the page file (virtual memory swap file) every time the PC shuts down. This prevents sensitive data that was in RAM (passwords, encryption keys, document contents) from persisting in the page file on disk after shutdown. Also ensures a clean page file state on every boot.",
-    category: "performance",
-    isActive: false,
-    warning: "This will significantly extend shutdown time on systems with large amounts of RAM. Clearing the page file takes roughly 10-30 seconds per 8GB of page file size — on a 32GB RAM system with a full page file, shutdown can take 2-5 minutes longer. Only recommended for users who store sensitive data and prioritize security over fast shutdowns.",
-    featureBreaks: "Shutdown time significantly increases based on your page file size. Page file is wiped clean on every shutdown. Improves security by preventing data recovery from the swap file."
-  },
   {
     title: "Disable Transparency Effects",
     description: "Turns off Windows transparency/blur effects on the taskbar, Start menu, and notification center. Transparency effects require the Desktop Window Manager to continuously blend and composite layers, consuming GPU and CPU resources every frame. Disabling them frees this overhead and can reduce micro-stutters caused by DWM composition.",
@@ -741,14 +658,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: null,
     featureBreaks: "Windows will no longer suggest automatic compatibility fixes for old software. No effect on modern games, Steam, Epic, or any current applications."
-  },
-  {
-    title: "Disable Application Experience Service",
-    description: "Disables the Application Experience (AeLookupSvc) service which performs a network lookup every time you launch any program to check whether it requires a compatibility shim. This creates a hidden network roundtrip and brief CPU stall on every application launch — including games. On slower connections or busy systems this delay is measurable. Disabling the service eliminates all per-launch compatibility network calls.",
-    category: "performance",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Windows will not apply automatic compatibility shims to older programs. No effect on modern applications, games, or Windows 10/11 software."
   },
   {
     title: "Disable Windows Activity History",
@@ -829,14 +738,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: null,
     featureBreaks: "No functional changes whatsoever. NTFS behavior is identical from the user's perspective. The MFT simply has a larger pre-reserved contiguous growth area, preventing long-term fragmentation as the drive fills up."
-  },
-  {
-    title: "Disable NIC Flow Control",
-    description: "Disables IEEE 802.3x Flow Control on all physical network adapters. Flow Control allows your NIC to send PAUSE frames to your network switch, requesting it to temporarily stop sending data when the receive buffer is full. While designed to prevent overflow, these PAUSE frames introduce measurable latency spikes during bursts of incoming game traffic. Disabling Flow Control ensures the NIC never stalls packet delivery, maintaining consistent low latency throughout gaming sessions. Widely cited in professional gaming network optimization guides including Battle(non)sense.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Your NIC will no longer send PAUSE frames to manage receive buffer overflow. On connections saturated beyond the NIC's receive capacity this could cause very minor packet drops, but on typical gaming connections this has no downside."
   },
   {
     title: "Exclude Driver Updates from Windows Update",

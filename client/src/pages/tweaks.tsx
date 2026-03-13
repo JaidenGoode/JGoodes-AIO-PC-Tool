@@ -818,12 +818,10 @@ export default function Tweaks() {
               </Button>
             )}
           </div>
-          {isDetecting && (
-            <div className="flex items-center gap-1 text-[10px] text-primary/60">
-              <Loader2 className="h-2.5 w-2.5 animate-spin" />
-              Scanning system registry...
-            </div>
-          )}
+          <div className={cn("flex items-center gap-1 text-[10px] text-primary/60", !isDetecting && "invisible")}>
+            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+            Scanning system registry...
+          </div>
         </div>
       </div>
 

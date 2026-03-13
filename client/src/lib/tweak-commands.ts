@@ -555,14 +555,6 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Manag
 
   // ── SYSTEM (Cortex Desktop Menu & Network Optimization) ───────────────────
 
-  "Speed Up System Shutdown": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v WaitToKillServiceTimeout /t REG_SZ /d "2000" /f
-reg add "HKCU\\Control Panel\\Desktop" /v WaitToKillAppTimeout /t REG_SZ /d "2000" /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v WaitToKillServiceTimeout /t REG_SZ /d "5000" /f
-reg add "HKCU\\Control Panel\\Desktop" /v WaitToKillAppTimeout /t REG_SZ /d "20000" /f`,
-  },
-
   "Disable Taskbar & Menu Animations": {
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarAnimations /t REG_DWORD /d 0 /f
 reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d "0" /f`,
@@ -684,22 +676,6 @@ if (Test-Path $discordCfg) {
   },
 
   // ── NETWORK ────────────────────────────────────────────────────────────────
-  "Disable NetBIOS over TCP/IP": {
-    requiresAdmin: true,
-    enable: `# Disable NetBIOS over TCP/IP on all adapters via WMI (0=EnableViaDhcp, 1=Enabled, 2=Disabled)
-$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" -ErrorAction SilentlyContinue
-foreach ($a in $adapters) { $a.SetTCPIPNetBIOS(2) 2>$null }
-# Also set registry key for all NetBT interfaces (persists for new adapters)
-Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces" -ErrorAction SilentlyContinue | ForEach-Object {
-  Set-ItemProperty -Path $_.PSPath -Name NetbiosOptions -Value 2 -ErrorAction SilentlyContinue
-}`,
-    disable: `$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" -ErrorAction SilentlyContinue
-foreach ($a in $adapters) { $a.SetTCPIPNetBIOS(0) 2>$null }
-Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces" -ErrorAction SilentlyContinue | ForEach-Object {
-  Set-ItemProperty -Path $_.PSPath -Name NetbiosOptions -Value 0 -ErrorAction SilentlyContinue
-}`,
-  },
-
   "Disable SMBv1 Protocol": {
     requiresAdmin: true,
     // Windows default since Win10 Fall Creators Update (2017): SMBv1 disabled.
@@ -711,23 +687,6 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v
     disable: `Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force -ErrorAction SilentlyContinue
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v SMB1 /t REG_DWORD /d 0 /f`,
     requiresRestart: true,
-  },
-
-  "Disable Large Send Offload (LSO)": {
-    requiresAdmin: true,
-    enable: `# Disable LSO v1 and v2 on all physical adapters
-Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
-  $name = $_.Name
-  Disable-NetAdapterLso -Name $name -ErrorAction SilentlyContinue
-  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv4)" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
-  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv6)" -DisplayValue "Disabled" -ErrorAction SilentlyContinue
-}`,
-    disable: `Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
-  $name = $_.Name
-  Enable-NetAdapterLso -Name $name -ErrorAction SilentlyContinue
-  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv4)" -DisplayValue "Enabled" -ErrorAction SilentlyContinue
-  Set-NetAdapterAdvancedProperty -Name $name -DisplayName "Large Send Offload V2 (IPv6)" -DisplayValue "Enabled" -ErrorAction SilentlyContinue
-}`,
   },
 
   "Enable Receive Side Scaling (RSS)": {
@@ -759,33 +718,7 @@ sc.exe start DoSvc 2>&1 | Out-Null
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 3 /f`,
   },
 
-  "Disable Windows Connect Now (wcncsvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name wcncsvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name wcncsvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name wcncsvc -StartupType Manual -ErrorAction SilentlyContinue`,
-  },
-
-  "Disable LLMNR Protocol": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" /v EnableMulticast /t REG_DWORD /d 0 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" /v EnableMulticast /t REG_DWORD /d 1 /f`,
-  },
-
-  "Disable mDNS Multicast": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /t REG_DWORD /d 0 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v EnableMDNS /t REG_DWORD /d 1 /f`,
-  },
-
   // ── GAMING (additional) ────────────────────────────────────────────────────
-  "Disable Teredo IPv6 Tunneling": {
-    requiresAdmin: true,
-    // Windows default on workstation/home: Teredo in "client" state
-    enable: `netsh interface teredo set state disabled 2>$null`,
-    disable: `netsh interface teredo set state client 2>$null`,
-  },
-
   "Disable HPET (Platform Clock)": {
     requiresAdmin: true,
     requiresRestart: true,
@@ -801,22 +734,7 @@ bcdedit /deletevalue uselegacyapicmode 2>$null`,
     disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU" /v NoAutoRebootWithLoggedOnUsers /t REG_DWORD /d 0 /f`,
   },
 
-  // ── NETWORK (additional) ───────────────────────────────────────────────────
-  "Disable 6to4 & ISATAP Tunneling": {
-    requiresAdmin: true,
-    enable: `netsh interface 6to4 set state disabled 2>$null
-netsh interface isatap set state disabled 2>$null`,
-    disable: `netsh interface 6to4 set state default 2>$null
-netsh interface isatap set state default 2>$null`,
-  },
-
   // ── PERFORMANCE (additional) ───────────────────────────────────────────────
-  "Clear Page File on Shutdown": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v ClearPageFileAtShutdown /t REG_DWORD /d 0 /f`,
-  },
-
   "Disable Transparency Effects": {
     requiresAdmin: false,
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v EnableTransparency /t REG_DWORD /d 0 /f`,
@@ -868,13 +786,6 @@ powercfg /apply 2>$null`,
     requiresRestart: true,
     enable: `bcdedit /set tscsyncpolicy Enhanced 2>$null`,
     disable: `bcdedit /deletevalue tscsyncpolicy 2>$null`,
-  },
-
-  "Disable GameInput Service (gaminputsvc)": {
-    requiresAdmin: true,
-    enable: `Set-Service -Name gaminputsvc -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name gaminputsvc -Force -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name gaminputsvc -StartupType Manual -ErrorAction SilentlyContinue`,
   },
 
   // ── NETWORK (Razer Cortex Speed Up style) ─────────────────────────────────
@@ -941,17 +852,6 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PcaSvc" /v Start /t REG_DWOR
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppCompat" /v DisableInventory /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PcaSvc" /v Start /t REG_DWORD /d 3 /f
 sc.exe config PcaSvc start= demand 2>&1 | Out-Null`,
-  },
-
-  "Disable Application Experience Service": {
-    requiresAdmin: true,
-    // AeLookupSvc default: Manual (3). Disabling stops per-launch compatibility network lookups.
-    enable: `sc.exe stop AeLookupSvc 2>&1 | Out-Null
-sc.exe config AeLookupSvc start= disabled 2>&1 | Out-Null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AeLookupSvc" /v Start /t REG_DWORD /d 4 /f`,
-    // Revert: restore AeLookupSvc to Manual (Windows default)
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AeLookupSvc" /v Start /t REG_DWORD /d 3 /f
-sc.exe config AeLookupSvc start= demand 2>&1 | Out-Null`,
   },
 
   "Disable Windows Activity History": {
@@ -1085,21 +985,6 @@ sc.exe start spooler 2>&1 | Out-Null`,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v NtfsMftZoneReservation /t REG_DWORD /d 2 /f`,
     // Revert: restore Windows default of 1
     disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v NtfsMftZoneReservation /t REG_DWORD /d 1 /f`,
-  },
-
-  "Disable NIC Flow Control": {
-    requiresAdmin: true,
-    // Flow Control default: 3 (Rx & Tx enabled) on most NICs.
-    // Setting RegistryValue 0 = disabled on all physical adapters.
-    // Uses Get-NetAdapter -Physical to target only real NICs (not virtual/loopback adapters).
-    // SilentlyContinue on each adapter — if the NIC driver doesn't expose FlowControl property, skips gracefully.
-    enable: `Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
-  Set-NetAdapterAdvancedProperty -Name $_.Name -RegistryKeyword "FlowControl" -RegistryValue 0 -ErrorAction SilentlyContinue
-}`,
-    // Revert: restore to 3 (Rx & Tx Enabled) which is the industry-standard NIC default
-    disable: `Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object {
-  Set-NetAdapterAdvancedProperty -Name $_.Name -RegistryKeyword "FlowControl" -RegistryValue 3 -ErrorAction SilentlyContinue
-}`,
   },
 
   "Exclude Driver Updates from Windows Update": {
