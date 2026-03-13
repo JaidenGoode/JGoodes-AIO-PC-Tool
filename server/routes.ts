@@ -854,8 +854,6 @@ try{
 }catch{$d['Disable NIC Flow Control']=0}
 # Exclude Driver Updates from Windows Update: Group Policy DWORD = 1
 $d['Exclude Driver Updates from Windows Update']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' 'ExcludeWUDriversInQualityUpdate' 1
-# CDPSvc: tweak sets Manual (Start=3), Windows default = 2 (Automatic). Check for Manual.
-$d['Disable Connected Devices Platform (CDPSvc)']=try{$s=Get-Service CDPSvc -EA Stop;if($s.StartType -eq 'Manual'){1}else{0}}catch{0}
 # Windows Copilot AI: Win11 23H2+ only — key is silently ignored on Win10/older Win11
 $d['Disable Windows Copilot AI Sidebar']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1
 # Windows 11 Widgets Panel: Win11 only — key is silently ignored on Win10

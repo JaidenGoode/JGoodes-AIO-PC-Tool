@@ -123,7 +123,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   // Services (additional)
   "Disable IP Helper Service (iphlpsvc)":          "Low",
   "Disable Diagnostic Policy Service (DPS)":       "Low",
-  "Disable Connected Devices Platform (CDPSvc)":   "Low",
 
   // Performance (additional)
   "Clear Page File on Shutdown":                   "Medium",

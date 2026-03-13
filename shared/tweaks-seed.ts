@@ -847,14 +847,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "GPU, audio, and network drivers will not auto-update via Windows Update. Must install manually from manufacturer websites. All Windows security patches, cumulative updates, and OS feature updates are completely unaffected and continue as normal."
   },
   {
-    title: "Disable Connected Devices Platform (CDPSvc)",
-    description: "Sets the Connected Devices Platform service (CDPSvc) to Manual startup so it no longer runs continuously in the background. CDPSvc powers cross-device Windows features — Windows Timeline syncing, Continue on PC from mobile, cross-device clipboard, and Phone Link backend. Setting it to Manual stops it from auto-starting while still allowing Windows to start it on-demand when needed, saving background memory and CPU without the risks of full disablement.",
-    category: "system",
-    isActive: false,
-    warning: "⚠️ MICROSOFT ACCOUNT WARNING: Do NOT fully disable CDPSvc on Windows 11 systems using a Microsoft Account. Full disablement causes 'User Profile Service failed the sign in' on next boot — your desktop loads as a blank temporary profile with no wallpaper, apps, or saved data visible. This tweak safely sets CDPSvc to Manual (not Disabled) to prevent that risk. If you experience any profile loading issues after applying, use the Revert button immediately and restart.",
-    featureBreaks: "CDPSvc will no longer auto-start in the background. Windows Timeline, Continue on PC (cross-device handoff from Android/iOS), cross-device shared clipboard, and Phone Link backend connectivity stop running automatically. All standard local Windows features — clipboard, notifications, apps, networking — are completely unaffected."
-  },
-  {
     title: "Disable Windows Copilot AI Sidebar",
     description: "Disables the Windows Copilot AI sidebar introduced in Windows 11 version 23H2 via the official Group Policy registry key. When Copilot is enabled, Windows runs a persistent background browser process that consumes RAM and makes continuous background network connections to Microsoft's AI servers — even when you never open the Copilot panel. Disabling it via the official Group Policy removes the Copilot button from the taskbar and completely stops its background process from running. If you are on Windows 10 or Windows 11 versions before 23H2, this tweak has absolutely no effect (the key is simply ignored).",
     category: "system",

@@ -1112,23 +1112,6 @@ sc.exe start spooler 2>&1 | Out-Null`,
     disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate" /v ExcludeWUDriversInQualityUpdate /t REG_DWORD /d 0 /f`,
   },
 
-  "Disable Connected Devices Platform (CDPSvc)": {
-    requiresAdmin: true,
-    // CDPSvc default startup: Automatic (Start=2) on Windows 10/11.
-    // SAFETY: Set to Manual (Start=3), NOT Disabled (Start=4).
-    // Fully disabling CDPSvc (Start=4) on Windows 11 with a Microsoft Account causes
-    // "User Profile Service failed the sign in" on next boot — the profile loads as a
-    // blank temporary profile with no wallpaper, apps, or account data.
-    // Manual allows Windows to start CDPSvc on-demand during profile load, preventing this.
-    enable: `sc.exe stop CDPSvc 2>&1 | Out-Null
-sc.exe config CDPSvc start= demand 2>&1 | Out-Null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 3 /f`,
-    // Revert: restore to Automatic (Start=2, Windows default), then start the service
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 2 /f
-sc.exe config CDPSvc start= auto 2>&1 | Out-Null
-sc.exe start CDPSvc 2>&1 | Out-Null`,
-  },
-
   "Disable Windows Copilot AI Sidebar": {
     requiresAdmin: true,
     // Official Group Policy key: TurnOffWindowsCopilot=1 under HKLM.
