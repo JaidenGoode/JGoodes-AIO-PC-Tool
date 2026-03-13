@@ -124,10 +124,9 @@ powercfg -setactive scheme_current`,
 
   "Win32 Priority Separation": {
     requiresAdmin: true,
-    // Windows default: 2 (0x02) = "Programs" mode in System Properties > Performance Options > Advanced.
-    // This is the correct Windows default shown on fresh Win10/11 installs.
+    // Windows default: 0x26 (38 decimal) = variable quanta, short foreground boost — the correct Win10/11 default.
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 36 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 2 /f`,
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f`,
   },
 
   "Disable Background UWP Apps": {
