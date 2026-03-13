@@ -826,15 +826,16 @@ netsh interface isatap set state default 2>$null`,
   "Increase Gaming Task Priority in System Scheduler": {
     requiresAdmin: true,
     // Targets MMCSS Tasks\Audio — distinct from Tasks\Games (covered by "Maximum Priority for Games")
-    // Windows defaults: Priority=3, Scheduling Category=Medium, SFIO Priority=Normal, Background Only=True
+    // Windows defaults for Tasks\Audio: Priority=6, Scheduling Category=Medium, SFIO Priority=Normal, Background Only=False
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v Priority /t REG_DWORD /d 6 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Scheduling Category" /t REG_SZ /d "High" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "SFIO Priority" /t REG_SZ /d "High" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Background Only" /t REG_SZ /d "False" /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v Priority /t REG_DWORD /d 3 /f
+    // Revert: Priority=6 (Windows default for Audio — NOT 3), Background Only=False (audio is NOT background-only by default)
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v Priority /t REG_DWORD /d 6 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Scheduling Category" /t REG_SZ /d "Medium" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "SFIO Priority" /t REG_SZ /d "Normal" /f
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Background Only" /t REG_SZ /d "True" /f`,
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Audio" /v "Background Only" /t REG_SZ /d "False" /f`,
   },
 
   "Disable Tile Notification System": {
