@@ -1125,9 +1125,10 @@ sc.exe start spooler 2>&1 | Out-Null`,
     enable: `sc.exe stop CDPSvc 2>&1 | Out-Null
 sc.exe config CDPSvc start= disabled 2>&1 | Out-Null
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 4 /f`,
-    // Revert: restore to Automatic (Start=2, Windows default)
+    // Revert: restore to Automatic (Start=2, Windows default), then start the service
     disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\CDPSvc" /v Start /t REG_DWORD /d 2 /f
-sc.exe config CDPSvc start= auto 2>&1 | Out-Null`,
+sc.exe config CDPSvc start= auto 2>&1 | Out-Null
+sc.exe start CDPSvc 2>&1 | Out-Null`,
   },
 
   "Disable Windows Copilot AI Sidebar": {
