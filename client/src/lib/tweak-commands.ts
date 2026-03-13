@@ -1007,10 +1007,11 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryMana
     enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_DWORD /d 0 /f`,
-    // Revert: set policy to 1 (clipboard history allowed, Windows default) and re-enable HKCU flag
+    // Revert: policy allowed=1 (no policy restriction, Windows default), HKCU EnableClipboardHistory=0
+    // (clipboard history is OFF by default in Windows — user must manually enable it in Settings)
     disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowClipboardHistory /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" /v AllowCrossDeviceClipboard /t REG_DWORD /d 1 /f
-reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_DWORD /d 1 /f`,
+reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_DWORD /d 0 /f`,
   },
 
   "Disable Virtualization-Based Security (VBS)": {

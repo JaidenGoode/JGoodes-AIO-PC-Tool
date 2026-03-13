@@ -665,7 +665,7 @@ $d['Win32 Priority Separation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Pri
 $d['Disable GameBar']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
 $d['Disable GameBar Background Recording']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
 $d['Optimize for Windowed & Borderless Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'ForceEffectMode' 2
-$d['Enable Game Mode']=creg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnabled' 1
+# Enable Game Mode: detection omitted — AutoGameModeEnabled=1 is the Windows default so registry check always returns applied; DB is authoritative
 $d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers' 'HwSchMode' 2
 $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0'
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
@@ -728,7 +728,7 @@ try{$mc=(Get-MMAgent -EA Stop).MemoryCompression;$d['Disable Memory Compression'
 $d['Release Unused DLLs from Memory']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer' 'AlwaysUnloadDLL' 1
 try{$svch=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' -EA Stop).SvcHostSplitThresholdInKB;$d['Svchost Process Isolation']=if($svch -gt 1000000){1}else{0}}catch{$d['Svchost Process Isolation']=0}
 $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsDisable8dot3NameCreation' 1
-$d['Optimize Boot Configuration']=creg 'HKLM:\SOFTWARE\Microsoft\Dfrg\BootOptimizeFunction' 'Enable' 'Y'
+# Optimize Boot Configuration: detection omitted — Enable='Y' exists in the registry by default in Windows so check always returns applied; DB is authoritative
 $d['Increase System I/O Performance']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'IoPageLockLimit' 983040
 
 # System (Cortex Desktop Menu & Network)
@@ -742,7 +742,7 @@ $d['Disable Notification Center']=creg 'HKCU:\Software\Microsoft\Windows\Current
 $d['Reduce Keyboard Input Delay']=creg 'HKCU:\Control Panel\Keyboard' 'KeyboardDelay' '0'
 $d['Increase Network Buffer Size']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' 'SizReqBuf' 65535
 $d['Optimize TCP/IP Network Stack']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters' 'DefaultTTL' 64
-$d['Optimize DNS Resolution']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'MaxNegativeCacheTtl' 5
+# Optimize DNS Resolution: detection omitted — enable and revert both write the same registry values so the key always equals 5 after either action; DB is authoritative
 $d['Unlock Reserved Network Bandwidth']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched' 'NonBestEffortLimit' 0
 $d['Increase Browser Connection Limits']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' 'MaxConnectionsPerServer' 16
 
