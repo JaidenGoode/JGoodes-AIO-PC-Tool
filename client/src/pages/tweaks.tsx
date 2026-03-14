@@ -20,12 +20,12 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { getTweakCommand, generatePowerShellScript, generateUndoScript } from "@/lib/tweak-commands";
+import { getTweakCommand, generatePowerShellScript, generateUndoScript } from "@tweaks/commands";
 import { bulkUpdateTweaks } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { TWEAK_PRESETS } from "@/lib/tweak-presets";
-import { getImpact, type ImpactLevel } from "@/lib/tweak-impacts";
-import { getConflict } from "@/lib/tweak-conflicts";
+import { TWEAK_PRESETS } from "@tweaks/presets";
+import { getImpact, type ImpactLevel } from "@tweaks/impacts";
+import { getConflict } from "@tweaks/conflicts";
 import { useDetect } from "@/contexts/detect-context";
 
 declare global {

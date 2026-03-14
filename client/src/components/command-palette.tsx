@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { generatePowerShellScript, generateUndoScript } from "@/lib/tweak-commands";
+import { generatePowerShellScript, generateUndoScript } from "@tweaks/commands";
 import { useTweaks } from "@/hooks/use-tweaks";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { TWEAK_PRESETS } from "@/lib/tweak-presets";
+import { TWEAK_PRESETS } from "@tweaks/presets";
 import {
   LayoutDashboard, Wrench, Trash2, Globe, ShieldCheck, Zap,
   Settings, Download, ScanSearch, Gamepad2, Shield, ChevronRight,
