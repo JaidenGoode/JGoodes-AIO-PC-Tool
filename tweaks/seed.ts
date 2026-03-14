@@ -334,40 +334,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background apps may use more CPU power. Battery life reduced on laptops. Desktop users: no negative effect."
   },
 
-  // ── BROWSER ──────────────────────────────────────────────────────────────────
-  {
-    title: "Debloat Microsoft Edge",
-    description: "MICROSOFT EDGE USERS ONLY. Applies the full set of Edge debloat policies matching ShutUp10/Optimizer recommendations: disables auto-import, personalization/ads, recommendations, first-run experience, Browser Essentials button, and default browser prompts (Annoyances); disables Follow Creators, both Sidebar modes, SmartScreen, Sync, crash restore dialog, Shopping, Rewards, mini context menus, implicit Microsoft Account sign-in, Collections, split screen, User Feedback, floating Bing search bar, and Startup Boost (Features/Bloat); and cleans the New Tab page by hiding pinned sites, quick links, background image, and Microsoft news content. WebView2 is NOT affected — apps that depend on it continue to work normally.",
-    category: "browser",
-    isActive: false,
-    warning: "MICROSOFT EDGE USERS ONLY — skip this if you primarily use Chrome, Firefox, or another browser. WebView2 is fully preserved. All changes are reversible.",
-    featureBreaks: "Edge Sidebar, SmartScreen, Sync, Shopping, Rewards, Startup Boost, and New Tab page Microsoft content all disabled. Revert instantly restores all defaults."
-  },
-  {
-    title: "Debloat Google Chrome",
-    description: "GOOGLE CHROME USERS ONLY. Disables Chrome hardware acceleration via Windows policy (frees GPU for gaming), disables background running when Chrome is closed, turns off usage stats and crash reports, disables Google's software reporting tool, and removes Chrome's media router. Restart Chrome after applying.",
-    category: "browser",
-    isActive: false,
-    warning: "GOOGLE CHROME USERS ONLY — skip this if you do not use Chrome as your browser. Safe to skip if you use Edge, Firefox, Opera GX, or another browser.",
-    featureBreaks: "Hardware acceleration off — Chrome renders without GPU. Chrome won't run in background after closing. Restart Chrome for changes to take effect."
-  },
-  {
-    title: "Debloat Opera GX",
-    description: "OPERA GX USERS ONLY. Disables Opera GX hardware acceleration so its GPU usage doesn't compete with games, and disables the GX browser sound effects (GX Corner sounds) that play by default. All changes are made in Opera GX's Preferences file — no registry modifications. Restart Opera GX after applying.",
-    category: "browser",
-    isActive: false,
-    warning: "OPERA GX USERS ONLY — skip this if you do not use Opera GX as your browser. Safe to skip if you use Chrome, Edge, Firefox, or another browser.",
-    featureBreaks: "GX Corner sound effects disabled. Hardware acceleration off. Restart Opera GX after applying for changes to take effect."
-  },
-  {
-    title: "Optimize Discord for Gaming",
-    description: "DISCORD USERS ONLY. Three changes in one: (1) Sets Discord to Below Normal CPU priority via Windows IFEO — Discord yields CPU to your game only when CPU is contested; voice and audio are completely unaffected as Windows audio system manages those threads independently. (2) Disables hardware acceleration in Discord so its GPU usage does not compete with your game. (3) Disables Discord's in-game overlay which causes stuttering and frame drops on many systems. Restart Discord after applying.",
-    category: "browser",
-    isActive: false,
-    warning: "DISCORD USERS ONLY — skip this if you do not use Discord. No effect if Discord is not installed.",
-    featureBreaks: "In-game Discord overlay will not appear over games (recommended to disable for gaming anyway). Discord UI may look slightly less smooth without hardware acceleration."
-  },
-
   // ── SYSTEM (new standalone) ──────────────────────────────────────────────────
   {
     title: "Disable Remote Assistance",

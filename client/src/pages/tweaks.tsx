@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Wrench, Zap, SlidersHorizontal,
-  AlertTriangle, Gamepad2, Globe, CheckCircle2,
+  AlertTriangle, Gamepad2, CheckCircle2,
   Download, Copy, Check, Terminal, Loader2, ScanSearch,
   Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Network,
   Upload, Database,
@@ -44,13 +44,12 @@ declare global {
   }
 }
 
-const CATEGORIES = ["all", "performance", "gaming", "system", "browser", "network"] as const;
+const CATEGORIES = ["all", "performance", "gaming", "system", "network"] as const;
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   performance: Zap,
   system: SlidersHorizontal,
   gaming: Gamepad2,
-  browser: Globe,
   network: Network,
   all: Wrench,
 };
@@ -59,7 +58,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   performance: "text-yellow-400",
   system: "text-purple-400",
   gaming: "text-green-400",
-  browser: "text-cyan-400",
   network: "text-teal-400",
   all: "text-primary",
 };

@@ -45,10 +45,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Prefer IPv4 over IPv6":                         "Low",
   "Enable SSD TRIM Optimization":                  "Low",
   "Disable Windows Performance Counters":          "Low",
-  "Debloat Microsoft Edge":                        "Low",
-  "Debloat Google Chrome":                         "Low",
-  "Debloat Opera GX":                              "Low",
-  "Optimize Discord for Gaming":                   "Low",
   "Disable Remote Assistance":                     "Low",
   "Disable Phone Link & Mobile Sync":              "Low",
 

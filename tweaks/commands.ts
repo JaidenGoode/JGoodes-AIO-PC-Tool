@@ -110,16 +110,14 @@ reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "10" /f`,
 
   "Keep All CPU Cores Active (Unpark Cores)": {
     requiresAdmin: true,
-    enable: `powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 100
-powercfg -setacvalueindex scheme_current sub_processor CPMAXCORES 100
-powercfg -setdcvalueindex scheme_current sub_processor CPMINCORES 100
-powercfg -setdcvalueindex scheme_current sub_processor CPMAXCORES 100
-powercfg -setactive scheme_current`,
-    disable: `powercfg -setacvalueindex scheme_current sub_processor CPMINCORES 0
-powercfg -setdcvalueindex scheme_current sub_processor CPMINCORES 0
-powercfg -setacvalueindex scheme_current sub_processor CPMAXCORES 100
-powercfg -setdcvalueindex scheme_current sub_processor CPMAXCORES 100
-powercfg -setactive scheme_current`,
+    // Enable: set ValueMax=0 and ValueMin=0 — forces all cores to 100% capacity, bypassing core parking
+    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMax /t REG_DWORD /d 0 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMin /t REG_DWORD /d 0 /f
+powercfg /setactive scheme_current`,
+    // Revert: ValueMax=100 (0x64 hex) re-enables core parking, ValueMin=0 — Windows default
+    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMax /t REG_DWORD /d 100 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMin /t REG_DWORD /d 0 /f
+powercfg /setactive scheme_current`,
   },
 
   "Win32 Priority Separation": {
@@ -359,115 +357,6 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v Disabl
     disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling" /v PowerThrottlingOff /t REG_DWORD /d 0 /f`,
   },
 
-  "Debloat Microsoft Edge": {
-    requiresAdmin: true,
-    enable: `# Applies browser-level policies only. Does NOT affect the WebView2 runtime
-# (used by apps like Teams, Discord, etc.) — WebView2 uses a separate policy path.
-# === Annoyances ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutoImportAtFirstRun /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PersonalizationReportingEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SpotlightExperiencesAndRecommendationsEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeEssentialsEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v DefaultBrowserSettingEnabled /t REG_DWORD /d 0 /f
-# === Features / Bloat ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v FollowCreatorsEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v StandaloneHubsSidebarEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SmartScreenEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SyncDisabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SessionCrashBubbleEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeShoppingAssistantEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v ShowMicrosoftRewards /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v MiniMenuEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v ImplicitSignInEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeCollectionsEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SplitScreenEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v UserFeedbackAllowed /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v WebWidgetAllowed /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v StartupBoostEnabled /t REG_DWORD /d 0 /f
-# === New Tab Page ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePrerenderEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePinnedTabsEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageQuickLinksEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageBackgroundEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageContentEnabled /t REG_DWORD /d 0 /f
-# === Additional ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v TrackingPrevention /t REG_DWORD /d 3 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PromotionalTabsEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutofillCreditCardEnabled /t REG_DWORD /d 0 /f`,
-    disable: `# === Annoyances — restore defaults ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutoImportAtFirstRun /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PersonalizationReportingEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SpotlightExperiencesAndRecommendationsEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HideFirstRunExperience /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeEssentialsEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v DefaultBrowserSettingEnabled /t REG_DWORD /d 1 /f
-# === Features / Bloat — restore defaults ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v FollowCreatorsEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v StandaloneHubsSidebarEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SmartScreenEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SyncDisabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SessionCrashBubbleEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeShoppingAssistantEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v ShowMicrosoftRewards /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v MiniMenuEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v ImplicitSignInEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v EdgeCollectionsEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v SplitScreenEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v UserFeedbackAllowed /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v WebWidgetAllowed /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v StartupBoostEnabled /t REG_DWORD /d 1 /f
-# === New Tab Page — restore defaults ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePrerenderEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPagePinnedTabsEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageQuickLinksEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageBackgroundEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v NewTabPageContentEnabled /t REG_DWORD /d 1 /f
-# === Additional — restore defaults ===
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v TrackingPrevention /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v PromotionalTabsEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge" /v AutofillCreditCardEnabled /t REG_DWORD /d 1 /f`,
-  },
-
-  "Debloat Google Chrome": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v HardwareAccelerationModeEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v BackgroundModeEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MetricsReportingEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v ChromeCleanupEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MediaRouterCastAllowAllIPs /t REG_DWORD /d 0 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v HardwareAccelerationModeEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v BackgroundModeEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MetricsReportingEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v ChromeCleanupEnabled /t REG_DWORD /d 1 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome" /v MediaRouterCastAllowAllIPs /t REG_DWORD /d 1 /f`,
-  },
-
-  "Debloat Opera GX": {
-    enable: `# Opera GX: Disable hardware acceleration and sounds via Preferences file (UTF-8 safe)
-$operaGxPath = "$env:APPDATA\\Opera Software\\Opera GX Stable\\Preferences"
-if (Test-Path $operaGxPath) {
-    $pref = Get-Content $operaGxPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    if (-not $pref.system) { $pref | Add-Member -Force -NotePropertyName "system" -NotePropertyValue ([PSCustomObject]@{}) }
-    $pref.system | Add-Member -Force -NotePropertyName "hardware_acceleration_mode_previous" -NotePropertyValue $false
-    if (-not $pref.gx_corner) { $pref | Add-Member -Force -NotePropertyName "gx_corner" -NotePropertyValue ([PSCustomObject]@{}) }
-    $pref.gx_corner | Add-Member -Force -NotePropertyName "sounds_enabled" -NotePropertyValue $false
-    $pref | ConvertTo-Json -Depth 100 | Set-Content $operaGxPath -Encoding UTF8
-}`,
-    disable: `# Opera GX: Restore hardware acceleration and sounds
-$operaGxPath = "$env:APPDATA\\Opera Software\\Opera GX Stable\\Preferences"
-if (Test-Path $operaGxPath) {
-    $pref = Get-Content $operaGxPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    if (-not $pref.system) { $pref | Add-Member -Force -NotePropertyName "system" -NotePropertyValue ([PSCustomObject]@{}) }
-    $pref.system | Add-Member -Force -NotePropertyName "hardware_acceleration_mode_previous" -NotePropertyValue $true
-    if (-not $pref.gx_corner) { $pref | Add-Member -Force -NotePropertyName "gx_corner" -NotePropertyValue ([PSCustomObject]@{}) }
-    $pref.gx_corner | Add-Member -Force -NotePropertyName "sounds_enabled" -NotePropertyValue $true
-    $pref | ConvertTo-Json -Depth 100 | Set-Content $operaGxPath -Encoding UTF8
-}`,
-  },
-
   "Disable Remote Assistance": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Remote Assistance" /v fAllowToGetHelp /t REG_DWORD /d 0 /f
@@ -646,33 +535,6 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v Max
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v MaxConnectionsPer1_0Server /t REG_DWORD /d 16 /f`,
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v MaxConnectionsPerServer /t REG_DWORD /d 2 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings" /v MaxConnectionsPer1_0Server /t REG_DWORD /d 2 /f`,
-  },
-
-  "Optimize Discord for Gaming": {
-    requiresAdmin: true,
-    enable: `# Set Discord to Below Normal CPU priority via IFEO
-# This only takes effect when CPU is contested — Discord yields to your game
-# Voice/audio threads are managed by Windows audio system and are unaffected by this
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 2 /f
-# Disable hardware acceleration and in-game overlay in Discord's settings.json
-# Restart Discord after applying for changes to take effect
-$discordCfg = "$env:APPDATA\\discord\\settings.json"
-if (Test-Path $discordCfg) {
-    $cfg = Get-Content $discordCfg -Raw -Encoding UTF8 | ConvertFrom-Json
-    $cfg | Add-Member -Force -NotePropertyName "enableHardwareAcceleration" -NotePropertyValue $false
-    $cfg | Add-Member -Force -NotePropertyName "OVERLAY" -NotePropertyValue $false
-    $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
-}`,
-    disable: `# Restore Discord CPU priority to Normal (CpuPriorityClass=3 = Normal, Windows default)
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\Discord.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
-# Restore hardware acceleration and overlay in Discord's settings.json
-$discordCfg = "$env:APPDATA\\discord\\settings.json"
-if (Test-Path $discordCfg) {
-    $cfg = Get-Content $discordCfg -Raw -Encoding UTF8 | ConvertFrom-Json
-    $cfg | Add-Member -Force -NotePropertyName "enableHardwareAcceleration" -NotePropertyValue $true
-    $cfg | Add-Member -Force -NotePropertyName "OVERLAY" -NotePropertyValue $true
-    $cfg | ConvertTo-Json -Depth 10 | Set-Content $discordCfg -Encoding UTF8
-}`,
   },
 
   // ── NETWORK ────────────────────────────────────────────────────────────────

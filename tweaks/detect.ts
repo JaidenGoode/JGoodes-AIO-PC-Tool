@@ -49,7 +49,7 @@ $d['Disable Cortana']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Se
 
 # Gaming
 $d['Disable Mouse Acceleration']=creg 'HKCU:\Control Panel\Mouse' 'MouseSpeed' '0'
-try{$cpm=((powercfg /query scheme_current sub_processor CPMINCORES 2>$null) -join ' ');$d['Keep All CPU Cores Active (Unpark Cores)']=if($cpm -match 'Current AC Power Setting Index:\s*0x00000064'){1}else{0}}catch{$d['Keep All CPU Cores Active (Unpark Cores)']=0}
+try{$vm=(Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583' -Name 'ValueMax' -ErrorAction Stop).ValueMax;$d['Keep All CPU Cores Active (Unpark Cores)']=if($vm -eq 0){1}else{0}}catch{$d['Keep All CPU Cores Active (Unpark Cores)']=0}
 $d['Win32 Priority Separation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl' 'Win32PrioritySeparation' 36
 $d['Disable GameBar']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
 $d['Disable GameBar Background Recording']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
@@ -79,22 +79,6 @@ $d['Disable Windows Automatic Maintenance']=creg 'HKLM:\SOFTWARE\Microsoft\Windo
 $d['Disable Power Throttling']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling' 'PowerThrottlingOff' 1
 $d['Disable Remote Assistance']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance' 'fAllowToGetHelp' 0
 $d['Disable Phone Link & Mobile Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableCdp' 0
-
-# Browser
-$d['Debloat Microsoft Edge']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'HubsSidebarEnabled' 0
-$d['Debloat Google Chrome']=creg 'HKLM:\SOFTWARE\Policies\Google\Chrome' 'BackgroundModeEnabled' 0
-$d['Optimize Discord for Gaming']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\Discord.exe\PerfOptions' 'CpuPriorityClass' 2
-
-# Opera GX: check hardware acceleration AND GX sounds disabled in Preferences
-try{
-  $opPref="$env:APPDATA\Opera Software\Opera GX Stable\Preferences"
-  if(Test-Path $opPref){
-    $opJson=Get-Content $opPref -Raw -Encoding UTF8 | ConvertFrom-Json
-    $hwOff=$opJson.system -and $opJson.system.hardware_acceleration_mode_previous -eq $false
-    $sndOff=$opJson.gx_corner -and $opJson.gx_corner.sounds_enabled -eq $false
-    if($hwOff -and $sndOff){$d['Debloat Opera GX']=1}else{$d['Debloat Opera GX']=0}
-  }else{$d['Debloat Opera GX']=0}
-}catch{$d['Debloat Opera GX']=0}
 
 # Network Power Saving
 try{
