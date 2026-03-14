@@ -36,7 +36,6 @@ function csvc($n){
 $d=[ordered]@{}
 
 # Performance
-try{$scheme=((powercfg /getactivescheme 2>$null) -join ' ');$d['Maximum Performance Power Plan']=if($scheme -match 'e9a42b02'){1}else{0}}catch{$d['Maximum Performance Power Plan']=0}
 $d['Disable SuperFetch / SysMain']=csvc 'SysMain'
 try{$fsu=((fsutil behavior query disablelastaccess 2>$null) -join ' ');$d['Disable NTFS Access Timestamps']=if($fsu -match 'DisableLastAccess\w*\s*=\s*[1-9]'){1}else{0}}catch{$d['Disable NTFS Access Timestamps']=0}
 $d['Disable Windows Performance Counters']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib' 'Disable Performance Counters' 4

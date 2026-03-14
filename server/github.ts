@@ -79,11 +79,6 @@ async function getRef(owner: string, repo: string, branch: string): Promise<{ ob
   return data;
 }
 
-async function getCommitTree(owner: string, repo: string, commitSha: string): Promise<string> {
-  const commit = await ghJson<any>(`/repos/${owner}/${repo}/git/commits/${commitSha}`);
-  return commit.tree.sha;
-}
-
 async function createBlob(owner: string, repo: string, base64Content: string): Promise<string> {
   const result = await ghPost<any>(`/repos/${owner}/${repo}/git/blobs`, {
     content: base64Content,
@@ -91,18 +86,6 @@ async function createBlob(owner: string, repo: string, base64Content: string): P
   });
   if (!result?.sha) throw new Error("Blob creation returned no SHA");
   return result.sha;
-}
-
-async function getFullTreeWithShas(
-  owner: string,
-  repo: string,
-  treeSha: string
-): Promise<{ path: string; sha: string }[]> {
-  const result = await ghJson<any>(`/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`);
-  if (!result?.tree) return [];
-  return (result.tree as any[])
-    .filter((item: any) => item.type === "blob")
-    .map((item: any) => ({ path: item.path as string, sha: item.sha as string }));
 }
 
 async function createTree(
@@ -179,7 +162,6 @@ export async function pushFilesViaTree(
 
   const headRef = await getRef(owner, repo, branch);
   const headSha = headRef?.object?.sha ?? null;
-  const baseTreeSha = headSha ? await getCommitTree(owner, repo, headSha) : null;
 
   // Step 1: Upload all local files to GitHub as blobs (get their SHAs)
   const blobResults = await runInBatches(files, async (file) => {

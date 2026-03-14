@@ -10,13 +10,6 @@ export interface TweakCommand {
 
 export const TWEAK_COMMANDS: Record<string, TweakCommand> = {
   // ── PERFORMANCE ────────────────────────────────────────────────────────────
-  "Maximum Performance Power Plan": {
-    requiresAdmin: true,
-    enable: `powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 2>$null
-powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61`,
-    disable: `powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e`,
-  },
-
   "Disable SuperFetch / SysMain": {
     requiresAdmin: true,
     enable: `Set-Service -Name SysMain -StartupType Disabled -ErrorAction SilentlyContinue

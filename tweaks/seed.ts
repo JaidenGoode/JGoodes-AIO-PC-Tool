@@ -10,14 +10,6 @@ export interface TweakSeed {
 export const TWEAKS_SEED: TweakSeed[] = [
   // ── PERFORMANCE ──────────────────────────────────────────────────────────────
   {
-    title: "Maximum Performance Power Plan",
-    description: "Activates the hidden Ultimate Performance power plan which prevents CPU from throttling and keeps all components at maximum performance at all times. Best for desktop PCs connected to mains power.",
-    category: "performance",
-    isActive: false,
-    warning: "LAPTOP USERS: This disables CPU power throttling entirely, which significantly increases battery drain and heat output. Only use this on laptops when plugged into mains power. Desktop users get full benefit with no drawbacks.",
-    featureBreaks: "Significantly higher power consumption and heat. Not suitable for laptops on battery power."
-  },
-  {
     title: "Disable SuperFetch / SysMain",
     description: "Stops the SysMain (SuperFetch) service which preloads frequently used apps into RAM. Provides the greatest benefit on HDDs (traditional spinning drives) where load times are long. On NVMe/SSD systems the improvement is minimal since SSDs already load apps near-instantly.",
     category: "performance",

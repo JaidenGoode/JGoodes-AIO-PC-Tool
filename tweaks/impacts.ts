@@ -2,7 +2,6 @@ export type ImpactLevel = "High" | "Medium" | "Low";
 
 export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   // High — users notice a clear real-world difference
-  "Maximum Performance Power Plan":                "High",
   "Disable Mouse Acceleration":                    "High",
   "Disable Multiplane Overlay (MPO)":              "High",
   "Maximum Priority for Games":                     "High",

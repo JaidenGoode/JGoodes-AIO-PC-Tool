@@ -36,7 +36,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Maximum Priority for Games",
       "Disable Dynamic Tick",
       "Disable Nagle's Algorithm",
-      "Maximum Performance Power Plan",
       "Disable Multiplane Overlay (MPO)",
       "Disable Power Throttling",
     ],
@@ -68,7 +67,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
     bgColor: "hover:bg-yellow-500/10",
     borderColor: "hover:border-yellow-500/30",
     titles: [
-      "Maximum Performance Power Plan",
       "Disable SuperFetch / SysMain",
       "Disable NTFS Access Timestamps",
       "Disable Windows Performance Counters",
