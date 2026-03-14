@@ -93,19 +93,34 @@ async function createBlob(owner: string, repo: string, base64Content: string): P
   return result.sha;
 }
 
+async function getFullTree(owner: string, repo: string, treeSha: string): Promise<string[]> {
+  const result = await ghJson<any>(`/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`);
+  if (!result?.tree) return [];
+  return (result.tree as any[])
+    .filter((item: any) => item.type === "blob")
+    .map((item: any) => item.path as string);
+}
+
 async function createTree(
   owner: string,
   repo: string,
   baseTree: string | null,
-  items: { path: string; sha: string }[]
+  items: { path: string; sha: string | null }[]
 ): Promise<string> {
   const body: any = {
-    tree: items.map((item) => ({
-      path: item.path,
-      mode: "100644",
-      type: "blob",
-      sha: item.sha,
-    })),
+    tree: items.map((item) => {
+      const entry: any = {
+        path: item.path,
+        mode: "100644",
+        type: "blob",
+      };
+      if (item.sha !== null) {
+        entry.sha = item.sha;
+      } else {
+        entry.sha = null;
+      }
+      return entry;
+    }),
   };
   if (baseTree) body.base_tree = baseTree;
   const result = await ghPost<any>(`/repos/${owner}/${repo}/git/trees`, body);
@@ -171,6 +186,15 @@ export async function pushFilesViaTree(
   const headSha = headRef?.object?.sha ?? null;
   const baseTreeSha = headSha ? await getCommitTree(owner, repo, headSha) : null;
 
+  // Fetch current file list from GitHub so we can detect deletions
+  const remoteFiles = baseTreeSha ? await getFullTree(owner, repo, baseTreeSha) : [];
+  const localPaths = new Set(files.map((f) => f.path));
+
+  // Find files that exist on GitHub but are no longer local → delete them
+  const deletions: { path: string; sha: null }[] = remoteFiles
+    .filter((p) => !localPaths.has(p))
+    .map((p) => ({ path: p, sha: null }));
+
   const blobResults = await runInBatches(files, async (file) => {
     const sha = await createBlob(owner, repo, file.content.toString("base64"));
     return { path: file.path, sha };
@@ -193,7 +217,13 @@ export async function pushFilesViaTree(
     throw new Error(`All ${files.length} files failed to upload. First error: ${errors[0] || "unknown"}`);
   }
 
-  const treeSha = await createTree(owner, repo, baseTreeSha, goodBlobs);
+  // Combine new/updated blobs with deletion entries
+  const allTreeItems: { path: string; sha: string | null }[] = [
+    ...goodBlobs,
+    ...deletions,
+  ];
+
+  const treeSha = await createTree(owner, repo, baseTreeSha, allTreeItems);
   const commitSha = await createCommit(owner, repo, commitMessage, treeSha, headSha ? [headSha] : []);
   await upsertRef(owner, repo, branch, commitSha, headRef !== null);
 
