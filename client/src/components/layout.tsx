@@ -1,9 +1,11 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useMemo } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { ShieldCheck, Minus, Square, X, Maximize2 } from "lucide-react";
 import { useTheme, THEME_COLORS } from "./theme-provider";
 import { cn } from "@/lib/utils";
+import { useDetect } from "@/hooks/detect-context";
+import { useTweaks } from "@/hooks/use-tweaks";
 
 interface LayoutProps { children: ReactNode; }
 
@@ -62,7 +64,24 @@ function WindowControls() {
 
 export function Layout({ children }: LayoutProps) {
   const { accentHue, setAccentHue, toggleMode, mode } = useTheme();
+  const { isDetecting, lastDetectedAt } = useDetect();
+  const { data: tweaks } = useTweaks();
   const style = { "--sidebar-width": "15rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties;
+
+  const tweakStats = useMemo(() => {
+    if (!tweaks) return null;
+    const active = tweaks.filter(t => t.isActive).length;
+    return { active, total: tweaks.length };
+  }, [tweaks]);
+
+  const lastScanLabel = useMemo(() => {
+    if (!lastDetectedAt) return null;
+    const diff = Math.round((Date.now() - lastDetectedAt.getTime()) / 1000);
+    if (diff < 5) return "just now";
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return lastDetectedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }, [lastDetectedAt, tweaks]);
 
   return (
     <SidebarProvider style={style}>
@@ -192,10 +211,31 @@ export function Layout({ children }: LayoutProps) {
               <span className="text-[10px] text-muted-foreground/40 font-mono">v3.5.0</span>
               <span className="text-[10px] text-muted-foreground/20">|</span>
               <span className="text-[10px] text-muted-foreground/40 font-mono">JGoode A.I.O PC Tool</span>
+              {tweakStats && (
+                <>
+                  <span className="text-[10px] text-muted-foreground/20">|</span>
+                  <span className="text-[10px] font-mono" data-testid="status-tweaks-count">
+                    <span className="text-primary/70 font-semibold">{tweakStats.active}</span>
+                    <span className="text-muted-foreground/30">/{tweakStats.total} optimized</span>
+                  </span>
+                </>
+              )}
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1 h-1 rounded-full bg-primary/50" />
-              <span className="text-[10px] text-muted-foreground/40 font-mono">ONLINE</span>
+            <div className="flex items-center gap-3">
+              {lastScanLabel && (
+                <span className="text-[10px] text-muted-foreground/30 font-mono" data-testid="status-last-scan">
+                  {isDetecting ? "scanning..." : `scanned ${lastScanLabel}`}
+                </span>
+              )}
+              <div className="flex items-center gap-1.5">
+                <div className={cn(
+                  "w-1 h-1 rounded-full",
+                  isDetecting ? "bg-yellow-400 animate-pulse" : "bg-primary/50"
+                )} />
+                <span className="text-[10px] text-muted-foreground/40 font-mono">
+                  {isDetecting ? "SCANNING" : "ONLINE"}
+                </span>
+              </div>
             </div>
           </div>
         </div>

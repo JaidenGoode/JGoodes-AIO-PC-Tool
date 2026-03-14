@@ -145,7 +145,7 @@ export function CommandPalette() {
     },
     {
       id: "select-all", label: "Select All Tweaks",
-      description: "Enable all 47 tweaks at once",
+      description: `Enable all ${tweaks?.length ?? 0} tweaks at once`,
       category: "Tweaks", icon: ChevronRight, keywords: ["enable all"],
       action: async () => {
         await bulkMutation.mutateAsync({ titles: [], isActive: true });

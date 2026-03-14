@@ -1,51 +1,56 @@
 # JGoode A.I.O PC Tool - PRD
 
 ## Original Problem Statement
-Debug the tweaks page and make sure they enable to the proper safe trusted tweaked values and also make sure they all revert to their proper Windows defaults. Then improve everything possible without breaking anything.
+Debug the tweaks page and make sure they enable to the proper safe trusted tweaked values and also make sure they all revert to their proper Windows defaults. Then improve everything possible without breaking anything. Make the app always silently detect if tweaks are optimized or reverted automatically.
 
 ## Architecture
 - **Frontend**: React + TypeScript (Vite) - Electron desktop app
 - **Backend**: Express/Node.js with Drizzle ORM (PostgreSQL)
 - **Tweaks System**: TypeScript modules in `/tweaks/` directory
-  - `commands.ts` - PowerShell enable/disable commands for each tweak
-  - `detect.ts` - PowerShell detection script to scan Windows registry
-  - `seed.ts` - Tweak definitions (title, description, category, warnings)
-  - `impacts.ts` - Impact level ratings (High/Medium/Low)
-  - `conflicts.ts` - Tweak conflict mappings
-  - `presets.ts` - Quick-select preset groupings
 
 ## What's Been Implemented (Jan 2026)
 
-### Session 1: Core Bug Fixes (commands.ts - 5 enable/disable fixes)
-1. **Enable Game Mode** - Disable now sets values to 0 (was identical to enable)
-2. **Optimize DNS Resolution** - Disable now deletes override keys (was identical)
-3. **Optimize Boot Configuration** - Disable now sets BootOptimizeFunction=N, Prefetcher/Superfetch=0 (was identical)
-4. **Enable SSD TRIM** - Disable now sets DisableDeleteNotify=1 (was identical)
-5. **Enable Receive Side Scaling (RSS)** - Disable now runs rss=disabled (was identical)
+### Session 1: Core Bug Fixes (commands.ts)
+1. Enable Game Mode - Disable now sets values to 0
+2. Optimize DNS Resolution - Disable deletes override keys
+3. Optimize Boot Configuration - Disable sets N/0/0
+4. Enable SSD TRIM - Disable sets DisableDeleteNotify=1
+5. Enable Receive Side Scaling - Disable runs rss=disabled
 
-### Session 1: Detection Fixes (detect.ts - 9 fixes)
-- Added live detection for 8 previously-omitted tweaks: Game Mode, SSD TRIM, TCP Auto-Tuning, Boot Config, DNS Resolution, SMBv1, RSS, TCP Fast Open
-- Fixed "Increase Gaming Task Priority" detection: now checks `Scheduling Category=High` instead of `Priority=6`
+### Session 1: Detection Fixes (detect.ts)
+- Added detection for 8 omitted tweaks
+- Fixed Gaming Task Priority detection
 
-### Session 2: Comprehensive Improvements
-1. **Nagle's Algorithm revert** - Now deletes TcpAckFrequency/TCPNoDelay keys (was setting invalid value 0)
-2. **Mouse Acceleration revert** - Now resets MouseSensitivity to 10 (was missing from disable)
-3. **Missing conflict mapping** - Added SuperFetch/SysMain <-> Boot Configuration conflict
-4. **18 missing impact ratings** - All 87 tweaks now have High/Medium/Low impact ratings
-5. **Restart/Admin badges** - Tweak cards now show "Restart" and "Admin" badges
-6. **Command dialog context** - Now says "revert" when viewing undo command, not "apply"
-7. **TypeScript errors fixed** - Fixed 7 pre-existing TS errors in utilities.tsx (exitCode/output/error properties)
+### Session 2: Data Quality Improvements
+1. Nagle's Algorithm revert - Now deletes keys instead of invalid value 0
+2. Mouse Acceleration revert - Added MouseSensitivity reset
+3. Added SuperFetch <-> Boot Config conflict
+4. 18 missing impact ratings added (87/87 complete)
+5. Fixed 2 phantom preset titles (WinRM, RemoteRegistry) - replaced with real privacy tweaks
+6. Fixed 7 TypeScript errors in utilities.tsx
+
+### Session 3: Auto-Detection & Professional Polish
+1. **Silent auto-detect on app open** - runs immediately on mount
+2. **Periodic background detection** - every 60 seconds silently
+3. **Window focus re-detection** - triggers on window.focus + Electron onWindowFocus
+4. **Status bar optimization count** - shows "X/Y optimized" with scan status
+5. **Sidebar active count badge** - shows number of active tweaks next to "Tweaks" nav
+6. **Command palette fix** - "Enable all 47 tweaks" now uses dynamic count
+7. **Last scan timestamp** - tweaks page and status bar show when last scanned
+8. **Privacy preset expanded** - added 6 real telemetry/tracking tweaks to privacy preset
+9. **Restart/Admin badges** on tweak cards
+10. **Command dialog context** - shows "revert" for undo commands
 
 ## Verification
-- 0 tweaks with identical enable/disable (ALL FIXED)
-- 87/87 impact coverage (COMPLETE)
-- 87/87 detection coverage (COMPLETE)
-- 87/87 command coverage (COMPLETE)
-- 0 TypeScript compilation errors
-- Clean Vite build (710KB JS, 87KB CSS)
+- 87/87 command coverage (PASS)
+- 87/87 detection coverage (PASS)
+- 87/87 impact coverage (PASS)
+- 0 identical enable/disable pairs (PASS)
+- 0 orphaned preset titles (PASS)
+- 0 TypeScript errors (PASS)
+- Clean Vite build (PASS)
 
 ## Backlog
-- P0: None
 - P1: Test all tweaks on actual Windows hardware
-- P2: Add tweak health check feature (auto-detect drift from expected state)
-- P2: Consider adding undo confirmation dialog for high-impact tweaks
+- P2: Add undo confirmation dialog for high-impact tweaks
+- P2: Consider adding "safe mode" rollback (batch undo all tweaks with one click)

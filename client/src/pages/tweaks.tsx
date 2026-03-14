@@ -40,6 +40,7 @@ declare global {
       onScriptOutput: (callback: (data: { type: string; text?: string; code?: number }) => void) => () => void;
       saveFile?: (content: string, defaultName: string) => Promise<{ success: boolean; error?: string }>;
       openFile?: () => Promise<{ success: boolean; content?: string; error?: string }>;
+      onWindowFocus?: (callback: () => void) => () => void;
     };
   }
 }
@@ -92,7 +93,7 @@ export default function Tweaks() {
   const updateTweak = useUpdateTweak();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { triggerDetect, isDetecting, hasInitialDetect } = useDetect();
+  const { triggerDetect, isDetecting, hasInitialDetect, lastDetectedAt } = useDetect();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [, setLocation] = useLocation();
@@ -818,9 +819,17 @@ export default function Tweaks() {
               </Button>
             )}
           </div>
-          <div className={cn("flex items-center gap-1 text-[10px] text-primary/60", !isDetecting && "invisible")}>
-            <Loader2 className="h-2.5 w-2.5 animate-spin" />
-            Scanning system registry...
+          <div className={cn("flex items-center gap-1 text-[10px] text-primary/60", !isDetecting && !lastDetectedAt && "invisible")}>
+            {isDetecting ? (
+              <>
+                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                Scanning system registry...
+              </>
+            ) : lastDetectedAt ? (
+              <span className="text-muted-foreground/40">
+                Auto-synced {lastDetectedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>

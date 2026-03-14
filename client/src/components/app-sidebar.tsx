@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { openUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useTweaks } from "@/hooks/use-tweaks";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
   SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
@@ -41,6 +42,8 @@ const NAV_GROUPS = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { data: tweaks } = useTweaks();
+  const activeCount = tweaks?.filter(t => t.isActive).length ?? 0;
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
@@ -122,6 +125,14 @@ export function AppSidebar() {
                           )}>
                             {item.title}
                           </span>
+                          {item.title === "Tweaks" && activeCount > 0 && (
+                            <span
+                              data-testid="sidebar-tweaks-badge"
+                              className="text-[9px] font-bold text-primary bg-primary/12 border border-primary/20 px-1.5 py-0.5 rounded-full leading-none min-w-[20px] text-center"
+                            >
+                              {activeCount}
+                            </span>
+                          )}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
