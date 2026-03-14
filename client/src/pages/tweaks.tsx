@@ -614,7 +614,9 @@ export default function Tweaks() {
               {viewingCmd?.title}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Run this in PowerShell as Administrator to apply this tweak.
+              {viewingCmd?.title && getTweakCommand(viewingCmd.title) && tweaks?.find(t => t.title === viewingCmd.title)?.isActive
+                ? "Run this in PowerShell as Administrator to revert this tweak to Windows defaults."
+                : "Run this in PowerShell as Administrator to apply this tweak."}
             </DialogDescription>
           </DialogHeader>
           <div className="relative">
@@ -1090,6 +1092,24 @@ export default function Tweaks() {
                             data-testid={`badge-impact-${tweak.id}`}
                           >
                             {impact}
+                          </span>
+                        )}
+                        {cmd?.requiresRestart && (
+                          <span
+                            className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border text-orange-400 bg-orange-500/8 border-orange-500/20"
+                            data-testid={`badge-restart-${tweak.id}`}
+                            title="This tweak requires a system restart to take effect"
+                          >
+                            Restart
+                          </span>
+                        )}
+                        {cmd?.requiresAdmin && (
+                          <span
+                            className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border text-sky-400/70 bg-sky-500/6 border-sky-500/15"
+                            data-testid={`badge-admin-${tweak.id}`}
+                            title="Requires Administrator privileges"
+                          >
+                            Admin
                           </span>
                         )}
                       </div>

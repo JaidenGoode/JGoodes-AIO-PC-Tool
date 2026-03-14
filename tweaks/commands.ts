@@ -98,7 +98,8 @@ reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "0" /f
 reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f`,
     disable: `reg add "HKCU\\Control Panel\\Mouse" /v MouseSpeed /t REG_SZ /d "1" /f
 reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold1 /t REG_SZ /d "6" /f
-reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "10" /f`,
+reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "10" /f
+reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f`,
   },
 
   "Keep All CPU Cores Active (Unpark Cores)": {
@@ -278,10 +279,12 @@ foreach ($iface in $interfaces) {
     Set-ItemProperty -Path $iface.PSPath -Name TcpAckFrequency -Value 1 -Type DWORD -Force -ErrorAction SilentlyContinue
     Set-ItemProperty -Path $iface.PSPath -Name TCPNoDelay -Value 1 -Type DWORD -Force -ErrorAction SilentlyContinue
 }`,
+    // Revert: remove TcpAckFrequency & TCPNoDelay keys entirely — these do NOT exist by default in Windows.
+    // Deleting them restores Windows built-in Nagle behavior (delayed ACK + Nagle's Algorithm enabled).
     disable: `$interfaces = Get-ChildItem "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"
 foreach ($iface in $interfaces) {
-    Set-ItemProperty -Path $iface.PSPath -Name TcpAckFrequency -Value 0 -Type DWORD -Force -ErrorAction SilentlyContinue
-    Set-ItemProperty -Path $iface.PSPath -Name TCPNoDelay -Value 0 -Type DWORD -Force -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path $iface.PSPath -Name TcpAckFrequency -Force -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path $iface.PSPath -Name TCPNoDelay -Force -ErrorAction SilentlyContinue
 }`,
   },
 

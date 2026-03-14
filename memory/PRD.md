@@ -1,7 +1,7 @@
 # JGoode A.I.O PC Tool - PRD
 
 ## Original Problem Statement
-Debug the tweaks page and make sure they enable to the proper safe trusted tweaked values and also make sure they all revert to their proper Windows defaults.
+Debug the tweaks page and make sure they enable to the proper safe trusted tweaked values and also make sure they all revert to their proper Windows defaults. Then improve everything possible without breaking anything.
 
 ## Architecture
 - **Frontend**: React + TypeScript (Vite) - Electron desktop app
@@ -16,44 +16,36 @@ Debug the tweaks page and make sure they enable to the proper safe trusted tweak
 
 ## What's Been Implemented (Jan 2026)
 
-### Bug Fixes Applied
+### Session 1: Core Bug Fixes (commands.ts - 5 enable/disable fixes)
+1. **Enable Game Mode** - Disable now sets values to 0 (was identical to enable)
+2. **Optimize DNS Resolution** - Disable now deletes override keys (was identical)
+3. **Optimize Boot Configuration** - Disable now sets BootOptimizeFunction=N, Prefetcher/Superfetch=0 (was identical)
+4. **Enable SSD TRIM** - Disable now sets DisableDeleteNotify=1 (was identical)
+5. **Enable Receive Side Scaling (RSS)** - Disable now runs rss=disabled (was identical)
 
-#### 1. Enable Game Mode - CRITICAL FIX
-- **Bug**: Disable/revert command was identical to enable (both set values to 1)
-- **Fix**: Disable now sets `AutoGameModeEnabled=0` and `AllowAutoGameMode=0`
-- **Impact**: Revert now actually turns Game Mode OFF
+### Session 1: Detection Fixes (detect.ts - 9 fixes)
+- Added live detection for 8 previously-omitted tweaks: Game Mode, SSD TRIM, TCP Auto-Tuning, Boot Config, DNS Resolution, SMBv1, RSS, TCP Fast Open
+- Fixed "Increase Gaming Task Priority" detection: now checks `Scheduling Category=High` instead of `Priority=6`
 
-#### 2. Optimize DNS Resolution - FIX
-- **Bug**: Enable and disable wrote identical registry values
-- **Fix**: Disable now uses `reg delete` to remove override keys, restoring Windows built-in DNS cache defaults
-- **Impact**: Revert now properly clears DNS cache customizations
+### Session 2: Comprehensive Improvements
+1. **Nagle's Algorithm revert** - Now deletes TcpAckFrequency/TCPNoDelay keys (was setting invalid value 0)
+2. **Mouse Acceleration revert** - Now resets MouseSensitivity to 10 (was missing from disable)
+3. **Missing conflict mapping** - Added SuperFetch/SysMain <-> Boot Configuration conflict
+4. **18 missing impact ratings** - All 87 tweaks now have High/Medium/Low impact ratings
+5. **Restart/Admin badges** - Tweak cards now show "Restart" and "Admin" badges
+6. **Command dialog context** - Now says "revert" when viewing undo command, not "apply"
+7. **TypeScript errors fixed** - Fixed 7 pre-existing TS errors in utilities.tsx (exitCode/output/error properties)
 
-#### 3. Optimize Boot Configuration - FIX
-- **Bug**: Enable and disable wrote identical values (BootOptimizeFunction=Y, Prefetcher=3, Superfetch=3)
-- **Fix**: Disable now sets `BootOptimizeFunction=N`, `EnablePrefetcher=0`, `EnableSuperfetch=0`
-- **Impact**: Revert now actually disables boot optimization
-
-#### 4. Enable SSD TRIM Optimization - FIX
-- **Bug**: Both enable and disable set `DisableDeleteNotify=0`
-- **Fix**: Disable now sets `DisableDeleteNotify=1`
-- **Impact**: Revert now actually disables TRIM
-
-#### 5. Enable Receive Side Scaling (RSS) - FIX
-- **Bug**: Both enable and disable enabled RSS
-- **Fix**: Disable now sets `rss=disabled` and runs `Disable-NetAdapterRss`
-- **Impact**: Revert now actually disables RSS
-
-#### 6. Detection Script Updates (detect.ts)
-- Added detection for: Enable Game Mode, SSD TRIM, TCP Auto-Tuning, Boot Configuration, DNS Resolution, SMBv1, RSS, TCP Fast Open
-- Fixed: "Increase Gaming Task Priority" detection now checks `Scheduling Category=High` instead of `Priority=6` (which was the same in both enable/disable states)
-- All 87 seed tweaks now have matching detection entries
-
-## Verified
-- All 87 tweaks have entries in commands.ts, detect.ts, and seed.ts
-- Zero new TypeScript compilation errors introduced
-- All enable/disable command pairs are now distinct
+## Verification
+- 0 tweaks with identical enable/disable (ALL FIXED)
+- 87/87 impact coverage (COMPLETE)
+- 87/87 detection coverage (COMPLETE)
+- 87/87 command coverage (COMPLETE)
+- 0 TypeScript compilation errors
+- Clean Vite build (710KB JS, 87KB CSS)
 
 ## Backlog
 - P0: None
-- P1: Pre-existing TypeScript errors in utilities.tsx (unrelated to tweaks)
-- P2: Consider adding "safe mode" detection for SMBv1 (intentionally keeps disabled on revert for security)
+- P1: Test all tweaks on actual Windows hardware
+- P2: Add tweak health check feature (auto-detect drift from expected state)
+- P2: Consider adding undo confirmation dialog for high-impact tweaks

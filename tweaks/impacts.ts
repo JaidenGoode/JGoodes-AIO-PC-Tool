@@ -128,6 +128,28 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Bluetooth Support Service (bthserv)":  "Low",
   "Disable Net.TCP Port Sharing (NetTcpPortSharing)": "Low",
   "Disable Remote Access Manager (RasMan)":        "Low",
+
+  // Privacy & Telemetry
+  "Increase Gaming Task Priority in System Scheduler": "Medium",
+  "Disable Tile Notification System":               "Low",
+  "Disable Windows Error Reporting":                "Medium",
+  "Disable Connected Telemetry (DiagTrack)":        "High",
+  "Disable Application Compatibility Telemetry":    "Medium",
+  "Disable Windows Activity History":               "Medium",
+  "Disable Windows Advertising ID":                 "Low",
+  "Disable Windows Content Delivery Manager":       "Medium",
+  "Disable Clipboard History Collection":           "Low",
+
+  // Advanced Performance & System
+  "Disable Virtualization-Based Security (VBS)":    "High",
+  "Raise System Timer IRQ Priority":                "Medium",
+  "Optimize AFD Network Socket Buffers":            "Medium",
+  "Foreground Application Priority Lock Timeout":   "Low",
+  "Disable Print Spooler":                          "Medium",
+  "NTFS MFT Zone Reservation":                      "Low",
+  "Exclude Driver Updates from Windows Update":     "Medium",
+  "Disable Windows Copilot AI Sidebar":             "Medium",
+  "Disable Windows 11 Widgets Panel":               "Low",
 };
 
 export function getImpact(title: string): ImpactLevel | null {

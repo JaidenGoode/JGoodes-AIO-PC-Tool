@@ -348,7 +348,7 @@ export default function Utilities() {
         toast({ title: "Winaero Tweaker launched", description: "The app window should appear momentarily." });
       } else {
         setWinaerotStatus("error");
-        toast({ title: "Launch failed", description: result.error || "Could not find or launch Winaero Tweaker.", variant: "destructive" });
+        toast({ title: "Launch failed", description: "Could not find or launch Winaero Tweaker.", variant: "destructive" });
       }
     } catch {
       setWinaerotStatus("error");
@@ -425,7 +425,7 @@ export default function Utilities() {
     ].join("\r\n");
     try {
       const result = await window.electronAPI.runScript(script);
-      if (result.exitCode === 2 || result.output?.includes("razer.com")) {
+      if (result.code === 2) {
         setCortexStatus("done");
         toast({ title: "Razer Cortex not found", description: "Opening the download page — install it, then click the button again." });
       } else if (result.success) {
@@ -433,7 +433,7 @@ export default function Utilities() {
         toast({ title: "Razer Cortex launched", description: "The app window should appear momentarily." });
       } else {
         setCortexStatus("error");
-        toast({ title: "Launch failed", description: result.error || "Could not find or launch Razer Cortex.", variant: "destructive" });
+        toast({ title: "Launch failed", description: "Could not find or launch Razer Cortex.", variant: "destructive" });
       }
     } catch {
       setCortexStatus("error");
@@ -509,7 +509,7 @@ export default function Utilities() {
     ].join("\r\n");
     try {
       const result = await window.electronAPI.runScript(script);
-      if (result.exitCode === 2 || result.output?.includes("exitlag.com")) {
+      if (result.code === 2) {
         setExitlagStatus("done");
         toast({ title: "ExitLag not found", description: "Opening the download page — install it, then click the button again." });
       } else if (result.success) {
@@ -517,7 +517,7 @@ export default function Utilities() {
         toast({ title: "ExitLag launched", description: "The app window should appear momentarily." });
       } else {
         setExitlagStatus("error");
-        toast({ title: "Launch failed", description: result.error || "Could not find or launch ExitLag.", variant: "destructive" });
+        toast({ title: "Launch failed", description: "Could not find or launch ExitLag.", variant: "destructive" });
       }
     } catch {
       setExitlagStatus("error");
