@@ -1476,7 +1476,9 @@ try {
         targetOwner,
         targetRepo,
         filesToPush,
-        "chore: sync via JGoode A.I.O PC Tool"
+        "chore: sync via JGoode A.I.O PC Tool",
+        SOURCE_DIRS,
+        ROOT_FILES
       );
 
       res.json({

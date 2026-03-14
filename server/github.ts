@@ -93,36 +93,31 @@ async function createBlob(owner: string, repo: string, base64Content: string): P
   return result.sha;
 }
 
-async function getFullTree(owner: string, repo: string, treeSha: string): Promise<string[]> {
+async function getFullTreeWithShas(
+  owner: string,
+  repo: string,
+  treeSha: string
+): Promise<{ path: string; sha: string }[]> {
   const result = await ghJson<any>(`/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`);
   if (!result?.tree) return [];
   return (result.tree as any[])
     .filter((item: any) => item.type === "blob")
-    .map((item: any) => item.path as string);
+    .map((item: any) => ({ path: item.path as string, sha: item.sha as string }));
 }
 
 async function createTree(
   owner: string,
   repo: string,
-  baseTree: string | null,
-  items: { path: string; sha: string | null }[]
+  items: { path: string; sha: string }[]
 ): Promise<string> {
   const body: any = {
-    tree: items.map((item) => {
-      const entry: any = {
-        path: item.path,
-        mode: "100644",
-        type: "blob",
-      };
-      if (item.sha !== null) {
-        entry.sha = item.sha;
-      } else {
-        entry.sha = null;
-      }
-      return entry;
-    }),
+    tree: items.map((item) => ({
+      path: item.path,
+      mode: "100644",
+      type: "blob",
+      sha: item.sha,
+    })),
   };
-  if (baseTree) body.base_tree = baseTree;
   const result = await ghPost<any>(`/repos/${owner}/${repo}/git/trees`, body);
   if (!result?.sha) throw new Error("Tree creation returned no SHA");
   return result.sha;
@@ -178,7 +173,9 @@ export async function pushFilesViaTree(
   owner: string,
   repo: string,
   files: { path: string; content: Buffer }[],
-  commitMessage: string
+  commitMessage: string,
+  managedDirs: string[] = [],
+  managedRootFiles: string[] = []
 ): Promise<{ pushed: number; skipped: number; repoUrl: string; errors: string[] }> {
   const branch = "main";
 
@@ -186,49 +183,59 @@ export async function pushFilesViaTree(
   const headSha = headRef?.object?.sha ?? null;
   const baseTreeSha = headSha ? await getCommitTree(owner, repo, headSha) : null;
 
-  // Fetch current file list from GitHub so we can detect deletions
-  const remoteFiles = baseTreeSha ? await getFullTree(owner, repo, baseTreeSha) : [];
-  const localPaths = new Set(files.map((f) => f.path));
+  // Step 1: Get ALL files currently on GitHub with their blob SHAs
+  const remoteEntries = baseTreeSha ? await getFullTreeWithShas(owner, repo, baseTreeSha) : [];
 
-  // Find files that exist on GitHub but are no longer local → delete them
-  const deletions: { path: string; sha: null }[] = remoteFiles
-    .filter((p) => !localPaths.has(p))
-    .map((p) => ({ path: p, sha: null }));
+  // Step 2: Build a mutable map starting from the complete remote state
+  // key = file path, value = blob SHA
+  const finalMap = new Map<string, string>(remoteEntries.map((e) => [e.path, e.sha]));
 
+  // Step 3: Upload local files and override/add in the map
   const blobResults = await runInBatches(files, async (file) => {
     const sha = await createBlob(owner, repo, file.content.toString("base64"));
     return { path: file.path, sha };
   }, 4);
 
-  const goodBlobs: { path: string; sha: string }[] = [];
   const errors: string[] = [];
   const skippedFiles: string[] = [];
+  let pushedCount = 0;
+  const localPaths = new Set<string>();
 
   blobResults.forEach((result, i) => {
     if (result.status === "fulfilled") {
-      goodBlobs.push(result.value);
+      finalMap.set(result.value.path, result.value.sha);
+      localPaths.add(result.value.path);
+      pushedCount++;
     } else {
       skippedFiles.push(files[i].path);
       errors.push(`${files[i].path}: ${result.reason?.message || "failed"}`);
     }
   });
 
-  if (goodBlobs.length === 0) {
+  if (pushedCount === 0) {
     throw new Error(`All ${files.length} files failed to upload. First error: ${errors[0] || "unknown"}`);
   }
 
-  // Combine new/updated blobs with deletion entries
-  const allTreeItems: { path: string; sha: string | null }[] = [
-    ...goodBlobs,
-    ...deletions,
-  ];
+  // Step 4: Remove entries from the map that belong to our managed scope
+  // but no longer exist locally — these were deleted and must be removed from GitHub
+  for (const { path } of remoteEntries) {
+    const isManaged =
+      managedRootFiles.includes(path) ||
+      managedDirs.some((dir) => path === dir || path.startsWith(dir + "/"));
+    if (isManaged && !localPaths.has(path)) {
+      finalMap.delete(path);
+    }
+  }
 
-  const treeSha = await createTree(owner, repo, baseTreeSha, allTreeItems);
+  // Step 5: Create a completely fresh tree (no base_tree) with exactly the files we want.
+  // This is the only reliable way to delete files via the GitHub Trees API.
+  const allItems = Array.from(finalMap.entries()).map(([path, sha]) => ({ path, sha }));
+  const treeSha = await createTree(owner, repo, allItems);
   const commitSha = await createCommit(owner, repo, commitMessage, treeSha, headSha ? [headSha] : []);
   await upsertRef(owner, repo, branch, commitSha, headRef !== null);
 
   return {
-    pushed: goodBlobs.length,
+    pushed: pushedCount,
     skipped: skippedFiles.length,
     repoUrl: `https://github.com/${owner}/${repo}`,
     errors: errors.slice(0, 5),
