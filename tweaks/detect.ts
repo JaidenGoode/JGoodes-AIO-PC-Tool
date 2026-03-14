@@ -53,7 +53,7 @@ $d['Win32 Priority Separation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Pri
 $d['Disable GameBar']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR' 'AppCaptureEnabled' 0
 $d['Disable GameBar Background Recording']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
 $d['Optimize for Windowed & Borderless Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'ForceEffectMode' 2
-# Enable Game Mode: detection omitted — AutoGameModeEnabled=1 is the Windows default so registry check always returns applied; DB is authoritative
+$d['Enable Game Mode']=creg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnabled' 1
 $d['Enable Hardware Accelerated GPU Scheduling (HAGS)']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers' 'HwSchMode' 2
 $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'MenuShowDelay' '0'
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
@@ -70,9 +70,9 @@ $d['Disable Xbox Core Services']=csvc 'XboxGipSvc'
 # System / Network
 $d['Disable IPv6']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' 255
 try{$ipv6v=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters' 'DisabledComponents' -EA Stop).DisabledComponents;$d['Prefer IPv4 over IPv6']=if($ipv6v -eq 32){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
-# SSD TRIM: detection omitted — apply/revert both set DisableDeleteNotify=0 (Windows default), DB is authoritative
+try{$fsu=((fsutil behavior query DisableDeleteNotify 2>$null) -join ' ');$d['Enable SSD TRIM Optimization']=if($fsu -match 'DisableDeleteNotify\w*\s*=\s*0'){1}else{0}}catch{$d['Enable SSD TRIM Optimization']=0}
 $d['Disable Web Search in Windows Search']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0
-# TCP Auto-Tuning: detection omitted — netsh reports enabled on Win11 default even when reverted, DB is authoritative
+try{$tcp=(netsh int tcp show global 2>$null) -join ' ';$d['Disable Windows TCP Auto-Tuning']=if($tcp -match 'Receive Window Auto-Tuning Level\s*:\s*disabled'){1}else{0}}catch{$d['Disable Windows TCP Auto-Tuning']=0}
 $d['Disable Startup Program Delay']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0
 $d['Disable Windows Automatic Maintenance']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance' 'MaintenanceDisabled' 1
 $d['Disable Power Throttling']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling' 'PowerThrottlingOff' 1
@@ -100,7 +100,7 @@ try{$mc=(Get-MMAgent -EA Stop).MemoryCompression;$d['Disable Memory Compression'
 $d['Release Unused DLLs from Memory']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer' 'AlwaysUnloadDLL' 1
 try{$svch=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' -EA Stop).SvcHostSplitThresholdInKB;$d['Svchost Process Isolation']=if($svch -gt 1000000){1}else{0}}catch{$d['Svchost Process Isolation']=0}
 $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsDisable8dot3NameCreation' 1
-# Optimize Boot Configuration: detection omitted — Enable='Y' exists in the registry by default in Windows so check always returns applied; DB is authoritative
+$d['Optimize Boot Configuration']=creg 'HKLM:\SOFTWARE\Microsoft\Dfrg\BootOptimizeFunction' 'Enable' 'Y'
 $d['Increase System I/O Performance']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'IoPageLockLimit' 983040
 
 # System (Cortex Desktop Menu & Network)
@@ -113,23 +113,23 @@ $d['Disable Notification Center']=creg 'HKCU:\Software\Microsoft\Windows\Current
 $d['Reduce Keyboard Input Delay']=creg 'HKCU:\Control Panel\Keyboard' 'KeyboardDelay' '0'
 $d['Increase Network Buffer Size']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' 'SizReqBuf' 65535
 $d['Optimize TCP/IP Network Stack']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters' 'DefaultTTL' 64
-# Optimize DNS Resolution: detection omitted — enable and revert both write the same registry values so the key always equals 5 after either action; DB is authoritative
+$d['Optimize DNS Resolution']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'MaxNegativeCacheTtl' 5
 $d['Unlock Reserved Network Bandwidth']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched' 'NonBestEffortLimit' 0
 $d['Increase Browser Connection Limits']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' 'MaxConnectionsPerServer' 16
 
 # Network
 $d['Disable Delivery Optimization Service']=csvc 'DoSvc'
 
-# SMBv1: detection omitted — disabled by Windows 10/11 default, apply/revert both keep it disabled, DB is authoritative
+$d['Disable SMBv1 Protocol']=creg 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' 'SMB1' 0
 
-# RSS: detection omitted — enabled by Windows default, apply/revert both keep it enabled, DB is authoritative
+try{$rss=(netsh int tcp show global 2>$null) -join ' ';$d['Enable Receive Side Scaling (RSS)']=if($rss -match 'Receive-Side Scaling State\s*:\s*enabled'){1}else{0}}catch{$d['Enable Receive Side Scaling (RSS)']=0}
 
 # Gaming (additional)
 try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Disable HPET (Platform Clock)']=if($bcd -match 'useplatformclock\s+No'){1}else{0}}catch{$d['Disable HPET (Platform Clock)']=0}
 $d['Disable Auto-Restart After Windows Updates']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' 'NoAutoRebootWithLoggedOnUsers' 1
 # Performance (additional)
 $d['Disable Transparency Effects']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'EnableTransparency' 0
-$d['Increase Gaming Task Priority in System Scheduler']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Audio' 'Priority' 6
+$d['Increase Gaming Task Priority in System Scheduler']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Audio' 'Scheduling Category' 'High'
 $d['Disable Tile Notification System']=creg 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\PushNotifications' 'NoTileApplicationNotification' 1
 
 # Gaming (Razer Cortex Speed Up style)
@@ -142,7 +142,7 @@ try{
 try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Set TSC Sync Policy (Precise Game Timing)']=if($bcd -match 'tscsyncpolicy\s+Enhanced'){1}else{0}}catch{$d['Set TSC Sync Policy (Precise Game Timing)']=0}
 
 # Network (Razer Cortex Speed Up style)
-# TCP Fast Open: detection omitted — Win11 has Fast Open enabled by default so detection always fires, DB is authoritative
+try{$tfo=(netsh int tcp show global 2>$null) -join ' ';$d['Enable TCP Fast Open']=if($tfo -match 'Fast Open\s*:\s*enabled'){1}else{0}}catch{$d['Enable TCP Fast Open']=0}
 try{
   $imOff=0
   Get-NetAdapter -Physical -EA Stop | ForEach-Object {
