@@ -58,6 +58,7 @@ async function buildAll() {
       alias: {
         "@": path.resolve(cwd, "client", "src"),
         "@shared": path.resolve(cwd, "shared"),
+        "@tweaks": path.resolve(cwd, "tweaks"),
         "@assets": path.resolve(cwd, "attached_assets"),
       },
     },
