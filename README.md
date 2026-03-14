@@ -4,7 +4,7 @@
 
 **All-in-one Windows optimization, privacy, and performance desktop app**
 
-*51 system tweaks · Real-time hardware monitoring · System cleaner · DNS manager · Restore points · Utilities*
+* system tweaks · System cleaner · DNS manager · Restore points · Utilities*
 
 [![Version](https://img.shields.io/badge/version-2.5.1-red?style=flat-square)](../../releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue?style=flat-square)](../../releases)
