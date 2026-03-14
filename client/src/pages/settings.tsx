@@ -159,7 +159,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">Check for Updates</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Version: 3.5.0</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Check GitHub for the latest release</p>
             </div>
             <Button
               size="sm"

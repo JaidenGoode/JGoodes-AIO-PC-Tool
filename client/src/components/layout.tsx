@@ -208,8 +208,6 @@ export function Layout({ children }: LayoutProps) {
               style={{ background: "linear-gradient(90deg, transparent 0%, hsl(var(--border)/0.6) 30%, hsl(var(--border)/0.6) 70%, transparent 100%)" }}
             />
             <div className="flex items-center gap-3">
-              <span className="text-[10px] text-muted-foreground/40 font-mono">v3.5.0</span>
-              <span className="text-[10px] text-muted-foreground/20">|</span>
               <span className="text-[10px] text-muted-foreground/40 font-mono">JGoode A.I.O PC Tool</span>
               {tweakStats && (
                 <>

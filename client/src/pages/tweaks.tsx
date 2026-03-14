@@ -445,7 +445,6 @@ export default function Tweaks() {
     }
     const profile = JSON.stringify({
       app: "JGoode's A.I.O PC Tool",
-      version: "3.5.0",
       exported: new Date().toISOString(),
       tweaks: activeTweaks.map(t => t.title),
     }, null, 2);
@@ -972,7 +971,7 @@ export default function Tweaks() {
 
       {/* ── Tweaks grid ─────────────────────────────────────────────────── */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="h-36 rounded-xl border border-border bg-card animate-pulse" />
           ))}
@@ -984,7 +983,7 @@ export default function Tweaks() {
           <p className="text-xs text-muted-foreground/50 mt-1">Try a different search or category filter</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <AnimatePresence mode="popLayout">
             {filteredTweaks?.map((tweak, i) => {
               const Icon = CATEGORY_ICONS[tweak.category.toLowerCase()] || Wrench;
@@ -1123,17 +1122,17 @@ export default function Tweaks() {
                         )}
                       </div>
                       <div className="flex items-center gap-1.5">
-                        {cmd && (
+                        {cmd && !isOptimized && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setViewingCmd({ title: tweak.title, cmd: isOptimized ? cmd.disable : cmd.enable });
+                              setViewingCmd({ title: tweak.title, cmd: cmd.enable });
                             }}
                             className="flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded border border-border/40 bg-secondary/50 hover:border-primary/30 hover:bg-primary/8 text-muted-foreground hover:text-primary transition-all duration-150"
                             data-testid={`button-view-cmd-${tweak.id}`}
                           >
                             <Terminal className="h-2.5 w-2.5" />
-                            {isOptimized ? "Undo CMD" : "View CMD"}
+                            View CMD
                           </button>
                         )}
                         <button
