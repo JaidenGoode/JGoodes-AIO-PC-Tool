@@ -26,7 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TWEAK_PRESETS } from "@tweaks/presets";
 import { getImpact, type ImpactLevel } from "@tweaks/impacts";
 import { getConflict } from "@tweaks/conflicts";
-import { useDetect } from "@/contexts/detect-context";
+import { useDetect } from "@/hooks/detect-context";
 
 declare global {
   interface Window {

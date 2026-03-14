@@ -24,10 +24,12 @@ A modern Windows PC optimization desktop app built with Electron + Express + Rea
 | `client/src/components/theme-provider.tsx` | Theme context: 13 colors, dark/light mode, CSS variable injection |
 | `client/src/components/layout.tsx` | App shell: sidebar + header + status bar |
 | `client/src/lib/api.ts` | All API calls (fetch-based, no Tauri) |
-| `client/src/lib/tweak-commands.ts` | All 129 real PowerShell enable/disable commands + `generateUndoScript()` |
-| `client/src/lib/tweak-presets.ts` | Gaming, Privacy, Performance, Select All preset definitions |
-| `client/src/lib/tweak-impacts.ts` | Impact ratings (High/Medium/Low) per tweak |
-| `client/src/lib/tweak-conflicts.ts` | Conflict pairs between mutually exclusive tweaks |
+| `tweaks/seed.ts` | Tweak metadata: title, description, category, warning text |
+| `tweaks/commands.ts` | All PowerShell enable/disable commands + `generateUndoScript()` |
+| `tweaks/presets.ts` | Gaming, Privacy, Performance, Select All preset definitions |
+| `tweaks/impacts.ts` | Impact ratings (High/Medium/Low) per tweak |
+| `tweaks/conflicts.ts` | Conflict pairs between mutually exclusive tweaks |
+| `tweaks/detect.ts` | Windows PowerShell detection script (checks if each tweak is applied) |
 | `client/src/components/command-palette.tsx` | Global Ctrl+K command palette (navigate, preset, export) |
 | `server/routes.ts` | Express routes + PowerShell execution + auto-seeds 129 tweaks + `POST /api/tweaks/detect` + `POST /api/tweaks/bulk` + cleaning history |
 | `server/storage.ts` | `IStorage` interface → always uses `JsonStorage` |

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTweaks, updateTweak } from "@/lib/api";
-import { useDetect } from "@/contexts/detect-context";
+import { useDetect } from "@/hooks/detect-context";
 import type { Tweak } from "@shared/schema";
 
 export function useTweaks() {

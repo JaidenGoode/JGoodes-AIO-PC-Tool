@@ -7,7 +7,7 @@ import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CommandPalette } from "@/components/command-palette";
-import { DetectProvider } from "@/contexts/detect-context";
+import { DetectProvider } from "@/hooks/detect-context";
 
 import Dashboard from "@/pages/dashboard";
 import Tweaks from "@/pages/tweaks";
