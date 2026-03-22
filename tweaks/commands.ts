@@ -786,12 +786,19 @@ export function generatePowerShellScript(
     lines.push("");
   }
 
+  // Always restart Explorer so taskbar and Start menu reflect changes immediately
+  lines.push('Write-Host "" ');
+  lines.push('Write-Host "Restarting Windows Explorer (refreshes taskbar and Start menu)..." -ForegroundColor Cyan');
+  lines.push("Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue");
+  lines.push("Start-Sleep -Milliseconds 1000");
+  lines.push("Start-Process explorer");
+  lines.push('Write-Host "Explorer restarted." -ForegroundColor Green');
   lines.push('Write-Host "" ');
   lines.push(`Write-Host "Done! ${active.length} tweaks applied." -ForegroundColor Green`);
 
   if (needsRestart) {
     lines.push(
-      'Write-Host "RESTART REQUIRED for some changes to take effect." -ForegroundColor Red'
+      'Write-Host "A full system restart is also recommended for some changes." -ForegroundColor Yellow'
     );
   }
 
@@ -828,9 +835,16 @@ export function generateUndoScript(
     lines.push("");
   }
 
+  // Always restart Explorer so taskbar and Start menu reflect the reverted changes
+  lines.push('Write-Host "" ');
+  lines.push('Write-Host "Restarting Windows Explorer (refreshes taskbar and Start menu)..." -ForegroundColor Cyan');
+  lines.push("Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue");
+  lines.push("Start-Sleep -Milliseconds 1000");
+  lines.push("Start-Process explorer");
+  lines.push('Write-Host "Explorer restarted." -ForegroundColor Green');
   lines.push('Write-Host "" ');
   lines.push(`Write-Host "Done! ${reversible.length} tweaks reverted to defaults." -ForegroundColor Green`);
-  lines.push('Write-Host "RESTART RECOMMENDED for all changes to take effect." -ForegroundColor Red');
+  lines.push('Write-Host "A full system restart is also recommended for all changes to take effect." -ForegroundColor Yellow');
 
   return lines.join("\n");
 }
