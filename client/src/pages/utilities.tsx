@@ -1646,11 +1646,31 @@ export default function Utilities() {
         <UtilCard icon={Download} title="Gaming Runtime Installer" description="Install .NET and Visual C++ runtimes for gaming" delay={0.31}>
           <div className="flex flex-col flex-1 space-y-2.5">
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Installs all Visual C++ Redistributables (2005–2022, x86 &amp; x64) and .NET Desktop Runtimes 6, 7, 8 (LTS), 9, and 10 — covering every runtime needed by modern and legacy games.
+              One-click install of every runtime required to run modern and legacy PC games.
             </p>
-            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="rounded-md border border-border/40 bg-muted/20 p-2 space-y-0.5">
+                <p className="text-[10px] font-semibold text-foreground/80 uppercase tracking-wide mb-1">Visual C++</p>
+                {["2005 · 2008 · 2010","2012 · 2013","2015 – 2022 (x86 + x64)"].map(v => (
+                  <div key={v} className="flex items-center gap-1">
+                    <span className="h-1 w-1 rounded-full bg-primary/60 shrink-0" />
+                    <span className="text-[10px] text-muted-foreground">{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-md border border-border/40 bg-muted/20 p-2 space-y-0.5">
+                <p className="text-[10px] font-semibold text-foreground/80 uppercase tracking-wide mb-1">.NET Desktop (x64)</p>
+                {[".NET 6.0",".NET 7.0",".NET 8.0 (LTS)",".NET 9.0",".NET 10.0"].map(v => (
+                  <div key={v} className="flex items-center gap-1">
+                    <span className="h-1 w-1 rounded-full bg-primary/60 shrink-0" />
+                    <span className="text-[10px] text-muted-foreground">{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
               <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet access and an admin (UAC) prompt. A progress window shows each step — the full install may take 10–20 minutes. A restart may be required when done.</p>
+              <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet and an admin (UAC) prompt. A progress window tracks each step — allow 10–20 min. Restart may be needed when complete.</p>
             </div>
             <div className="mt-auto space-y-1">
               <Button
