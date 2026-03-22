@@ -31,7 +31,7 @@ A modern Windows PC optimization desktop app built with Electron + Express + Rea
 | `tweaks/conflicts.ts` | Conflict pairs between mutually exclusive tweaks |
 | `tweaks/detect.ts` | Windows PowerShell detection script (checks if each tweak is applied) |
 | `client/src/components/command-palette.tsx` | Global Ctrl+K command palette (navigate, preset, export) |
-| `server/routes.ts` | Express routes + PowerShell execution + auto-seeds 129 tweaks + `POST /api/tweaks/detect` + `POST /api/tweaks/bulk` + cleaning history |
+| `server/routes.ts` | Express routes + PowerShell execution + auto-seeds tweaks + `POST /api/tweaks/detect` + `POST /api/tweaks/bulk` + cleaning history |
 | `server/storage.ts` | `IStorage` interface → always uses `JsonStorage` |
 | `server/storage-json.ts` | JSON file persistence at `~/.jgoode-aio/data.json` |
 | `shared/schema.ts` | Drizzle schema + Zod types for Tweaks, Settings |
@@ -40,7 +40,7 @@ A modern Windows PC optimization desktop app built with Electron + Express + Rea
 ## Pages
 
 - `/` — Dashboard: System Health Score ring gauge (0-100 with grade A-F); live CPU/RAM/GPU/disk bars, hardware info, temperature readouts, quick restore point button
-- `/tweaks` — 129 toggles with PowerShell commands; impact ratings (High/Medium/Low) per card; conflict detection between incompatible tweaks; "View CMD", "Export .ps1", "Undo Script", "Save Profile", "Load Profile" buttons
+- `/tweaks` — Toggleable tweaks with PowerShell commands; impact ratings (High/Medium/Low) per card; conflict detection between incompatible tweaks; "Export .ps1", "Undo Script", "Save Profile", "Load Profile" buttons
 - `/cleaner` — Razer Cortex-style Scan → Select → Clean flow (Windows temp, prefetch, browser cache, etc.)
 - `/utilities` — Windows tools: SFC, DISM, CheckDisk (opens terminal); Flush DNS, Restart Explorer, Empty Standby Memory, etc. (background/GUI execution)
 - `/dns` — DNS Manager: switch to Cloudflare, Google, Quad9, etc. — applies via PowerShell `Set-DnsClientServerAddress`

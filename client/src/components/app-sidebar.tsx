@@ -11,6 +11,7 @@ import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
   SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
   SidebarMenu, SidebarMenuItem, SidebarMenuButton,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const NAV_GROUPS = [
@@ -43,12 +44,21 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { data: tweaks } = useTweaks();
   const activeCount = tweaks?.filter(t => t.isActive).length ?? 0;
+  const { setOpen, setOpenMobile, isMobile } = useSidebar();
+
+  function handleNavClick() {
+    if (isMobile) {
+      setOpenMobile(false);
+    } else {
+      setOpen(false);
+    }
+  }
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar">
       {/* Brand header */}
       <SidebarHeader className="px-3 pt-4 pb-3 border-b border-sidebar-border">
-        <Link href="/" className="flex items-center gap-2.5 px-1 hover:opacity-85 transition-opacity">
+        <Link href="/" onClick={handleNavClick} className="flex items-center gap-2.5 px-1 hover:opacity-85 transition-opacity">
           <div className="relative shrink-0">
             <div
               className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md"
@@ -108,7 +118,7 @@ export function AppSidebar() {
                             : "text-muted-foreground/50 hover:text-foreground/80 hover:bg-sidebar-accent"
                         )}
                       >
-                        <Link href={item.url} className="flex items-center gap-2.5 px-2.5">
+                        <Link href={item.url} onClick={handleNavClick} className="flex items-center gap-2.5 px-2.5">
                           {isActive && (
                             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-full" />
                           )}
