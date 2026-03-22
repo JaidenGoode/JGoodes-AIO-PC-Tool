@@ -103,50 +103,33 @@ async function startLHM() {
       } catch {}
     }
 
-    // Launch via PowerShell with WindowStyle Hidden — this properly sets SW_HIDE in STARTUPINFO
-    // which suppresses the GUI window at the OS level (windowsHide:true only hides console windows)
-    const exeQ = LHM_EXE.replace(/'/g, "''");
-    const pidFile = path.join(os.tmpdir(), "jgoode-lhm.pid");
-    const psCmd = `$p = Start-Process -FilePath '${exeQ}' -WindowStyle Hidden -PassThru; if ($p) { $p.Id | Out-File '${pidFile.replace(/'/g, "''")}' -Encoding ASCII -Force }`;
+    // Spawn LHM directly — detached so it outlives our process, unref'd so it doesn't block exit
+    // windowsHide suppresses the console (not the GUI); Win32 hide script handles the GUI window
+    lhmProcess = spawn(LHM_EXE, [], {
+      detached: true,
+      windowsHide: false,   // must be false for GUI exe or it fails to start on some systems
+      stdio: "ignore",
+    });
+    lhmProcess.unref();
+    lhmPid = lhmProcess.pid;
+    console.log("[LHM] Started (PID " + lhmPid + ") — CPU/GPU sensors active (v" + LHM_VERSION + ")");
+    lhmProcess.on("error", (e) => { console.log("[LHM] Spawn error:", e.message); lhmProcess = null; lhmPid = null; });
+    lhmProcess.on("exit", (code) => { console.log("[LHM] Exited (code " + code + ")"); lhmProcess = null; });
 
-    lhmProcess = spawn("powershell.exe", [
-      "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden",
-      "-Command", psCmd
-    ], { windowsHide: true });
-
-    lhmProcess.on("error", () => { lhmProcess = null; });
-    lhmProcess.on("exit", () => {
-      lhmProcess = null;
-      // Read the PID that PowerShell wrote to disk
-      try {
-        const pidStr = fs.readFileSync(pidFile, "utf8").trim();
-        const pid = parseInt(pidStr);
-        if (!isNaN(pid) && pid > 0) {
-          lhmPid = pid;
-          console.log("[LHM] Running silently (PID " + lhmPid + ") — CPU/GPU sensors active (v" + LHM_VERSION + ")");
-        }
-      } catch {}
-      // After LHM starts, forcibly hide its window via Win32 API (belt-and-suspenders)
-      setTimeout(() => {
-        const hideScript = `
+    // After LHM initialises (~3 s), hide its window via Win32 API
+    setTimeout(() => {
+      const hideScript = `
 Add-Type -TypeDefinition @'
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 public class Win32Hide {
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int n);
-    [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
 }
 '@
 $procs = Get-Process "LibreHardwareMonitor" -EA SilentlyContinue
-foreach ($p in $procs) {
-    if ($p.MainWindowHandle -ne [IntPtr]::Zero) {
-        [Win32Hide]::ShowWindow($p.MainWindowHandle, 0)
-    }
-}`;
-        spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", hideScript], { windowsHide: true });
-      }, 3500);
-    });
+foreach ($p in $procs) { if ($p.MainWindowHandle -ne [IntPtr]::Zero) { [Win32Hide]::ShowWindow($p.MainWindowHandle, 0) } }`;
+      spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", hideScript], { windowsHide: true });
+    }, 3000);
 
   } catch (err) {
     console.log("[LHM] Failed to start:", err.message);
