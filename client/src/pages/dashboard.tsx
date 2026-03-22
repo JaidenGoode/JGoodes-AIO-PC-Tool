@@ -513,17 +513,6 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <TipDivider />
-                  {/* CPU peak */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Thermometer className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                      <span className="text-[11px] text-muted-foreground">CPU Session Peak</span>
-                    </div>
-                    <span className={cn("text-[11px] font-bold font-mono tabular-nums", temps?.cpu?.max == null ? "text-muted-foreground/30" : temps.cpu.max < 75 ? "text-amber-400" : "text-primary")}>
-                      {temps?.cpu?.max != null ? `${temps.cpu.max}°C` : "N/A"}
-                    </span>
-                  </div>
-                  <TipDivider />
                   {/* GPU temp */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -550,34 +539,45 @@ export default function Dashboard() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[
-              { label: "CPU Temp",  temp: temps?.cpu?.current ?? null, icon: Cpu },
-              { label: "GPU Temp",  temp: temps?.gpu?.current ?? null, icon: Monitor },
-              { label: "CPU Peak",  temp: temps?.cpu?.max    ?? null,  icon: Thermometer },
-            ].map(({ label, temp, icon: Icon }) => {
-              const pct   = temp ? Math.min((temp / 110) * 100, 100) : 0;
-              const barBg = temp
-                ? temp < 55
-                  ? "linear-gradient(90deg,#16a34a80,#22c55e)"
+              { label: "CPU", sublabel: "Processor", temp: temps?.cpu?.current ?? null, icon: Cpu, maxTemp: 110 },
+              { label: "GPU", sublabel: "Graphics", temp: temps?.gpu?.current ?? null, icon: Monitor, maxTemp: 110 },
+            ].map(({ label, sublabel, temp, icon: Icon, maxTemp }) => {
+              const pct = temp ? Math.min((temp / maxTemp) * 100, 100) : 0;
+              const valueColor = temp == null
+                ? "text-muted-foreground/30"
+                : temp < 55
+                  ? "text-green-400"
                   : temp < 75
-                    ? "linear-gradient(90deg,#d9770680,#f59e0b)"
-                    : "linear-gradient(90deg,hsl(var(--primary)/0.6),hsl(var(--primary)))"
-                : undefined;
+                    ? "text-amber-400"
+                    : "text-primary";
               return (
-                <div key={label} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Icon className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                      <span className="text-[11px] text-muted-foreground">{label}</span>
+                <div key={label} className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
+                      <Icon className="h-3.5 w-3.5 text-primary" />
                     </div>
-                    <TempDot temp={temp} />
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-secondary/50 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, background: barBg }}
-                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between mb-1.5">
+                        <div>
+                          <span className="text-[12px] font-bold text-foreground/80 uppercase tracking-wide">{label}</span>
+                          <span className="text-[10px] text-muted-foreground/40 ml-1.5">{sublabel}</span>
+                        </div>
+                        <span className={cn("text-[18px] font-black font-mono tabular-nums leading-none", valueColor)}>
+                          {temp != null ? `${temp}°C` : "N/A"}
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full rounded-full bg-secondary/60 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 progress-gradient-fill"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <p className="text-[9.5px] text-muted-foreground/35 mt-1 leading-none">
+                        {temp == null ? "Sensor not detected" : temp < 55 ? "Cool — normal idle" : temp < 75 ? "Warm — under load" : "Hot — check cooling"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               );
