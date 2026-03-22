@@ -79,34 +79,35 @@ function applyTheme(mode: ThemeMode, hue: number) {
     root.style.setProperty("--input",                       `${hue} 0% 28%`);
     root.style.setProperty("--ring",                        `${hue} 84% 50%`);
   } else {
-    root.style.setProperty("--background",                  `${hue} 10% 96%`);
-    root.style.setProperty("--foreground",                  `${hue} 8% 12%`);
-    root.style.setProperty("--border",                      `${hue} 8% 83%`);
-    root.style.setProperty("--card",                        `${hue} 8% 98%`);
-    root.style.setProperty("--card-foreground",             `${hue} 8% 12%`);
-    root.style.setProperty("--card-border",                 `${hue} 8% 87%`);
-    root.style.setProperty("--sidebar",                     `${hue} 8% 92%`);
-    root.style.setProperty("--sidebar-foreground",          `${hue} 8% 12%`);
-    root.style.setProperty("--sidebar-border",              `${hue} 8% 84%`);
+    // Muted warm-slate light mode — not bright white, easy on the eyes
+    root.style.setProperty("--background",                  `${hue} 5% 84%`);
+    root.style.setProperty("--foreground",                  `${hue} 8% 13%`);
+    root.style.setProperty("--border",                      `${hue} 5% 71%`);
+    root.style.setProperty("--card",                        `${hue} 5% 88%`);
+    root.style.setProperty("--card-foreground",             `${hue} 8% 13%`);
+    root.style.setProperty("--card-border",                 `${hue} 5% 74%`);
+    root.style.setProperty("--sidebar",                     `${hue} 6% 77%`);
+    root.style.setProperty("--sidebar-foreground",          `${hue} 8% 13%`);
+    root.style.setProperty("--sidebar-border",              `${hue} 5% 69%`);
     root.style.setProperty("--sidebar-primary",             `${hue} 72% 38%`);
     root.style.setProperty("--sidebar-primary-foreground",  `0 0% 98%`);
-    root.style.setProperty("--sidebar-accent",              `${hue} 8% 86%`);
-    root.style.setProperty("--sidebar-accent-foreground",   `${hue} 8% 12%`);
+    root.style.setProperty("--sidebar-accent",              `${hue} 5% 73%`);
+    root.style.setProperty("--sidebar-accent-foreground",   `${hue} 8% 13%`);
     root.style.setProperty("--sidebar-ring",                `${hue} 72% 45%`);
-    root.style.setProperty("--popover",                     `${hue} 8% 97%`);
-    root.style.setProperty("--popover-foreground",          `${hue} 8% 12%`);
-    root.style.setProperty("--popover-border",              `${hue} 8% 85%`);
+    root.style.setProperty("--popover",                     `${hue} 5% 86%`);
+    root.style.setProperty("--popover-foreground",          `${hue} 8% 13%`);
+    root.style.setProperty("--popover-border",              `${hue} 5% 72%`);
     root.style.setProperty("--primary",                     `${hue} 72% 38%`);
     root.style.setProperty("--primary-foreground",          `0 0% 98%`);
-    root.style.setProperty("--secondary",                   `${hue} 8% 88%`);
-    root.style.setProperty("--secondary-foreground",        `${hue} 8% 15%`);
-    root.style.setProperty("--muted",                       `${hue} 8% 89%`);
-    root.style.setProperty("--muted-foreground",            `${hue} 6% 44%`);
-    root.style.setProperty("--accent",                      `${hue} 8% 88%`);
-    root.style.setProperty("--accent-foreground",           `${hue} 8% 12%`);
+    root.style.setProperty("--secondary",                   `${hue} 5% 76%`);
+    root.style.setProperty("--secondary-foreground",        `${hue} 8% 16%`);
+    root.style.setProperty("--muted",                       `${hue} 5% 77%`);
+    root.style.setProperty("--muted-foreground",            `${hue} 5% 38%`);
+    root.style.setProperty("--accent",                      `${hue} 5% 76%`);
+    root.style.setProperty("--accent-foreground",           `${hue} 8% 13%`);
     root.style.setProperty("--destructive",                 `0 72% 38%`);
     root.style.setProperty("--destructive-foreground",      `0 0% 98%`);
-    root.style.setProperty("--input",                       `${hue} 8% 79%`);
+    root.style.setProperty("--input",                       `${hue} 5% 68%`);
     root.style.setProperty("--ring",                        `${hue} 72% 45%`);
   }
 }
