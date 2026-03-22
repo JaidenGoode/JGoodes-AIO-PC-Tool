@@ -45,18 +45,8 @@ function downloadFile(url, dest, maxRedirects) {
   });
 }
 
-async function downloadLHM() {
-  const zipPath = path.join(os.tmpdir(), "JGoode-LHM.zip");
+async function extractLHM(zipPath) {
   try {
-    console.log("[LHM] Downloading LibreHardwareMonitor v" + LHM_VERSION + "...");
-    await downloadFile(LHM_URL, zipPath);
-  } catch (err) {
-    console.log("[LHM] Download failed:", err.message);
-    try { fs.unlinkSync(zipPath); } catch {}
-    return false;
-  }
-  try {
-    // Only wipe AFTER successful download so old exe is not lost on network failure
     const tmpExtract = path.join(os.tmpdir(), "JGoode-LHM-extract");
     try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch {}
     fs.mkdirSync(tmpExtract, { recursive: true });
@@ -68,47 +58,62 @@ async function downloadLHM() {
       ps.on("close", resolve);
       ps.on("error", resolve);
     });
-    try { fs.unlinkSync(zipPath); } catch {}
-    // Find the exe — could be at root of zip or inside a subfolder
+    // Find exe — could be at root or one subfolder deep
     let foundExe = path.join(tmpExtract, "LibreHardwareMonitor.exe");
     if (!fs.existsSync(foundExe)) {
-      const entries = fs.readdirSync(tmpExtract);
-      for (const e of entries) {
+      for (const e of fs.readdirSync(tmpExtract)) {
         const candidate = path.join(tmpExtract, e, "LibreHardwareMonitor.exe");
         if (fs.existsSync(candidate)) { foundExe = candidate; break; }
       }
     }
     if (!fs.existsSync(foundExe)) {
-      console.log("[LHM] Exe not found in downloaded zip");
+      console.log("[LHM] Exe not found in zip");
       try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch {}
       return false;
     }
-    // Now safe to replace old installation
+    // Replace old install only after confirming zip is valid
     try { fs.rmSync(LHM_DIR, { recursive: true, force: true }); } catch {}
     fs.mkdirSync(LHM_DIR, { recursive: true });
-    // Copy all extracted files to LHM_DIR
     const srcDir = path.dirname(foundExe);
-    const srcFiles = fs.readdirSync(srcDir);
-    for (const f of srcFiles) {
+    for (const f of fs.readdirSync(srcDir)) {
       try { fs.cpSync(path.join(srcDir, f), path.join(LHM_DIR, f), { recursive: true }); } catch {}
     }
     try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch {}
-    if (fs.existsSync(LHM_EXE)) {
-      fs.writeFileSync(LHM_VERSION_FILE, LHM_VERSION, "utf8");
-      // Log which DLLs landed — helps diagnose missing-DLL crashes in future
-      const dlls = fs.readdirSync(LHM_DIR).filter(f => f.endsWith(".dll") || f.endsWith(".exe"));
-      console.log("[LHM] Download complete — v" + LHM_VERSION + " — files: " + dlls.join(", "));
-      const memDll = path.join(LHM_DIR, "System.Memory.dll");
-      if (!fs.existsSync(memDll)) {
-        console.log("[LHM] WARNING: System.Memory.dll missing from extracted zip — LHM may crash");
-      }
-      return true;
+    if (!fs.existsSync(LHM_EXE)) return false;
+    fs.writeFileSync(LHM_VERSION_FILE, LHM_VERSION, "utf8");
+    const dlls = fs.readdirSync(LHM_DIR).filter(f => f.endsWith(".dll") || f.endsWith(".exe"));
+    console.log("[LHM] Extracted — v" + LHM_VERSION + " — " + dlls.join(", "));
+    if (!fs.existsSync(path.join(LHM_DIR, "System.Memory.dll"))) {
+      console.log("[LHM] WARNING: System.Memory.dll missing — LHM may crash on startup");
     }
-    return false;
+    return true;
   } catch (err) {
     console.log("[LHM] Extract failed:", err.message);
     return false;
   }
+}
+
+async function downloadLHM() {
+  // 1 — Prefer the zip bundled inside the installer (no internet needed, guaranteed DLL set)
+  const bundledZip = path.join(process.resourcesPath || "", "lhm", "LibreHardwareMonitor.zip");
+  if (fs.existsSync(bundledZip)) {
+    console.log("[LHM] Using bundled zip from resources:", bundledZip);
+    return await extractLHM(bundledZip);
+  }
+
+  // 2 — Bundled zip not present (dev mode or missing): download from GitHub
+  console.log("[LHM] Bundled zip not found — downloading from GitHub...");
+  const zipPath = path.join(os.tmpdir(), "JGoode-LHM.zip");
+  try {
+    await downloadFile(LHM_URL, zipPath);
+  } catch (err) {
+    console.log("[LHM] Download failed:", err.message);
+    try { fs.unlinkSync(zipPath); } catch {}
+    return false;
+  }
+  const ok = await extractLHM(zipPath);
+  try { fs.unlinkSync(zipPath); } catch {}
+  return ok;
 }
 
 async function startLHM() {
