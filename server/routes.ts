@@ -630,11 +630,24 @@ if (-not $cpuTemp) {
   } catch {}
 }
 
+$dbgParts = @()
+try {
+  $lhmAll = @(Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop)
+  $dbgParts += "lhm_total=" + $lhmAll.Count
+  $lhmTemps = @($lhmAll | Where-Object { $_.SensorType -eq "Temperature" })
+  $dbgParts += "lhm_temps=" + $lhmTemps.Count
+  if ($lhmTemps.Count -gt 0) {
+    $names = ($lhmTemps | Select-Object -First 5 | ForEach-Object { $_.Name + "=" + $_.Value }) -join "|"
+    $dbgParts += "names=" + $names
+  }
+} catch { $dbgParts += "lhm_err=" + $_.Exception.Message }
+
 $out = [ordered]@{}
 if ($null -ne $cpuTemp) { $out['cpu'] = $cpuTemp }
 if ($null -ne $cpuPeak) { $out['cpuPeak'] = $cpuPeak }
 if ($null -ne $gpuTemp) { $out['gpu'] = $gpuTemp }
 if ($null -ne $gpuHotspot) { $out['gpuHotspot'] = $gpuHotspot }
+$out['_dbg'] = $dbgParts -join ";"
 $out | ConvertTo-Json -Compress -Depth 1`;
 
         const output = await runPowerShell(psScript, 12000).catch(() => "");
@@ -642,12 +655,17 @@ $out | ConvertTo-Json -Compress -Depth 1`;
           const m = output.trim().match(/\{[\s\S]*\}/);
           if (m) {
             const j = JSON.parse(m[0]);
+            if (j._dbg) console.log("[TEMP_DBG]", j._dbg);
             if (isValidCpuTemp(j.cpu)) cpuCurrent = Math.round(j.cpu);
             if (isValidCpuTemp(j.cpuPeak)) cpuMax = Math.round(j.cpuPeak);
             if (isValidGpuTemp(j.gpu)) gpuCurrent = Math.round(j.gpu);
             if (isValidGpuTemp(j.gpuHotspot)) gpuHotspot = Math.round(j.gpuHotspot);
+          } else {
+            console.log("[TEMP_RAW]", output.slice(0, 400));
           }
-        } catch {}
+        } catch (e: any) {
+          console.log("[TEMP_ERR]", e?.message, output?.slice(0, 200));
+        }
       }
 
       // Fallback for CPU if PowerShell returned nothing (Linux/Mac or sensor not found)
