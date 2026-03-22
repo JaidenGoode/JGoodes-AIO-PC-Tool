@@ -15,9 +15,11 @@ let windowCreated = false;
 // ── LibreHardwareMonitor (silent hardware sensor provider) ────────────────────
 let lhmProcess = null;
 
-const LHM_DIR  = path.join(os.homedir(), "AppData", "Local", "JGoode-AIO", "LibreHardwareMonitor");
-const LHM_EXE  = path.join(LHM_DIR, "LibreHardwareMonitor.exe");
-const LHM_URL  = "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases/download/v0.9.3/LibreHardwareMonitor-net472.zip";
+const LHM_VERSION      = "0.9.6";
+const LHM_DIR          = path.join(os.homedir(), "AppData", "Local", "JGoode-AIO", "LibreHardwareMonitor");
+const LHM_EXE          = path.join(LHM_DIR, "LibreHardwareMonitor.exe");
+const LHM_VERSION_FILE = path.join(LHM_DIR, "version.txt");
+const LHM_URL          = "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases/download/v0.9.6/LibreHardwareMonitor.zip";
 
 function downloadFile(url, dest, maxRedirects) {
   if (maxRedirects === undefined) maxRedirects = 5;
@@ -44,9 +46,11 @@ function downloadFile(url, dest, maxRedirects) {
 
 async function downloadLHM() {
   try {
-    if (!fs.existsSync(LHM_DIR)) fs.mkdirSync(LHM_DIR, { recursive: true });
+    // Wipe old installation so we get a clean v0.9.6 copy
+    try { fs.rmSync(LHM_DIR, { recursive: true, force: true }); } catch {}
+    fs.mkdirSync(LHM_DIR, { recursive: true });
     const zipPath = path.join(os.tmpdir(), "JGoode-LHM.zip");
-    console.log("[LHM] Downloading LibreHardwareMonitor v0.9.3...");
+    console.log("[LHM] Downloading LibreHardwareMonitor v" + LHM_VERSION + "...");
     await downloadFile(LHM_URL, zipPath);
     await new Promise((resolve) => {
       const ps = spawn("powershell.exe", [
@@ -57,8 +61,12 @@ async function downloadLHM() {
       ps.on("error", resolve);
     });
     try { fs.unlinkSync(zipPath); } catch {}
-    console.log("[LHM] Download complete");
-    return fs.existsSync(LHM_EXE);
+    if (fs.existsSync(LHM_EXE)) {
+      fs.writeFileSync(LHM_VERSION_FILE, LHM_VERSION, "utf8");
+      console.log("[LHM] Download complete — v" + LHM_VERSION);
+      return true;
+    }
+    return false;
   } catch (err) {
     console.log("[LHM] Download failed:", err.message);
     return false;
@@ -68,14 +76,24 @@ async function downloadLHM() {
 async function startLHM() {
   if (process.platform !== "win32") return;
   try {
-    if (!fs.existsSync(LHM_EXE)) {
+    // Re-download if missing or outdated version
+    let needsDownload = !fs.existsSync(LHM_EXE);
+    if (!needsDownload) {
+      try {
+        const installed = fs.readFileSync(LHM_VERSION_FILE, "utf8").trim();
+        if (installed !== LHM_VERSION) needsDownload = true;
+      } catch {
+        needsDownload = true; // no version file = old install, upgrade it
+      }
+    }
+    if (needsDownload) {
       const ok = await downloadLHM();
       if (!ok) { console.log("[LHM] Skipping — exe not found after download"); return; }
     }
     lhmProcess = spawn(LHM_EXE, [], { windowsHide: true, detached: false });
     lhmProcess.on("error", () => { lhmProcess = null; });
     lhmProcess.on("exit",  () => { lhmProcess = null; });
-    console.log("[LHM] Running silently — CPU/GPU sensors active");
+    console.log("[LHM] Running silently — CPU/GPU sensors active (v" + LHM_VERSION + ")");
   } catch (err) {
     console.log("[LHM] Failed to start:", err.message);
     lhmProcess = null;
