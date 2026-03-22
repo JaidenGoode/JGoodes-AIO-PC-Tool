@@ -126,6 +126,26 @@ async function startLHM() {
           console.log("[LHM] Running silently (PID " + lhmPid + ") — CPU/GPU sensors active (v" + LHM_VERSION + ")");
         }
       } catch {}
+      // After LHM starts, forcibly hide its window via Win32 API (belt-and-suspenders)
+      setTimeout(() => {
+        const hideScript = `
+Add-Type -TypeDefinition @'
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+public class Win32Hide {
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int n);
+    [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
+}
+'@
+$procs = Get-Process "LibreHardwareMonitor" -EA SilentlyContinue
+foreach ($p in $procs) {
+    if ($p.MainWindowHandle -ne [IntPtr]::Zero) {
+        [Win32Hide]::ShowWindow($p.MainWindowHandle, 0)
+    }
+}`;
+        spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", hideScript], { windowsHide: true });
+      }, 3500);
     });
 
   } catch (err) {
