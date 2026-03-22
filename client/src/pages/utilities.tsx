@@ -79,7 +79,7 @@ export default function Utilities() {
   const [showSystemInfo, setShowSystemInfo] = useState(false);
   const [shutup10Status, setShutup10Status] = useState<"idle" | "downloading" | "done" | "error">("idle");
   const [titusStatus, setTitusStatus] = useState<"idle" | "running" | "done" | "error">("idle");
-  const [winaerotStatus, setWinaerotStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
+  const [winaerotStatus, setWinaerotStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
   const [cortexStatus, setCortexStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [exitlagStatus, setExitlagStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msiStatus, setMsiStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
@@ -182,25 +182,38 @@ export default function Utilities() {
       `  }`,
       `}`,
       ``,
-      `# Check Temp cached portable copy`,
+      `# Check persistent cache (survives Temp cleaners)`,
+      `$cacheDir = Join-Path $env:LOCALAPPDATA "JGoode-AIO\\Tool"`,
+      `$cacheDest = Join-Path $cacheDir "OOSU10.exe"`,
       `if (-not $exePath) {`,
-      `  $t = Join-Path $env:TEMP "OOSU10.exe"`,
-      `  if ((Test-Path $t) -and (Get-Item $t -EA SilentlyContinue).Length -ge 102400) { $exePath = $t }`,
+      `  if ((Test-Path $cacheDest) -and (Get-Item $cacheDest -EA SilentlyContinue).Length -ge 5242880) { $exePath = $cacheDest }`,
       `}`,
       ``,
-      `# Download portable copy as last resort`,
+      `# Also check legacy Temp cache location`,
+      `if (-not $exePath) {`,
+      `  $t = Join-Path $env:TEMP "OOSU10.exe"`,
+      `  if ((Test-Path $t) -and (Get-Item $t -EA SilentlyContinue).Length -ge 5242880) {`,
+      `    if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null }`,
+      `    Copy-Item $t $cacheDest -Force -EA SilentlyContinue`,
+      `    $exePath = $cacheDest`,
+      `  }`,
+      `}`,
+      ``,
+      `# Download and cache`,
       `if (-not $exePath) {`,
       `  $ErrorActionPreference = 'Stop'`,
-      `  $dest = Join-Path $env:TEMP "OOSU10.exe"`,
-      `  if (Test-Path $dest) { Remove-Item $dest -Force -EA SilentlyContinue }`,
+      `  if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null }`,
+      `  $tmpDest = Join-Path $env:TEMP "OOSU10_dl.exe"`,
+      `  if (Test-Path $tmpDest) { Remove-Item $tmpDest -Force -EA SilentlyContinue }`,
       `  try {`,
       `    $wc = New-Object System.Net.WebClient`,
       `    $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")`,
-      `    $wc.DownloadFile("https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe", $dest)`,
+      `    $wc.DownloadFile("https://dl5.oo-software.com/files/ooshutup10/OOSU10.exe", $tmpDest)`,
       `  } catch { Write-Error "Download failed: $_"; exit 1 }`,
-      `  if (-not (Test-Path $dest)) { Write-Error "File not found after download"; exit 1 }`,
-      `  if ((Get-Item $dest).Length -lt 102400) { Write-Error "File invalid or blocked by antivirus"; exit 1 }`,
-      `  $exePath = $dest`,
+      `  if (-not (Test-Path $tmpDest)) { Write-Error "File not found after download"; exit 1 }`,
+      `  if ((Get-Item $tmpDest).Length -lt 5242880) { Write-Error "File too small — may be blocked by antivirus"; exit 1 }`,
+      `  Move-Item $tmpDest $cacheDest -Force`,
+      `  $exePath = $cacheDest`,
       `}`,
       ``,
       `Start-Process -FilePath $exePath -WindowStyle Normal`,
@@ -264,7 +277,7 @@ export default function Utilities() {
       });
       return;
     }
-    setWinaerotStatus("downloading");
+    setWinaerotStatus("launching");
     const script = [
       `$ErrorActionPreference = 'SilentlyContinue'`,
       `$exePath = $null`,
@@ -1062,7 +1075,7 @@ export default function Utilities() {
               </p>
               <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
                 <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads ~2MB from O&O's servers — takes 10–30s depending on your connection. Subsequent launches are instant (cached).</p>
+                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads ~77 MB from O&O's servers (one-time). Cached permanently in AppData — never re-downloaded, survives PC restarts and temp cleaners. Subsequent launches are instant.</p>
               </div>
               <div className="mt-auto space-y-1">
                 <Button
@@ -1109,7 +1122,7 @@ export default function Utilities() {
                 <Button
                   size="sm"
                   onClick={launchWinaerot}
-                  disabled={winaerotStatus === "downloading"}
+                  disabled={winaerotStatus === "launching"}
                   className={cn(
                     "w-full h-8 text-xs font-bold transition-all gap-1.5",
                     winaerotStatus === "done"
@@ -1120,8 +1133,8 @@ export default function Utilities() {
                   )}
                   data-testid="button-launch-winaerot"
                 >
-                  {winaerotStatus === "downloading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
+                  {winaerotStatus === "launching" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
                   ) : winaerotStatus === "done" ? (
                     <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
                   ) : winaerotStatus === "error" ? (

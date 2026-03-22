@@ -267,6 +267,7 @@ function getCleanCategories(): CleanCategory[] {
         id: "browser",
         name: "Browser Cache",
         description: "Chrome, Edge, and Opera GX browser cache — all profiles auto-detected",
+        warnNote: "Close your browser before cleaning for best results — open browsers may hold cache files in use.",
         // subDirScan detects every Chrome/Edge profile (Default, Profile 1, Profile 2, …) automatically
         subDirScan: [
           { parent: path.join(local, "Google", "Chrome", "User Data"),    subdir: path.join("Cache", "Cache_Data") },
@@ -333,6 +334,7 @@ function getCleanCategories(): CleanCategory[] {
         id: "discord",
         name: "Discord Cache",
         description: "Discord app cache, GPU cache, and code cache files",
+        warnNote: "Close Discord fully (right-click tray icon → Quit) before cleaning for best results.",
         paths: [
           path.join(roaming, "discord", "Cache", "Cache_Data"),
           path.join(roaming, "discord", "Code Cache"),
