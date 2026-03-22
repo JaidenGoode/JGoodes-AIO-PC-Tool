@@ -131,27 +131,25 @@ async function startLHM() {
       }
     }
 
-    // Always force-write config so LHM starts minimized to tray with no window
+    // Always force-write config — startMinimized + minimizeToTray + WMI ENABLED
+    // wmiEnabled=true is critical: LHM only registers its WMI namespace when this is set
     const configPath = path.join(LHM_DIR, "LibreHardwareMonitor.config");
     try {
       fs.writeFileSync(configPath,
-        '<?xml version="1.0" encoding="utf-8"?>\n<settings>\n  <value name="startMinimized">true</value>\n  <value name="minimizeToTray">true</value>\n  <value name="startWithWindows">false</value>\n</settings>\n',
+        '<?xml version="1.0" encoding="utf-8"?>\n<settings>\n  <value name="startMinimized">true</value>\n  <value name="minimizeToTray">true</value>\n  <value name="startWithWindows">false</value>\n  <value name="wmiEnabled">true</value>\n</settings>\n',
         "utf8"
       );
     } catch {}
 
-    // Skip spawning if LHM is already running (avoids duplicate windows on app restart)
-    const alreadyRunning = await new Promise((resolve) => {
-      const chk = spawn("tasklist", ["/FI", "IMAGENAME eq LibreHardwareMonitor.exe", "/NH"], { windowsHide: true });
-      let out = "";
-      chk.stdout && chk.stdout.on("data", (d) => { out += d; });
-      chk.on("close", () => resolve(out.toLowerCase().includes("librehardwaremonitor")));
-      chk.on("error", () => resolve(false));
+    // Kill any existing LHM process so it restarts fresh with the new config (WMI enabled)
+    // Without this, an old LHM instance running without WMI won't register the namespace
+    await new Promise((resolve) => {
+      const kill = spawn("taskkill", ["/F", "/IM", "LibreHardwareMonitor.exe"], { windowsHide: true });
+      kill.on("close", resolve);
+      kill.on("error", resolve);
     });
-    if (alreadyRunning) {
-      console.log("[LHM] Already running — skipping spawn");
-      return;
-    }
+    // Brief pause so Windows fully cleans up the process before we relaunch
+    await new Promise((r) => setTimeout(r, 1500));
 
     // Spawn LHM directly — detached so it outlives our process, unref'd so it doesn't block exit
     lhmProcess = spawn(LHM_EXE, [], {

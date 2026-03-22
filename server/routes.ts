@@ -575,7 +575,13 @@ $gpuHotspot = $null
 $gpuOnly = @("GPU Core","GPU Hot Spot","GPU VRM","GPU Memory","GPU Memory Junction","GPU Fan","GPU Power","GPU Package")
 
 function Read-LhmNs($ns) {
-  try { return @(Get-WmiObject -Namespace $ns -Class Sensor -EA Stop | Where-Object { $_.SensorType -eq "Temperature" }) } catch {}
+  for ($r = 0; $r -lt 3; $r++) {
+    try {
+      $s = @(Get-WmiObject -Namespace $ns -Class Sensor -EA Stop | Where-Object { $_.SensorType -eq "Temperature" })
+      if ($s.Count -gt 0) { return $s }
+    } catch { }
+    if ($r -lt 2) { Start-Sleep -Seconds 2 }
+  }
   return @()
 }
 
@@ -650,7 +656,7 @@ if ($null -ne $gpuHotspot) { $out['gpuHotspot'] = $gpuHotspot }
 $out['_dbg'] = $dbgParts -join ";"
 $out | ConvertTo-Json -Compress -Depth 1`;
 
-        const output = await runPowerShell(psScript, 12000).catch(() => "");
+        const output = await runPowerShell(psScript, 18000).catch(() => "");
         try {
           const m = output.trim().match(/\{[\s\S]*\}/);
           if (m) {
@@ -734,7 +740,9 @@ $d = [ordered]@{}
 $lhmDir = "$env:LOCALAPPDATA\\JGoode-AIO\\LibreHardwareMonitor"
 $lhmExe = "$lhmDir\\LibreHardwareMonitor.exe"
 $d['lhm_exe_exists']   = (Test-Path $lhmExe)
-$d['lhm_version_file'] = if (Test-Path "$lhmDir\\version.txt") { Get-Content "$lhmDir\\version.txt" -Raw } else { "MISSING" }
+$d['lhm_version_file'] = if (Test-Path "$lhmDir\\version.txt") { [string](Get-Content "$lhmDir\\version.txt" -EA SilentlyContinue) -replace '\\s','' } else { "MISSING" }
+$d['lhm_config_exists'] = (Test-Path "$lhmDir\\LibreHardwareMonitor.config")
+$d['lhm_config_wmi'] = if (Test-Path "$lhmDir\\LibreHardwareMonitor.config") { [string](Select-String -Path "$lhmDir\\LibreHardwareMonitor.config" -Pattern 'wmiEnabled' -Quiet) } else { "no-config" }
 $d['lhm_process_running'] = (@(Get-Process "LibreHardwareMonitor" -EA SilentlyContinue)).Count -gt 0
 try {
   $all = @(Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop)
