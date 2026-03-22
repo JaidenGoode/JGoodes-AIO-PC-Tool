@@ -84,6 +84,8 @@ export default function Utilities() {
   const [exitlagStatus, setExitlagStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msiStatus, setMsiStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
   const [dduStatus, setDduStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
+  const [npiStatus, setNpiStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
+  const [tcpStatus, setTcpStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -263,69 +265,57 @@ export default function Utilities() {
       return;
     }
     setWinaerotStatus("downloading");
-    // 1. Check App Paths registry (covers per-user and system installs)
-    // 2. Check common install directories
-    // 3. Check Temp cached copy from previous download
-    // 4. Download portable copy as last resort
     const script = [
       `$ErrorActionPreference = 'SilentlyContinue'`,
       `$exePath = $null`,
-      ``,
-      `# Check registry App Paths (most reliable for installed apps)`,
-      `$regPaths = @(`,
-      `  'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe',`,
-      `  'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe'`,
+      `$installCandidates = @(`,
+      `  "$env:ProgramFiles\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "\${env:ProgramFiles(x86)}\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "$env:LOCALAPPDATA\\Programs\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "$env:LOCALAPPDATA\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "$env:ProgramData\\Winaero Tweaker\\WinaeroTweaker.exe"`,
       `)`,
-      `foreach ($rp in $regPaths) {`,
+      ``,
+      `# 1. Check registry App Paths (fastest for already-installed)`,
+      `foreach ($rp in @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe')) {`,
       `  if (Test-Path $rp) {`,
       `    $val = (Get-ItemProperty $rp -EA SilentlyContinue).'(default)'`,
       `    if ($val -and (Test-Path $val)) { $exePath = $val; break }`,
       `  }`,
       `}`,
       ``,
-      `# Check common install directories`,
+      `# 2. Check common install directories`,
       `if (-not $exePath) {`,
-      `  $candidates = @(`,
-      `    "$env:ProgramFiles\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `    "\${env:ProgramFiles(x86)}\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `    "$env:LOCALAPPDATA\\Programs\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `    "$env:LOCALAPPDATA\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `    "$env:ProgramData\\Winaero Tweaker\\WinaeroTweaker.exe"`,
-      `  )`,
-      `  foreach ($c in $candidates) {`,
-      `    if (Test-Path $c) { $exePath = $c; break }`,
-      `  }`,
+      `  foreach ($c in $installCandidates) { if (Test-Path $c) { $exePath = $c; break } }`,
       `}`,
       ``,
-      `# Check Temp cached copy from a previous portable download`,
+      `# 3. Check uninstall registry`,
       `if (-not $exePath) {`,
-      `  $tempExe = Get-ChildItem (Join-Path $env:TEMP "WinaeroTweaker") -Filter "WinaeroTweaker.exe" -Recurse -EA SilentlyContinue | Select-Object -First 1`,
-      `  if ($tempExe) { $exePath = $tempExe.FullName }`,
-      `}`,
-      ``,
-      `# Also check entire uninstall registry for the DisplayIcon path`,
-      `if (-not $exePath) {`,
-      `  $uninstKeys = @(`,
-      `    'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall',`,
-      `    'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall',`,
-      `    'HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall'`,
-      `  )`,
+      `  $uninstKeys = @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall','HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall')`,
       `  foreach ($uk in $uninstKeys) {`,
       `    if (Test-Path $uk) {`,
-      `      $match = Get-ChildItem $uk -EA SilentlyContinue | Where-Object {`,
-      `        (Get-ItemProperty $_.PSPath -EA SilentlyContinue).DisplayName -like '*Winaero*'`,
-      `      } | Select-Object -First 1`,
+      `      $match = Get-ChildItem $uk -EA SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -EA SilentlyContinue).DisplayName -like '*Winaero*' } | Select-Object -First 1`,
       `      if ($match) {`,
       `        $icon = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).DisplayIcon`,
-      `        if ($icon) { $icon = $icon -replace ',\d+$',''; if (Test-Path $icon) { $exePath = $icon; break } }`,
+      `        if ($icon) { $icon = $icon -replace ',\\d+$',''; if (Test-Path $icon) { $exePath = $icon; break } }`,
       `        $loc = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).InstallLocation`,
-      `        if ($loc) { $try2 = Join-Path $loc "WinaeroTweaker.exe"; if (Test-Path $try2) { $exePath = $try2; break } }`,
+      `        if ($loc) { $t = Join-Path $loc 'WinaeroTweaker.exe'; if (Test-Path $t) { $exePath = $t; break } }`,
       `      }`,
       `    }`,
       `  }`,
       `}`,
       ``,
-      `# Download portable copy as last resort`,
+      `# 4. Silent install from bundled setup (no download needed)`,
+      `if (-not $exePath -and $env:ELECTRON_RESOURCES_PATH) {`,
+      `  $setup = Join-Path $env:ELECTRON_RESOURCES_PATH 'executables\\WinaeroTweakerSetup.exe'`,
+      `  if (Test-Path $setup) {`,
+      `    Start-Process -FilePath $setup -ArgumentList '/SP-', '/VERYSILENT' -Wait`,
+      `    Start-Sleep -Seconds 2`,
+      `    foreach ($c in $installCandidates) { if (Test-Path $c) { $exePath = $c; break } }`,
+      `  }`,
+      `}`,
+      ``,
+      `# 5. Download portable copy as last resort`,
       `if (-not $exePath) {`,
       `  $ErrorActionPreference = 'Stop'`,
       `  $destDir = Join-Path $env:TEMP "WinaeroTweaker"`,
@@ -670,6 +660,104 @@ export default function Utilities() {
     toast({ title: "Download started", description: `${filename} is being saved to your Downloads folder.` });
   };
 
+  const launchNPI = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "NVIDIA Profile Inspector can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setNpiStatus("launching");
+    const script = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$exePath = $null`,
+      ``,
+      `# 1. Check bundled copy inside the installed app`,
+      `if ($env:ELECTRON_RESOURCES_PATH) {`,
+      `  $bundled = Join-Path $env:ELECTRON_RESOURCES_PATH 'executables\\NvidiaProfileInspector.exe'`,
+      `  if ((Test-Path $bundled) -and (Get-Item $bundled -EA SilentlyContinue).Length -ge 10240) { $exePath = $bundled }`,
+      `}`,
+      ``,
+      `# 2. Check common install/portable locations`,
+      `if (-not $exePath) {`,
+      `  $candidates = @(`,
+      `    "$env:ProgramFiles\\NVIDIA Profile Inspector\\nvidiaProfileInspector.exe",`,
+      `    "$env:LOCALAPPDATA\\NVIDIA Profile Inspector\\nvidiaProfileInspector.exe",`,
+      `    "$env:USERPROFILE\\Downloads\\nvidiaProfileInspector.exe",`,
+      `    "$env:USERPROFILE\\Desktop\\nvidiaProfileInspector.exe"`,
+      `  )`,
+      `  foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
+      `}`,
+      ``,
+      `if ($exePath) {`,
+      `  Start-Process -FilePath $exePath -WindowStyle Normal`,
+      `} else {`,
+      `  Write-Error "Could not find NvidiaProfileInspector.exe"; exit 1`,
+      `}`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.success) {
+        setNpiStatus("done");
+        toast({ title: "NVIDIA Profile Inspector launched", description: "Import your .nip profile via File → Import Profile(s)." });
+      } else {
+        setNpiStatus("error");
+        toast({ title: "Launch failed", description: "Could not find NVIDIA Profile Inspector.", variant: "destructive" });
+      }
+    } catch {
+      setNpiStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setNpiStatus("idle"), 4000);
+  };
+
+  const launchTCPOptimizer = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "TCP Optimizer can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setTcpStatus("launching");
+    const script = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$exePath = $null`,
+      ``,
+      `# 1. Check bundled copy inside the installed app`,
+      `if ($env:ELECTRON_RESOURCES_PATH) {`,
+      `  $bundled = Join-Path $env:ELECTRON_RESOURCES_PATH 'executables\\TCPOptimizer.exe'`,
+      `  if ((Test-Path $bundled) -and (Get-Item $bundled -EA SilentlyContinue).Length -ge 10240) { $exePath = $bundled }`,
+      `}`,
+      ``,
+      `# 2. Check common locations`,
+      `if (-not $exePath) {`,
+      `  $candidates = @(`,
+      `    "$env:ProgramFiles\\TCP Optimizer\\TCPOptimizer.exe",`,
+      `    "$env:USERPROFILE\\Downloads\\TCPOptimizer.exe",`,
+      `    "$env:USERPROFILE\\Desktop\\TCPOptimizer.exe",`,
+      `    "C:\\TCP Optimizer\\TCPOptimizer.exe"`,
+      `  )`,
+      `  foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
+      `}`,
+      ``,
+      `if ($exePath) {`,
+      `  Start-Process -FilePath $exePath -WindowStyle Normal`,
+      `} else {`,
+      `  Write-Error "Could not find TCPOptimizer.exe"; exit 1`,
+      `}`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.success) {
+        setTcpStatus("done");
+        toast({ title: "TCP Optimizer launched", description: "Load your profile via File → Load Settings, then click Apply Changes." });
+      } else {
+        setTcpStatus("error");
+        toast({ title: "Launch failed", description: "Could not find TCP Optimizer.", variant: "destructive" });
+      }
+    } catch {
+      setTcpStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setTcpStatus("idle"), 4000);
+  };
+
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
     localStorage.setItem(key, String(value));
@@ -1011,11 +1099,11 @@ export default function Utilities() {
           <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.24}>
             <div className="flex flex-col flex-1 space-y-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Free portable tool by Winaero. Unlocks hidden Windows settings not available through Settings or Group Policy — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
+                Free tool by Winaero. Unlocks hidden Windows settings not available through Settings or Group Policy — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
               </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
-                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads a zip from winaerotweaker.com and extracts it to your Temp folder — takes 10–30s. Subsequent launches are instant (cached).</p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 flex-1">
+                <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Bundled installer — installs silently on first launch with no download. Every launch after that is instant.</p>
               </div>
               <div className="mt-auto space-y-1">
                 <Button
@@ -1223,33 +1311,67 @@ export default function Utilities() {
             </div>
           </UtilCard>
 
-          <UtilCard icon={Gamepad2} title="Game Profiles" description="Download optimized config profiles" delay={0.29}>
+          <UtilCard icon={Gamepad2} title="Game Profiles" description="Launch tools and download optimized config profiles" delay={0.29}>
             <div className="flex flex-col flex-1 space-y-3">
               <div className="space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground">NVIDIA Profile Inspector — Fortnite</p>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Pre-tuned NVIDIA driver profile for Fortnite. Import via NVIDIA Profile Inspector: File → Import Profile(s).</p>
-                <Button
-                  size="sm"
-                  onClick={() => downloadProfile("JsFortniteNPI.nip")}
-                  className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1.5"
-                  data-testid="button-download-fortnite-npi"
-                >
-                  <Download className="h-3 w-3" />
-                  Download Fortnite .nip Profile
-                </Button>
+                <p className="text-[11px] font-semibold text-foreground">NVIDIA Profile Inspector</p>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Launch NPI then import your Fortnite profile: File → Import Profile(s) → select the .nip file.</p>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="sm"
+                    onClick={launchNPI}
+                    disabled={npiStatus === "launching"}
+                    className={cn(
+                      "flex-1 h-7 text-xs font-bold transition-all gap-1",
+                      npiStatus === "done" ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : npiStatus === "error" ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary"
+                    )}
+                    data-testid="button-launch-npi"
+                  >
+                    {npiStatus === "launching" ? <Loader2 className="h-3 w-3 animate-spin" /> : npiStatus === "done" ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                    {npiStatus === "launching" ? "Opening..." : npiStatus === "done" ? "Launched" : "Launch NPI"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => downloadProfile("JsFortniteNPI.nip")}
+                    className="flex-1 h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1"
+                    data-testid="button-download-fortnite-npi"
+                  >
+                    <Download className="h-3 w-3" />
+                    .nip Profile
+                  </Button>
+                </div>
               </div>
               <div className="pt-2 border-t border-border/30 space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground">TCP Optimizer — Optimal Settings</p>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Pre-configured TCP Optimizer profile with optimized network stack settings. Open TCP Optimizer → File → Load Settings.</p>
-                <Button
-                  size="sm"
-                  onClick={() => downloadProfile("JsTCPOptimizer.spg")}
-                  className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1.5"
-                  data-testid="button-download-tcp-profile"
-                >
-                  <Download className="h-3 w-3" />
-                  Download TCP Optimizer .spg Profile
-                </Button>
+                <p className="text-[11px] font-semibold text-foreground">TCP Optimizer</p>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Launch TCP Optimizer then load your profile: File → Load Settings → select the .spg file, then Apply Changes.</p>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="sm"
+                    onClick={launchTCPOptimizer}
+                    disabled={tcpStatus === "launching"}
+                    className={cn(
+                      "flex-1 h-7 text-xs font-bold transition-all gap-1",
+                      tcpStatus === "done" ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : tcpStatus === "error" ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary"
+                    )}
+                    data-testid="button-launch-tcp"
+                  >
+                    {tcpStatus === "launching" ? <Loader2 className="h-3 w-3 animate-spin" /> : tcpStatus === "done" ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                    {tcpStatus === "launching" ? "Opening..." : tcpStatus === "done" ? "Launched" : "Launch TCP"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => downloadProfile("JsTCPOptimizer.spg")}
+                    className="flex-1 h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1"
+                    data-testid="button-download-tcp-profile"
+                  >
+                    <Download className="h-3 w-3" />
+                    .spg Profile
+                  </Button>
+                </div>
               </div>
             </div>
           </UtilCard>
