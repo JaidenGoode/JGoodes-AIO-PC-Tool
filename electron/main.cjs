@@ -16,11 +16,11 @@ let windowCreated = false;
 let lhmProcess = null;
 let lhmPid     = null;
 
-const LHM_VERSION      = "0.9.6";
+const LHM_VERSION      = "latest-2026-03";
 const LHM_DIR          = path.join(os.homedir(), "AppData", "Local", "JGoode-AIO", "LibreHardwareMonitor");
 const LHM_EXE          = path.join(LHM_DIR, "LibreHardwareMonitor.exe");
 const LHM_VERSION_FILE = path.join(LHM_DIR, "version.txt");
-const LHM_URL          = "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases/download/v0.9.6/LibreHardwareMonitor.zip";
+const LHM_URL          = "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases/latest/download/LibreHardwareMonitor.zip";
 
 function downloadFile(url, dest, maxRedirects) {
   if (maxRedirects === undefined) maxRedirects = 5;

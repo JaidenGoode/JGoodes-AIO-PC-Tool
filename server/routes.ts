@@ -620,6 +620,16 @@ function Get-CpuFromSensors($sensors, $ns) {
     if ($v.Count -gt 0) { $r.temp = ($v | Measure-Object -Maximum).Maximum }
     $m = @($s | ForEach-Object { [int][math]::Round([double]$_.Max,0) } | Where-Object { $_ -ge 25 -and $_ -lt 115 })
     if ($m.Count -gt 0) { $r.peak = ($m | Measure-Object -Maximum).Maximum }
+    if ($r.temp) { return $r }
+  }
+  # E: broadest fallback — exclude only explicit GPU sensor names, take anything else
+  $gpuNames = @("GPU Core","GPU Hot Spot","GPU VRM","GPU Memory","GPU Memory Junction","GPU Fan","GPU Power")
+  $s = @($sensors | Where-Object { $gpuNames -notcontains $_.Name })
+  if ($s.Count -gt 0) {
+    $v = @($s | ForEach-Object { [int][math]::Round([double]$_.Value,0) } | Where-Object { $_ -ge 20 -and $_ -lt 115 })
+    if ($v.Count -gt 0) { $r.temp = ($v | Measure-Object -Maximum).Maximum }
+    $m = @($s | ForEach-Object { [int][math]::Round([double]$_.Max,0) } | Where-Object { $_ -ge 20 -and $_ -lt 115 })
+    if ($m.Count -gt 0) { $r.peak = ($m | Measure-Object -Maximum).Maximum }
   }
   return $r
 }
