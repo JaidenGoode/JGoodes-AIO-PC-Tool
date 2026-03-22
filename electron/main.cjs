@@ -157,8 +157,18 @@ async function startLHM() {
     // wmiEnabled=true is critical: LHM only registers its WMI namespace when this is set
     const configPath = path.join(LHM_DIR, "LibreHardwareMonitor.config");
     try {
+      // Include every known key-name variant so at least one matches regardless of LHM version
       fs.writeFileSync(configPath,
-        '<?xml version="1.0" encoding="utf-8"?>\n<settings>\n  <value name="startMinimized">true</value>\n  <value name="minimizeToTray">true</value>\n  <value name="startWithWindows">false</value>\n  <value name="wmiEnabled">true</value>\n</settings>\n',
+        '<?xml version="1.0" encoding="utf-8"?>\n<settings>\n' +
+        '  <value name="startMinimized">true</value>\n' +
+        '  <value name="minimizeToTray">true</value>\n' +
+        '  <value name="startWithWindows">false</value>\n' +
+        '  <value name="wmiEnabled">true</value>\n' +
+        '  <value name="mainForm.startMinimized">true</value>\n' +
+        '  <value name="mainForm.minimizeToTray">true</value>\n' +
+        '  <value name="mainForm.wmi">true</value>\n' +
+        '  <value name="wmi">true</value>\n' +
+        '</settings>\n',
         "utf8"
       );
     } catch {}

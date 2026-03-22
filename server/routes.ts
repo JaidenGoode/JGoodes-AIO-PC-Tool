@@ -572,28 +572,29 @@ $cpuTemp = $null
 $cpuPeak = $null
 $gpuTemp = $null
 $gpuHotspot = $null
+$dbgParts = @()
 $gpuOnly = @("GPU Core","GPU Hot Spot","GPU VRM","GPU Memory","GPU Memory Junction","GPU Fan","GPU Power","GPU Package")
-
-function Read-LhmNs($ns) {
-  for ($r = 0; $r -lt 3; $r++) {
-    try {
-      $s = @(Get-WmiObject -Namespace $ns -Class Sensor -EA Stop | Where-Object { $_.SensorType -eq "Temperature" })
-      if ($s.Count -gt 0) { return $s }
-    } catch { }
-    if ($r -lt 2) { Start-Sleep -Seconds 2 }
-  }
-  return @()
-}
 
 function Val($s) { try { return [int][math]::Round([double]$s.Value, 0) } catch { return $null } }
 function Max($s) { try { return [int][math]::Round([double]$s.Max,  0) } catch { return $null } }
 
-# ── LHM / OHM ─────────────────────────────────────────────────────────────
+function Read-LhmNs($ns) {
+  for ($r = 0; $r -lt 2; $r++) {
+    try {
+      $s = @(Get-WmiObject -Namespace $ns -Class Sensor -EA Stop | Where-Object { $_.SensorType -eq "Temperature" })
+      if ($s.Count -gt 0) { return $s }
+    } catch { }
+    if ($r -lt 1) { Start-Sleep -Seconds 1 }
+  }
+  return @()
+}
+
+# ── Phase 1: LHM / OHM WMI ────────────────────────────────────────────────
 foreach ($ns in @("root/LibreHardwareMonitor","root/OpenHardwareMonitor")) {
   $all = Read-LhmNs $ns
   if ($all.Count -eq 0) { continue }
+  $dbgParts += "wmi_ns=" + $ns + "_total=" + $all.Count
 
-  # GPU sensors
   if (-not $gpuTemp) {
     $g = @($all | Where-Object { $_.Name -eq "GPU Core" })
     if ($g.Count -gt 0) { $v = Val $g[0]; if ($v -ge 20 -and $v -lt 120) { $gpuTemp = $v } }
@@ -602,8 +603,6 @@ foreach ($ns in @("root/LibreHardwareMonitor","root/OpenHardwareMonitor")) {
     $h = @($all | Where-Object { $_.Name -eq "GPU Hot Spot" })
     if ($h.Count -gt 0) { $v = Val $h[0]; if ($v -ge 20 -and $v -lt 130) { $gpuHotspot = $v } }
   }
-
-  # CPU sensors — try specific names first, then fall back to any non-GPU sensor
   if (-not $cpuTemp) {
     $cpuS = @($all | Where-Object { $_.Name -match "CPU|Tdie|Tctl|CCD|Package|Core|Temperature" -and $gpuOnly -notcontains $_.Name })
     if ($cpuS.Count -eq 0) { $cpuS = @($all | Where-Object { $gpuOnly -notcontains $_.Name }) }
@@ -614,39 +613,54 @@ foreach ($ns in @("root/LibreHardwareMonitor","root/OpenHardwareMonitor")) {
       if ($maxVals.Count -gt 0) { $cpuPeak = ($maxVals | Sort-Object -Descending)[0] }
     }
   }
-
   if ($cpuTemp -and $gpuTemp) { break }
 }
 
-# ── Windows Get-Counter fallback (no driver needed) ───────────────────────
+# ── Phase 2: LHM DLL direct load (bypasses WMI entirely — works even if WMI is not registered) ──
+if (-not $cpuTemp) {
+  $lhmDir2 = [System.IO.Path]::Combine($env:LOCALAPPDATA, "JGoode-AIO", "LibreHardwareMonitor")
+  $lhmDll2 = [System.IO.Path]::Combine($lhmDir2, "LibreHardwareMonitorLib.dll")
+  if (Test-Path $lhmDll2) {
+    try {
+      Get-ChildItem $lhmDir2 -Filter "*.dll" -EA SilentlyContinue | ForEach-Object { try { [System.Reflection.Assembly]::LoadFrom($_.FullName) | Out-Null } catch {} }
+      $comp2 = New-Object LibreHardwareMonitor.Hardware.Computer
+      $comp2.IsCpuEnabled = $true; $comp2.IsMotherboardEnabled = $true; $comp2.IsGpuEnabled = $true
+      $comp2.IsStorageEnabled = $false; $comp2.IsControllerEnabled = $false; $comp2.IsNetworkEnabled = $false; $comp2.IsBatteryEnabled = $false
+      $comp2.Open()
+      $comp2.Hardware | ForEach-Object { $_.Update(); $_.SubHardware | ForEach-Object { $_.Update() } }
+      $comp2.Hardware | ForEach-Object {
+        $hwT = $_.HardwareType.ToString()
+        $_.Sensors | Where-Object { $_.SensorType.ToString() -eq "Temperature" -and $null -ne $_.Value } | ForEach-Object {
+          $v2 = [int][math]::Round([double]$_.Value, 0); $n2 = $_.Name
+          if ($hwT -match "Cpu" -and -not $cpuTemp -and $v2 -ge 20 -and $v2 -lt 115) { $cpuTemp = $v2 }
+          if ($hwT -match "Cpu" -and $n2 -match "Package|Tdie|Tctl" -and $v2 -ge 20 -and $v2 -lt 115) { $cpuTemp = $v2 }
+          if (($hwT -match "Gpu" -or $hwT -match "Nvidia") -and -not $gpuTemp -and $n2 -match "Core" -and $v2 -ge 20 -and $v2 -lt 120) { $gpuTemp = $v2 }
+          if (($hwT -match "Gpu" -or $hwT -match "Nvidia") -and -not $gpuHotspot -and $n2 -match "Hot" -and $v2 -ge 20 -and $v2 -lt 130) { $gpuHotspot = $v2 }
+        }
+      }
+      try { $comp2.Close() } catch {}
+      $dbgParts += "dll_ok_cpu=" + $cpuTemp + "_gpu=" + $gpuTemp
+    } catch { $dbgParts += "dll_err=" + ($_.Exception.Message -replace '[^a-zA-Z0-9 _=.]','') }
+  } else { $dbgParts += "dll_missing" }
+}
+
+# ── Phase 3: Windows Get-Counter (no driver, rough ACPI thermal zones) ────
 if (-not $cpuTemp) {
   try {
     $ctr = (Get-Counter '\Thermal Zone Information(*)\High Precision Temperature' -EA Stop).CounterSamples
     $v = @($ctr | Where-Object { $_.CookedValue -gt 0 } | ForEach-Object { [int][math]::Round($_.CookedValue / 10.0 - 273.15, 0) } | Where-Object { $_ -ge 25 -and $_ -lt 115 })
-    if ($v.Count -gt 0) { $cpuTemp = ($v | Sort-Object -Descending)[0] }
-  } catch {}
+    if ($v.Count -gt 0) { $cpuTemp = ($v | Sort-Object -Descending)[0]; $dbgParts += "ctr_ok" }
+  } catch { $dbgParts += "ctr_err" }
 }
 
-# ── MSAcpi fallback ────────────────────────────────────────────────────────
+# ── Phase 4: MSAcpi thermal zone ────────────────────────────────────────────
 if (-not $cpuTemp) {
   try {
     $az = @(Get-WmiObject MSAcpi_ThermalZoneTemperature -Namespace "root/wmi" -EA Stop)
     $v = @($az | ForEach-Object { [int][math]::Round($_.CurrentTemperature / 10.0 - 273.15, 0) } | Where-Object { $_ -ge 25 -and $_ -lt 115 })
-    if ($v.Count -gt 0) { $cpuTemp = ($v | Sort-Object -Descending)[0] }
-  } catch {}
+    if ($v.Count -gt 0) { $cpuTemp = ($v | Sort-Object -Descending)[0]; $dbgParts += "acpi_ok" }
+  } catch { $dbgParts += "acpi_err" }
 }
-
-$dbgParts = @()
-try {
-  $lhmAll = @(Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop)
-  $dbgParts += "lhm_total=" + $lhmAll.Count
-  $lhmTemps = @($lhmAll | Where-Object { $_.SensorType -eq "Temperature" })
-  $dbgParts += "lhm_temps=" + $lhmTemps.Count
-  if ($lhmTemps.Count -gt 0) {
-    $names = ($lhmTemps | Select-Object -First 5 | ForEach-Object { $_.Name + "=" + $_.Value }) -join "|"
-    $dbgParts += "names=" + $names
-  }
-} catch { $dbgParts += "lhm_err=" + $_.Exception.Message }
 
 $out = [ordered]@{}
 if ($null -ne $cpuTemp) { $out['cpu'] = $cpuTemp }
