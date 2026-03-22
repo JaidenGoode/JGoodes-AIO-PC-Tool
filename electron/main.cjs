@@ -87,6 +87,7 @@ async function startLHM() {
         needsDownload = true;
       }
     }
+    const isFirstInstall = needsDownload;
     if (needsDownload) {
       const ok = await downloadLHM();
       if (!ok) { console.log("[LHM] Skipping — exe not found after download"); return; }
@@ -130,6 +131,20 @@ $procs = Get-Process "LibreHardwareMonitor" -EA SilentlyContinue
 foreach ($p in $procs) { if ($p.MainWindowHandle -ne [IntPtr]::Zero) { [Win32Hide]::ShowWindow($p.MainWindowHandle, 0) } }`;
       spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", hideScript], { windowsHide: true });
     }, 3000);
+
+    // On first install: show a one-time notice after the window is ready
+    if (isFirstInstall) {
+      setTimeout(() => {
+        dialog.showMessageBox(mainWindow || undefined, {
+          type: "info",
+          title: "Hardware Monitor Installed",
+          message: "LibreHardwareMonitor has been installed.",
+          detail: "Temperature sensors are now loading. If WinRing0 prompted you to install a driver, please restart the app once for CPU temps to appear.\n\nGPU temperature will appear immediately.",
+          buttons: ["OK"],
+          defaultId: 0,
+        }).catch(() => {});
+      }, 6000);
+    }
 
   } catch (err) {
     console.log("[LHM] Failed to start:", err.message);
