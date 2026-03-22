@@ -86,6 +86,7 @@ export default function Utilities() {
   const [dduStatus, setDduStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
   const [npiStatus, setNpiStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
   const [tcpStatus, setTcpStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
+  const [pseStatus, setPseStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -771,6 +772,55 @@ export default function Utilities() {
     setTimeout(() => setTcpStatus("idle"), 4000);
   };
 
+  const launchPSE = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "Power Settings Explorer can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setPseStatus("launching");
+    const script = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$exePath = $null`,
+      ``,
+      `# 1. Check bundled copy inside the installed app`,
+      `if ($env:ELECTRON_RESOURCES_PATH) {`,
+      `  $bundled = Join-Path $env:ELECTRON_RESOURCES_PATH 'executables\\PowerSettingsExplorer.exe'`,
+      `  if ((Test-Path $bundled) -and (Get-Item $bundled -EA SilentlyContinue).Length -ge 10240) { $exePath = $bundled }`,
+      `}`,
+      ``,
+      `# 2. Check common install/portable locations`,
+      `if (-not $exePath) {`,
+      `  $candidates = @(`,
+      `    "$env:ProgramFiles\\PowerSettingsExplorer\\PowerSettingsExplorer.exe",`,
+      `    "$env:LOCALAPPDATA\\PowerSettingsExplorer\\PowerSettingsExplorer.exe",`,
+      `    "$env:USERPROFILE\\Downloads\\PowerSettingsExplorer.exe",`,
+      `    "$env:USERPROFILE\\Desktop\\PowerSettingsExplorer.exe"`,
+      `  )`,
+      `  foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
+      `}`,
+      ``,
+      `if ($exePath) {`,
+      `  Start-Process -FilePath $exePath -WindowStyle Normal`,
+      `} else {`,
+      `  Write-Error "Could not find PowerSettingsExplorer.exe"; exit 1`,
+      `}`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.success) {
+        setPseStatus("done");
+        toast({ title: "Power Settings Explorer launched", description: "Browse and edit hidden Windows power plan settings." });
+      } else {
+        setPseStatus("error");
+        toast({ title: "Launch failed", description: "Could not find Power Settings Explorer.", variant: "destructive" });
+      }
+    } catch {
+      setPseStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setPseStatus("idle"), 4000);
+  };
+
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
     localStorage.setItem(key, String(value));
@@ -1315,6 +1365,47 @@ export default function Utilities() {
                     <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
                   ) : (
                     <><Download className="h-3.5 w-3.5" /> Launch DDU</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+                )}
+              </div>
+            </div>
+          </UtilCard>
+
+          <UtilCard icon={Power} title="Power Settings Explorer" description="View and edit all hidden Windows power plan settings" delay={0.30}>
+            <div className="flex flex-col flex-1 space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Exposes every hidden power setting not shown in the Control Panel — per-plan values, hidden subgroups, GUID references, and defaults. Essential for fine-tuning CPU, GPU, disk, and USB power behaviour.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 flex-1">
+                <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Bundled — opens instantly with no download required. Works with all power plans including custom and hidden ones.</p>
+              </div>
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchPSE}
+                  disabled={pseStatus === "launching"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    pseStatus === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : pseStatus === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-pse"
+                >
+                  {pseStatus === "launching" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
+                  ) : pseStatus === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                  ) : pseStatus === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Zap className="h-3.5 w-3.5" /> Launch Power Settings Explorer</>
                   )}
                 </Button>
                 {!window.electronAPI && (
