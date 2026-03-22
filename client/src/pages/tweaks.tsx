@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Wrench, Zap, SlidersHorizontal,
   AlertTriangle, Gamepad2, CheckCircle2,
-  Download, Copy, Check, Terminal, Loader2, ScanSearch,
+  Download, Copy, Check, Terminal, Loader2,
   Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Network,
   Upload, Database,
 } from "lucide-react";
@@ -670,19 +670,6 @@ export default function Tweaks() {
                 data-testid="input-search-tweaks"
               />
             </div>
-            <Button
-              size="sm"
-              onClick={() => triggerDetect()}
-              disabled={isDetecting}
-              className="h-8 gap-1.5 text-xs font-semibold shrink-0 bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 hover:border-primary/30"
-              data-testid="button-scan-system"
-              title="Re-scan your Windows registry to detect which tweaks are applied"
-            >
-              {isDetecting
-                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : <ScanSearch className="h-3.5 w-3.5 text-primary" />}
-              {isDetecting ? "Scanning..." : "Re-scan"}
-            </Button>
             {selectedCount > 0 && (
               <Button
                 size="sm"

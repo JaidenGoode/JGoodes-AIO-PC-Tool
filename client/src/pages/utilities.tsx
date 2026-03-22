@@ -595,67 +595,46 @@ export default function Utilities() {
 
   const launchDDU = async () => {
     if (!window.electronAPI?.runScript) {
-      toast({ title: "Desktop app required", description: "Display Driver Uninstaller can only launch from the installed desktop app.", variant: "destructive" });
+      toast({ title: "Desktop app required", description: "DDU can only launch from the installed desktop app.", variant: "destructive" });
       return;
     }
     setDduStatus("downloading");
     const script = [
       `$ErrorActionPreference = 'SilentlyContinue'`,
-      `$cacheDir = Join-Path $env:LOCALAPPDATA 'JGoode-AIO\\DDU'`,
       `$exePath = $null`,
       ``,
-      `# Check common DDU paths`,
-      `$candidates = @(`,
-      `  "$env:ProgramFiles\\DDU\\Display Driver Uninstaller.exe",`,
-      `  "\${env:ProgramFiles(x86)}\\DDU\\Display Driver Uninstaller.exe",`,
-      `  "C:\\DDU\\Display Driver Uninstaller.exe",`,
-      `  "$env:USERPROFILE\\Desktop\\DDU\\Display Driver Uninstaller.exe"`,
-      `)`,
-      `foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
-      ``,
-      `# Check cached portable copy`,
-      `if (-not $exePath) {`,
-      `  $cached = Get-ChildItem $cacheDir -Filter 'Display Driver Uninstaller.exe' -Recurse -EA SilentlyContinue | Where-Object { $_.Length -ge 102400 } | Select-Object -First 1`,
-      `  if ($cached) { $exePath = $cached.FullName }`,
+      `# 1. Bundled copy inside the installed app`,
+      `if ($env:ELECTRON_RESOURCES_PATH) {`,
+      `  $bundled = Join-Path $env:ELECTRON_RESOURCES_PATH 'executables\\DDU.exe'`,
+      `  if ((Test-Path $bundled) -and (Get-Item $bundled -EA SilentlyContinue).Length -ge 102400) { $exePath = $bundled }`,
       `}`,
       ``,
-      `# Download latest DDU from GitHub`,
+      `# 2. Common install/portable locations`,
       `if (-not $exePath) {`,
-      `  $ErrorActionPreference = 'Stop'`,
-      `  try {`,
-      `    $wc = New-Object System.Net.WebClient`,
-      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0")`,
-      `    $api = $wc.DownloadString("https://api.github.com/repos/Wagnardsoft/display-driver-uninstaller/releases/latest")`,
-      `    $asset = ($api | ConvertFrom-Json).assets | Where-Object { $_.name -like '*.exe' -or $_.name -like '*.zip' } | Select-Object -First 1`,
-      `    if (-not $asset) { Start-Process "https://www.guru3d.com/files-details/display-driver-uninstaller-download.html"; exit 2 }`,
-      `    if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null }`,
-      `    $dest = Join-Path $cacheDir $asset.name`,
-      `    $wc2 = New-Object System.Net.WebClient`,
-      `    $wc2.Headers.Add("User-Agent", "Mozilla/5.0")`,
-      `    $wc2.DownloadFile($asset.browser_download_url, $dest)`,
-      `    if ($dest -like '*.zip') {`,
-      `      Expand-Archive -Path $dest -DestinationPath $cacheDir -Force`,
-      `      $found = Get-ChildItem $cacheDir -Filter 'Display Driver Uninstaller.exe' -Recurse -EA SilentlyContinue | Select-Object -First 1`,
-      `      if ($found) { $exePath = $found.FullName } else { Start-Process "https://www.guru3d.com/files-details/display-driver-uninstaller-download.html"; exit 2 }`,
-      `    } else {`,
-      `      $exePath = $dest`,
-      `    }`,
-      `  } catch { Start-Process "https://www.guru3d.com/files-details/display-driver-uninstaller-download.html"; exit 2 }`,
+      `  $candidates = @(`,
+      `    "$env:ProgramFiles\\DDU\\Display Driver Uninstaller.exe",`,
+      `    "\${env:ProgramFiles(x86)}\\DDU\\Display Driver Uninstaller.exe",`,
+      `    "C:\\DDU\\Display Driver Uninstaller.exe",`,
+      `    "$env:USERPROFILE\\Desktop\\DDU\\Display Driver Uninstaller.exe",`,
+      `    "$env:LOCALAPPDATA\\JGoode-AIO\\DDU\\Display Driver Uninstaller.exe"`,
+      `  )`,
+      `  foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
       `}`,
       ``,
-      `Start-Process -FilePath $exePath -WindowStyle Normal`,
+      `if ($exePath) {`,
+      `  Start-Process -FilePath $exePath -WindowStyle Normal`,
+      `} else {`,
+      `  Write-Error "Could not find DDU.exe"; exit 1`,
+      `}`,
     ].join("\r\n");
     try {
       const result = await window.electronAPI.runScript(script);
-      if (result.code === 2) {
+      if (result.success) {
         setDduStatus("done");
-        toast({ title: "DDU download page opened", description: "Download and extract DDU, then click the button again to launch." });
-      } else if (result.success) {
-        setDduStatus("done");
-        toast({ title: "DDU launched", description: "Remember: for a clean uninstall, boot into Safe Mode first." });
+        toast({ title: "DDU launched", description: "For a clean uninstall, boot into Safe Mode before running DDU." });
       } else {
         setDduStatus("error");
-        toast({ title: "Launch failed", description: "Could not find or launch DDU.", variant: "destructive" });
+        toast({ title: "Launch failed", description: "Could not find DDU.", variant: "destructive" });
       }
     } catch {
       setDduStatus("error");
@@ -1358,13 +1337,13 @@ export default function Utilities() {
                   data-testid="button-launch-ddu"
                 >
                   {dduStatus === "downloading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching...</>
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
                   ) : dduStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Done</>
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
                   ) : dduStatus === "error" ? (
                     <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
                   ) : (
-                    <><Download className="h-3.5 w-3.5" /> Launch DDU</>
+                    <><Zap className="h-3.5 w-3.5" /> Launch DDU</>
                   )}
                 </Button>
                 {!window.electronAPI && (
