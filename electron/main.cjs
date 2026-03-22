@@ -16,7 +16,7 @@ let windowCreated = false;
 let lhmProcess = null;
 let lhmPid     = null;
 
-const LHM_VERSION      = "latest-2026-03b";
+const LHM_VERSION      = "latest-2026-03c";
 const LHM_DIR          = path.join(os.homedir(), "AppData", "Local", "JGoode-AIO", "LibreHardwareMonitor");
 const LHM_EXE          = path.join(LHM_DIR, "LibreHardwareMonitor.exe");
 const LHM_VERSION_FILE = path.join(LHM_DIR, "version.txt");
@@ -95,7 +95,13 @@ async function downloadLHM() {
     try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch {}
     if (fs.existsSync(LHM_EXE)) {
       fs.writeFileSync(LHM_VERSION_FILE, LHM_VERSION, "utf8");
-      console.log("[LHM] Download complete — v" + LHM_VERSION);
+      // Log which DLLs landed — helps diagnose missing-DLL crashes in future
+      const dlls = fs.readdirSync(LHM_DIR).filter(f => f.endsWith(".dll") || f.endsWith(".exe"));
+      console.log("[LHM] Download complete — v" + LHM_VERSION + " — files: " + dlls.join(", "));
+      const memDll = path.join(LHM_DIR, "System.Memory.dll");
+      if (!fs.existsSync(memDll)) {
+        console.log("[LHM] WARNING: System.Memory.dll missing from extracted zip — LHM may crash");
+      }
       return true;
     }
     return false;
@@ -116,6 +122,17 @@ async function startLHM() {
         if (installed !== LHM_VERSION) needsDownload = true;
       } catch {
         needsDownload = true;
+      }
+    }
+    // Integrity check — if critical DLLs are missing the install is corrupt; force re-download
+    if (!needsDownload) {
+      const criticalDlls = ["System.Memory.dll", "LibreHardwareMonitorLib.dll"];
+      for (const dll of criticalDlls) {
+        if (!fs.existsSync(path.join(LHM_DIR, dll))) {
+          console.log("[LHM] Missing DLL:", dll, "— forcing re-download");
+          needsDownload = true;
+          break;
+        }
       }
     }
     const isFirstInstall = needsDownload;
