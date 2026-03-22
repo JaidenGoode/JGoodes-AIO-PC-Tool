@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const path = require("path");
 const http = require("http");
+const https = require("https");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -10,6 +11,84 @@ app.name = "JGoode's A.I.O PC Tool";
 const PORT = 57321;
 let mainWindow = null;
 let windowCreated = false;
+
+// ── LibreHardwareMonitor (silent hardware sensor provider) ────────────────────
+let lhmProcess = null;
+
+const LHM_DIR  = path.join(os.homedir(), "AppData", "Local", "JGoode-AIO", "LibreHardwareMonitor");
+const LHM_EXE  = path.join(LHM_DIR, "LibreHardwareMonitor.exe");
+const LHM_URL  = "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases/download/v0.9.3/LibreHardwareMonitor-net472.zip";
+
+function downloadFile(url, dest, maxRedirects) {
+  if (maxRedirects === undefined) maxRedirects = 5;
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    const request = https.get(url, { headers: { "User-Agent": "JGoode-AIO-PC-Tool" } }, (res) => {
+      if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location && maxRedirects > 0) {
+        file.close();
+        try { fs.unlinkSync(dest); } catch {}
+        downloadFile(res.headers.location, dest, maxRedirects - 1).then(resolve).catch(reject);
+        return;
+      }
+      if (res.statusCode !== 200) {
+        file.close();
+        reject(new Error("HTTP " + res.statusCode));
+        return;
+      }
+      res.pipe(file);
+      file.on("finish", () => { file.close(); resolve(); });
+    });
+    request.on("error", (err) => { file.close(); reject(err); });
+  });
+}
+
+async function downloadLHM() {
+  try {
+    if (!fs.existsSync(LHM_DIR)) fs.mkdirSync(LHM_DIR, { recursive: true });
+    const zipPath = path.join(os.tmpdir(), "JGoode-LHM.zip");
+    console.log("[LHM] Downloading LibreHardwareMonitor v0.9.3...");
+    await downloadFile(LHM_URL, zipPath);
+    await new Promise((resolve) => {
+      const ps = spawn("powershell.exe", [
+        "-NoProfile", "-Command",
+        `Expand-Archive -Path '${zipPath}' -DestinationPath '${LHM_DIR}' -Force`
+      ], { windowsHide: true });
+      ps.on("close", resolve);
+      ps.on("error", resolve);
+    });
+    try { fs.unlinkSync(zipPath); } catch {}
+    console.log("[LHM] Download complete");
+    return fs.existsSync(LHM_EXE);
+  } catch (err) {
+    console.log("[LHM] Download failed:", err.message);
+    return false;
+  }
+}
+
+async function startLHM() {
+  if (process.platform !== "win32") return;
+  try {
+    if (!fs.existsSync(LHM_EXE)) {
+      const ok = await downloadLHM();
+      if (!ok) { console.log("[LHM] Skipping — exe not found after download"); return; }
+    }
+    lhmProcess = spawn(LHM_EXE, [], { windowsHide: true, detached: false });
+    lhmProcess.on("error", () => { lhmProcess = null; });
+    lhmProcess.on("exit",  () => { lhmProcess = null; });
+    console.log("[LHM] Running silently — CPU/GPU sensors active");
+  } catch (err) {
+    console.log("[LHM] Failed to start:", err.message);
+    lhmProcess = null;
+  }
+}
+
+function stopLHM() {
+  if (lhmProcess) {
+    try { lhmProcess.kill(); } catch {}
+    lhmProcess = null;
+    console.log("[LHM] Stopped");
+  }
+}
 
 function startServer() {
   process.env.PORT = String(PORT);
@@ -122,10 +201,16 @@ function createWindow() {
 
 app.whenReady().then(() => {
   startServer();
+  startLHM();
   waitForServer(createWindow);
 });
 
+app.on("before-quit", () => {
+  stopLHM();
+});
+
 app.on("window-all-closed", () => {
+  stopLHM();
   app.quit();
 });
 

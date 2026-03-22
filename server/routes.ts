@@ -423,7 +423,7 @@ export async function registerRoutes(
         fsSize.find((f) => f.mount === "C:" || f.mount === "/") || fsSize[0];
 
       res.json({
-        cpu: { model: cpu.brand || cpu.manufacturer || "Unknown CPU", cores: cpu.cores || 0, speed: cpu.speed },
+        cpu: { model: cpu.brand || cpu.manufacturer || "Unknown CPU", physicalCores: cpu.physicalCores || 0, threads: cpu.cores || 0, speed: cpu.speed },
         gpu: { model: gpu?.model || "Unknown GPU", vram: vramStr },
         memory: {
           total: mem.total ? `${(mem.total / 1024 ** 3).toFixed(1)} GB` : "0 GB",
@@ -442,7 +442,7 @@ export async function registerRoutes(
       });
     } catch {
       res.json({
-        cpu: { model: "Unknown CPU", cores: 0, speed: 0 },
+        cpu: { model: "Unknown CPU", physicalCores: 0, threads: 0, speed: 0 },
         gpu: { model: "Unknown GPU", vram: "Unknown" },
         memory: { total: "0 GB", used: "0 GB", type: "Unknown" },
         system: { os: "Unknown", version: "Unknown" },
@@ -452,18 +452,29 @@ export async function registerRoutes(
   });
 
   // ── Live System Usage (CPU %, RAM %, GPU %) ────────────────────────────────
+  // LHM WMI query for GPU load — fast (<100ms when LHM running, fails instantly when not)
+  const LHM_GPU_USAGE_SCRIPT = `
+try {
+  $s = Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop |
+    Where-Object { $_.SensorType -eq "Load" -and $_.Name -eq "GPU Core" }
+  if ($s) { [math]::Round(($s | Measure-Object -Property Value -Maximum).Maximum, 0) }
+} catch {}`;
+
   app.get("/api/system/usage", async (_req, res) => {
     try {
-      const [load, mem, graphics, fsSize, diskIO] = await Promise.all([
+      const [load, mem, graphics, fsSize, diskIO, lhmRaw] = await Promise.all([
         si.currentLoad(),
         si.mem(),
         si.graphics(),
         si.fsSize(),
         si.fsStats().catch(() => null as si.Systeminformation.FsStatsData | null),
+        process.platform === "win32"
+          ? runPowerShell(LHM_GPU_USAGE_SCRIPT, 2500).catch(() => "")
+          : Promise.resolve(""),
       ]);
 
       const controllers = graphics.controllers || [];
-      const gpu =
+      const gpuCtrl =
         controllers.find((c) =>
           /nvidia|amd|radeon/i.test(c.vendor || c.model || "")
         ) || controllers[0];
@@ -472,7 +483,12 @@ export async function registerRoutes(
         fsSize.find((f) => f.mount === "C:" || f.mount === "/") || fsSize[0];
       const diskUsePct = rootFs ? Math.round(rootFs.use || 0) : 0;
 
-      const gpuTemp = (gpu as any)?.temperatureGpu;
+      const lhmGpuUsage = lhmRaw ? parseInt(lhmRaw.trim(), 10) : NaN;
+      const gpuUsage = !isNaN(lhmGpuUsage) && lhmGpuUsage >= 0 && lhmGpuUsage <= 100
+        ? lhmGpuUsage
+        : ((gpuCtrl as any)?.utilizationGpu ?? null);
+
+      const gpuTemp = (gpuCtrl as any)?.temperatureGpu;
 
       res.json({
         cpu: {
@@ -485,8 +501,8 @@ export async function registerRoutes(
           totalGb: parseFloat(((mem.total || 0) / 1024 ** 3).toFixed(1)),
         },
         gpu: {
-          usage: (gpu as any)?.utilizationGpu ?? null,
-          model: gpu?.model || null,
+          usage: gpuUsage,
+          model: gpuCtrl?.model || null,
           temp: gpuTemp && gpuTemp > 0 ? Math.round(gpuTemp) : null,
         },
         disk: {
@@ -508,70 +524,78 @@ export async function registerRoutes(
   // ── Temperatures ───────────────────────────────────────────────────────────
   app.get("/api/system/temps", async (_req, res) => {
     try {
-      // CPU must be >= 30°C — anything lower is an ambient/case sensor, not the CPU package
       const isValidCpuTemp = (t: unknown): t is number =>
         typeof t === "number" && isFinite(t) && t >= 30 && t < 115;
       const isValidGpuTemp = (t: unknown): t is number =>
         typeof t === "number" && isFinite(t) && t >= 20 && t < 120;
 
-      const graphics = await si.graphics();
-      const controllers = graphics.controllers || [];
-      const gpu =
-        controllers.find((c) =>
-          /nvidia|amd|radeon/i.test(c.vendor || c.model || "")
-        ) || controllers[0];
-
       let cpuCurrent: number | null = null;
       let cpuMax: number | null = null;
+      let gpuCurrent: number | null = null;
 
-      // On Windows: try PowerShell methods first in priority order.
-      // systeminformation can only read CPU package temp on Linux/Mac reliably.
       if (process.platform === "win32") {
+        // Single PowerShell call reads CPU + GPU from LHM WMI (both in one query),
+        // falls back through OHM and MSAcpi for CPU if LHM isn't running.
         const psScript = `
-$result = $null
+$cpuTemp = $null
+$gpuTemp = $null
 
-# Method 1: LibreHardwareMonitor WMI — most accurate, requires LHM installed/running
-if (-not $result) {
-  try {
-    $sensors = Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop |
-      Where-Object { $_.SensorType -eq "Temperature" -and $_.Name -match "CPU Package|CPU Core|CPU Total|Core #" }
-    if ($sensors) {
-      $vals = @($sensors) | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
-      if ($vals) { $result = ($vals | Measure-Object -Maximum).Maximum }
-    }
-  } catch {}
-}
+# Method 1: LibreHardwareMonitor WMI — reads CPU Package + GPU Core in one call
+try {
+  $sensors = Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop |
+    Where-Object { $_.SensorType -eq "Temperature" }
+  $cpuSensors = $sensors | Where-Object { $_.Name -match "CPU Package|CPU Core|CPU Total|Core #" }
+  if ($cpuSensors) {
+    $vals = @($cpuSensors) | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+    if ($vals) { $cpuTemp = ($vals | Measure-Object -Maximum).Maximum }
+  }
+  $gpuSensors = $sensors | Where-Object { $_.Name -eq "GPU Core" }
+  if ($gpuSensors) {
+    $vals = @($gpuSensors) | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 120 }
+    if ($vals) { $gpuTemp = ($vals | Measure-Object -Maximum).Maximum }
+  }
+} catch {}
 
-# Method 2: OpenHardwareMonitor WMI — accurate, requires OHM installed/running
-if (-not $result) {
+# Method 2: OpenHardwareMonitor WMI (CPU only, if LHM didn't supply it)
+if (-not $cpuTemp) {
   try {
     $sensors = Get-WmiObject -Namespace "root/OpenHardwareMonitor" -Class Sensor -EA Stop |
       Where-Object { $_.SensorType -eq "Temperature" -and $_.Name -match "CPU Package|CPU Core|CPU Total|Core #" }
     if ($sensors) {
       $vals = @($sensors) | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
-      if ($vals) { $result = ($vals | Measure-Object -Maximum).Maximum }
+      if ($vals) { $cpuTemp = ($vals | Measure-Object -Maximum).Maximum }
     }
   } catch {}
 }
 
-# Method 3: MSAcpi — filter to CPU-labelled zones first, fall back to all zones
-if (-not $result) {
+# Method 3: MSAcpi (CPU only, if still not found)
+if (-not $cpuTemp) {
   try {
     $zones = Get-WmiObject MSAcpi_ThermalZoneTemperature -Namespace "root/wmi" -EA Stop
     $cpuZones = @($zones) | Where-Object { $_.InstanceName -match "CPU|PROC|CPUZ|CpuPackage|TZ0[01]" }
     if (-not $cpuZones -or $cpuZones.Count -eq 0) { $cpuZones = @($zones) }
     $vals = $cpuZones | ForEach-Object { [math]::Round($_.CurrentTemperature / 10 - 273.15, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
-    if ($vals) { $result = ($vals | Sort-Object -Descending)[0] }
+    if ($vals) { $cpuTemp = ($vals | Sort-Object -Descending)[0] }
   } catch {}
 }
 
-if ($result) { $result }`;
+$out = [ordered]@{}
+if ($cpuTemp) { $out['cpu'] = $cpuTemp }
+if ($gpuTemp) { $out['gpu'] = $gpuTemp }
+$out | ConvertTo-Json -Compress -Depth 1`;
+
         const output = await runPowerShell(psScript, 12000).catch(() => "");
-        const parsed = parseFloat(output.trim());
-        if (isValidCpuTemp(parsed)) cpuCurrent = Math.round(parsed);
+        try {
+          const m = output.trim().match(/\{[\s\S]*\}/);
+          if (m) {
+            const j = JSON.parse(m[0]);
+            if (isValidCpuTemp(j.cpu)) cpuCurrent = Math.round(j.cpu);
+            if (isValidGpuTemp(j.gpu)) gpuCurrent = Math.round(j.gpu);
+          }
+        } catch {}
       }
 
-      // Fallback: systeminformation (works on Linux/Mac, rarely on Windows)
+      // Fallback for CPU if PowerShell returned nothing (Linux/Mac or sensor not found)
       if (cpuCurrent === null) {
         const cpuTemp = await si.cpuTemperature().catch(() => ({
           main: null as number | null,
@@ -594,11 +618,22 @@ if ($result) { $result }`;
         if (isValidMax(cpuTemp.max)) cpuMax = Math.round(cpuTemp.max);
       }
 
-      const gpuTemp = (gpu as any)?.temperatureGpu ?? null;
+      // Fallback for GPU temp if LHM didn't return it — try si.graphics()
+      if (gpuCurrent === null) {
+        try {
+          const graphics = await si.graphics();
+          const controllers = graphics.controllers || [];
+          const gpuCtrl = controllers.find((c) =>
+            /nvidia|amd|radeon/i.test(c.vendor || c.model || "")
+          ) || controllers[0];
+          const rawGpuTemp = (gpuCtrl as any)?.temperatureGpu ?? null;
+          if (isValidGpuTemp(rawGpuTemp)) gpuCurrent = Math.round(rawGpuTemp);
+        } catch {}
+      }
 
       res.json({
         cpu: { current: cpuCurrent, max: cpuMax },
-        gpu: { current: isValidGpuTemp(gpuTemp) ? Math.round(gpuTemp) : null },
+        gpu: { current: gpuCurrent },
       });
     } catch {
       res.json({ cpu: { current: null, max: null }, gpu: { current: null } });

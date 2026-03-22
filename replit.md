@@ -65,6 +65,18 @@ A modern Windows PC optimization desktop app built with Electron + Express + Rea
 - "Load Profile" imports a saved JSON profile and applies matching tweaks via the run dialog
 - Tweaks are applied by the user running the exported `.ps1` script as Administrator
 
+## Hardware Monitoring
+
+- **LibreHardwareMonitor (LHM) v0.9.3** is downloaded silently to `%LOCALAPPDATA%\JGoode-AIO\LibreHardwareMonitor\` on first run
+- LHM starts silently (no window, no tray) when the Electron app opens; killed when the app closes
+- LHM registers a WMI provider (`root/LibreHardwareMonitor`) that routes.ts queries for CPU Package + GPU Core temps and GPU Load
+- Fallback chain: LHM WMI → OpenHardwareMonitor WMI → MSAcpi → si.cpuTemperature()
+- GPU temp fallback (if LHM not yet running): si.graphics()
+- `/api/system/info`: returns `physicalCores` (actual cores, e.g. 8) and `threads` (logical processors, e.g. 16)
+- `/api/system/usage`: LHM WMI queried in parallel for GPU usage; falls back to si.graphics().utilizationGpu
+- `/api/system/temps`: single PowerShell call returns both CPU and GPU temps as JSON from LHM WMI
+- FaceIT Anti-Cheat: LHM stops when the app is closed — close the tool before launching FaceIT games
+
 ## Windows Execution Logic (routes.ts)
 
 - **Utilities**: Long-running commands (SFC, DISM, CheckDisk, Network Reset, Restart Explorer) open a new `cmd.exe` terminal window. GUI tools (Disk Cleanup, System Restore) spawn directly. Background commands (Flush DNS, registry tweaks) execute via `exec` and return output.

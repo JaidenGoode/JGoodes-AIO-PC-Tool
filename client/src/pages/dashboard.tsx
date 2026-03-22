@@ -311,8 +311,8 @@ export default function Dashboard() {
             title="Processor"
             primaryValue={sys?.cpu?.model || "Unknown CPU"}
             secondaryValue={
-              sys?.cpu?.cores
-                ? `${sys.cpu.cores} Cores${sys.cpu.speed ? ` · ${sys.cpu.speed} GHz` : ""}`
+              (sys as any)?.cpu?.physicalCores || (sys as any)?.cpu?.threads
+                ? `${(sys as any).cpu.physicalCores || (sys as any).cpu.threads} Cores · ${(sys as any).cpu.threads || (sys as any).cpu.physicalCores} Threads${(sys as any).cpu.speed ? ` · ${(sys as any).cpu.speed} GHz` : ""}`
                 : "—"
             }
             delay={0.04}
@@ -381,7 +381,7 @@ export default function Dashboard() {
             <LiveBar
               label="CPU"
               value={usage?.cpu?.usage ?? null}
-              sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} cores` : undefined}
+              sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} threads` : undefined}
             />
             <LiveBar
               label="RAM"
@@ -457,7 +457,7 @@ export default function Dashboard() {
               <p className="text-[10px] text-green-400/60 text-center">Hardware sensors active</p>
             ) : (
               <p className="text-[10px] text-muted-foreground/30 text-center leading-relaxed">
-                Temps require local install &amp; admin rights on Windows
+                Sensor data via LibreHardwareMonitor · Run on Windows as Admin
               </p>
             )}
           </div>
