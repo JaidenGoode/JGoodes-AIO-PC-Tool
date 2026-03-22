@@ -74,7 +74,7 @@ try{$mc=(Get-MMAgent -EA Stop).MemoryCompression;$d['Disable Memory Compression'
 $d['Release Unused DLLs from Memory']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer' 'AlwaysUnloadDLL' 1
 try{$svch=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' -EA Stop).SvcHostSplitThresholdInKB;$d['Svchost Process Isolation']=if($svch -gt 1000000){1}else{0}}catch{$d['Svchost Process Isolation']=0}
 $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsDisable8dot3NameCreation' 1
-try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Optimize Boot Configuration']=if($bcd -match 'useplatformclock\s+No'){1}else{0}}catch{$d['Optimize Boot Configuration']=0}
+try{$bcd=(bcdedit /enum '{current}' 2>$null) -join ' ';$d['Optimize Boot Configuration']=if($bcd -match 'quietboot\s+Yes'){1}else{0}}catch{$d['Optimize Boot Configuration']=0}
 
 # System (Desktop / Misc)
 $d['Disable Taskbar & Menu Animations']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAnimations' 0

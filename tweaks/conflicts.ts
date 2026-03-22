@@ -14,6 +14,10 @@ export const TWEAK_CONFLICTS: Record<string, string> = {
   "Optimize Boot Configuration":   "Disable Hibernation",
   "Disable Hibernation":           "Optimize Boot Configuration",
 
+  // Optimize Boot Configuration now also sets Compression=0.
+  // Disable Memory Compression writes the same key — redundant if both are active.
+  "Disable Memory Compression":    "Optimize Boot Configuration",
+
   // One-Click Network Optimization includes Nagle disable across all interfaces.
   // Enabling both Nagle and Network Optimization writes to the same registry keys
   // — the last one applied wins, causing redundancy.

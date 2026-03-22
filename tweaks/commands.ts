@@ -343,16 +343,24 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB 
   "Optimize Boot Configuration": {
     requiresAdmin: true,
     requiresRestart: true,
-    // Enable fast startup, reduce boot menu timeout to 3s, disable platform clock for faster TSC timer
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 1 /f
-bcdedit /timeout 3 2>$null
-bcdedit /set useplatformclock No 2>$null
-bcdedit /set useplatformtick Yes 2>$null`,
-    // Revert: disable fast startup (safer default), restore 30s boot menu timeout, remove platform clock overrides
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" /v HiberbootEnabled /t REG_DWORD /d 0 /f
-bcdedit /timeout 30 2>$null
-bcdedit /deletevalue useplatformclock 2>$null
-bcdedit /deletevalue useplatformtick 2>$null`,
+    enable: `# Disable GUI Boot (No GUI at startup)
+bcdedit /set '{current}' quietboot yes 2>$null
+bcdedit /set '{current}' bootuxdisabled on 2>$null
+
+# Enable Fast Startup
+Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 1
+
+# Disable Memory Compression
+Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" -Name "Compression" -Value 0`,
+    disable: `# Re-enable GUI Boot
+bcdedit /set '{current}' quietboot no 2>$null
+bcdedit /set '{current}' bootuxdisabled off 2>$null
+
+# Disable Fast Startup
+Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 0
+
+# Re-enable Memory Compression
+Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" -Name "Compression" -Value 1`,
   },
 
   "Disable Taskbar & Menu Animations": {
