@@ -536,36 +536,25 @@ export default function Utilities() {
     setMsiStatus("downloading");
     const script = [
       `$ErrorActionPreference = 'SilentlyContinue'`,
-      `$cacheDir = Join-Path $env:LOCALAPPDATA 'JGoode-AIO\\MsiUtility'`,
       `$exePath = $null`,
       ``,
-      `# Check registry App Paths`,
-      `foreach ($rp in @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\MsiUtility.exe','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\MsiUtility.exe')) {`,
-      `  if (Test-Path $rp) {`,
-      `    $val = (Get-ItemProperty $rp -EA SilentlyContinue).'(default)'`,
-      `    if ($val -and (Test-Path $val)) { $exePath = $val; break }`,
-      `  }`,
+      `# 1. Check bundled copy inside the installed app (fastest — no download ever)`,
+      `if ($env:ELECTRON_RESOURCES_PATH) {`,
+      `  $bundled = Join-Path $env:ELECTRON_RESOURCES_PATH 'executables\\MsiUtilityV3.exe'`,
+      `  if ((Test-Path $bundled) -and (Get-Item $bundled -EA SilentlyContinue).Length -ge 10240) { $exePath = $bundled }`,
       `}`,
       ``,
-      `# Check common install paths`,
+      `# 2. Check cached copy from a previous download`,
       `if (-not $exePath) {`,
-      `  $candidates = @(`,
-      `    "$env:ProgramFiles\\MsiUtility\\MsiUtility.exe",`,
-      `    "\${env:ProgramFiles(x86)}\\MsiUtility\\MsiUtility.exe",`,
-      `    "$env:LOCALAPPDATA\\Programs\\MsiUtility\\MsiUtility.exe"`,
-      `  )`,
-      `  foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
-      `}`,
-      ``,
-      `# Check cached portable copy`,
-      `if (-not $exePath) {`,
-      `  $cached = Get-ChildItem $cacheDir -Filter 'MsiUtility*.exe' -Recurse -EA SilentlyContinue | Where-Object { $_.Length -ge 102400 } | Select-Object -First 1`,
+      `  $cacheDir = Join-Path $env:LOCALAPPDATA 'JGoode-AIO\\MsiUtility'`,
+      `  $cached = Get-ChildItem $cacheDir -Filter 'MsiUtility*.exe' -Recurse -EA SilentlyContinue | Where-Object { $_.Length -ge 10240 } | Select-Object -First 1`,
       `  if ($cached) { $exePath = $cached.FullName }`,
       `}`,
       ``,
-      `# Download latest from GitHub releases`,
+      `# 3. Download latest from GitHub as last resort`,
       `if (-not $exePath) {`,
       `  $ErrorActionPreference = 'Stop'`,
+      `  $cacheDir = Join-Path $env:LOCALAPPDATA 'JGoode-AIO\\MsiUtility'`,
       `  try {`,
       `    $wc = New-Object System.Net.WebClient`,
       `    $wc.Headers.Add("User-Agent", "Mozilla/5.0")`,
@@ -577,7 +566,7 @@ export default function Utilities() {
       `    $wc2 = New-Object System.Net.WebClient`,
       `    $wc2.Headers.Add("User-Agent", "Mozilla/5.0")`,
       `    $wc2.DownloadFile($asset.browser_download_url, $dest)`,
-      `    if ((Get-Item $dest -EA SilentlyContinue).Length -lt 102400) { Write-Error "Download invalid or too small"; exit 1 }`,
+      `    if ((Get-Item $dest -EA SilentlyContinue).Length -lt 10240) { Write-Error "Download invalid or too small"; exit 1 }`,
       `    $exePath = $dest`,
       `  } catch { Write-Error "Download failed: $_"; exit 1 }`,
       `}`,
@@ -1152,9 +1141,9 @@ export default function Utilities() {
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Open-source tool by Sathango. Assigns CPU core affinity to device interrupts (GPU, NIC, audio) — reduces latency spikes and stabilizes frame times in competitive games.
               </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
-                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads the latest release from GitHub and caches it. Subsequent launches are instant.</p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 flex-1">
+                <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Bundled directly with the app — opens instantly with no download required.</p>
               </div>
               <div className="mt-auto space-y-1">
                 <Button
@@ -1172,13 +1161,13 @@ export default function Utilities() {
                   data-testid="button-launch-msiutility"
                 >
                   {msiStatus === "downloading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
                   ) : msiStatus === "done" ? (
                     <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
                   ) : msiStatus === "error" ? (
                     <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
                   ) : (
-                    <><Download className="h-3.5 w-3.5" /> Launch MSI Utility v3</>
+                    <><Zap className="h-3.5 w-3.5" /> Launch MSI Utility v3</>
                   )}
                 </Button>
                 {!window.electronAPI && (

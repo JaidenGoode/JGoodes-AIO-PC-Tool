@@ -21,7 +21,8 @@
     "package.json"
   ],
   "extraResources": [
-    { "from": "server/profiles", "to": "profiles", "filter": ["**/*"] }
+    { "from": "server/profiles", "to": "profiles", "filter": ["**/*"] },
+    { "from": "server/executables", "to": "executables", "filter": ["**/*"] }
   ],
   "win": {
     "target": [{ "target": "nsis", "arch": ["x64"] }],
