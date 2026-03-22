@@ -10,7 +10,7 @@ import { TWEAK_PRESETS } from "@tweaks/presets";
 import {
   LayoutDashboard, Wrench, Trash2, Globe, ShieldCheck, Zap,
   Settings, Download, ScanSearch, Gamepad2, Shield, ChevronRight,
-  Terminal, RotateCcw, Sparkles, Github, X,
+  Terminal, RotateCcw, Sparkles, X,
 } from "lucide-react";
 
 type Command = {
@@ -111,8 +111,6 @@ export function CommandPalette() {
     { id: "nav-restore",    label: "Go to Restore Points", category: "Navigate", icon: ShieldCheck,     action: () => nav("/restore"),     keywords: ["backup"] },
     { id: "nav-utilities",  label: "Go to Utilities",      category: "Navigate", icon: Zap,             action: () => nav("/utilities"),   keywords: ["tools"] },
     { id: "nav-settings",   label: "Go to Settings",       category: "Navigate", icon: Settings,        action: () => nav("/settings") },
-    { id: "nav-github",     label: "Go to GitHub",         category: "Navigate", icon: Github,          action: () => nav("/github") },
-
     {
       id: "preset-gaming", label: "Apply Gaming Preset",
       description: "Enable 20 gaming & performance tweaks",

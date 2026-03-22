@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { SiDiscord, SiGithub } from "react-icons/si";
+import { SiDiscord } from "react-icons/si";
 import {
   LayoutDashboard, Wrench, Box, Sparkles, RotateCcw,
   Globe, Settings, ChevronRight, MonitorCheck,
@@ -35,7 +35,6 @@ const NAV_GROUPS = [
     items: [
       { title: "Restore",   url: "/restore",   icon: RotateCcw },
       { title: "Settings",  url: "/settings",  icon: Settings },
-      { title: "GitHub",    url: "/github",    icon: SiGithub as unknown as React.ElementType },
     ],
   },
 ];

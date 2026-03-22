@@ -98,7 +98,6 @@ export default function Tweaks() {
   const [filter, setFilter] = useState<string>("all");
   const [, setLocation] = useLocation();
   const [showRestorePrompt, setShowRestorePrompt] = useState(() => !localStorage.getItem("restore_prompt_shown"));
-  const [viewingCmd, setViewingCmd] = useState<{ title: string; cmd: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [applyingAll, setApplyingAll] = useState(false);
   const [showRunDialog, setShowRunDialog] = useState(false);
@@ -281,26 +280,6 @@ export default function Tweaks() {
     setApplyingAll(false);
     setSelectedIds(new Set());
     triggerDetect(500);
-  };
-
-  const exportScript = () => {
-    if (!tweaks) return;
-    const toExport = selectedIds.size > 0
-      ? tweaks.filter(t => selectedIds.has(t.id)).map(t => ({ ...t, isActive: true }))
-      : tweaks.filter(t => t.isActive).map(t => ({ ...t, isActive: true }));
-    const script = generatePowerShellScript(toExport);
-    if (!script) {
-      toast({ title: "No tweaks to export", description: "Select tweaks first, then export.", variant: "destructive" });
-      return;
-    }
-    const blob = new Blob([script], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "JGoode-AIO-Tweaks.ps1";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Script exported", description: `${toExport.length} tweaks exported as .ps1 file.` });
   };
 
   const exportUndoScript = () => {
@@ -605,33 +584,6 @@ export default function Tweaks() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Command viewer dialog */}
-      <Dialog open={!!viewingCmd} onOpenChange={() => setViewingCmd(null)}>
-        <DialogContent className="bg-card border-border max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-sm font-bold">
-              <Terminal className="h-4 w-4 text-primary" />
-              {viewingCmd?.title}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {viewingCmd?.title && getTweakCommand(viewingCmd.title) && tweaks?.find(t => t.title === viewingCmd.title)?.isActive
-                ? "Run this in PowerShell as Administrator to revert this tweak to Windows defaults."
-                : "Run this in PowerShell as Administrator to apply this tweak."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="relative">
-            <pre className="text-[11px] leading-relaxed bg-black/40 border border-border/40 rounded-lg p-4 overflow-x-auto text-green-400 font-mono whitespace-pre-wrap">
-              {viewingCmd?.cmd}
-            </pre>
-            {viewingCmd && (
-              <div className="absolute top-2 right-2">
-                <CopyButton text={viewingCmd.cmd} />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Run in App terminal dialog */}
       <Dialog open={showRunDialog} onOpenChange={closeRunDialog}>
         <DialogContent className="bg-card border-border max-w-2xl" onPointerDownOutside={(e) => isRunning && e.preventDefault()}>
@@ -761,22 +713,6 @@ export default function Tweaks() {
                 </span>
               </Button>
             )}
-            <Button
-              size="sm"
-              onClick={exportScript}
-              disabled={optimizedCount === 0 && selectedCount === 0}
-              className={cn(
-                "h-8 gap-1.5 text-xs font-semibold shrink-0",
-                (optimizedCount > 0 || selectedCount > 0)
-                  ? "bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30"
-                  : "bg-secondary text-muted-foreground cursor-not-allowed border border-border/40"
-              )}
-              data-testid="button-export-script"
-              title="Export tweaks as a .ps1 script"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export .ps1
-            </Button>
             <Button
               size="sm"
               onClick={handleExportProfile}
@@ -1122,19 +1058,6 @@ export default function Tweaks() {
                         )}
                       </div>
                       <div className="flex items-center gap-1.5">
-                        {cmd && !isOptimized && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setViewingCmd({ title: tweak.title, cmd: cmd.enable });
-                            }}
-                            className="flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded border border-border/40 bg-secondary/50 hover:border-primary/30 hover:bg-primary/8 text-muted-foreground hover:text-primary transition-all duration-150"
-                            data-testid={`button-view-cmd-${tweak.id}`}
-                          >
-                            <Terminal className="h-2.5 w-2.5" />
-                            View CMD
-                          </button>
-                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); handleRevertOne(tweak); }}
                           disabled={isRunning}

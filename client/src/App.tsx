@@ -16,7 +16,6 @@ import Cleaner from "@/pages/cleaner";
 import RestorePoints from "@/pages/restore-points";
 import Utilities from "@/pages/utilities";
 import Settings from "@/pages/settings";
-import GitHub from "@/pages/github";
 import Startup from "@/pages/startup";
 
 function Router() {
@@ -31,7 +30,6 @@ function Router() {
         <Route path="/startup" component={Startup} />
         <Route path="/restore" component={RestorePoints} />
         <Route path="/settings" component={Settings} />
-        <Route path="/github" component={GitHub} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
