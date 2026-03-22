@@ -87,6 +87,7 @@ export default function Utilities() {
   const [npiStatus, setNpiStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
   const [tcpStatus, setTcpStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
   const [pseStatus, setPseStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
+  const [runtimeStatus, setRuntimeStatus] = useState<"idle" | "installing" | "done" | "error">("idle");
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -800,6 +801,93 @@ export default function Utilities() {
     setTimeout(() => setPseStatus("idle"), 4000);
   };
 
+  const installGamingRuntimes = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "Gaming Runtime Installer can only run from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setRuntimeStatus("installing");
+    const script = [
+      `$inner = @'`,
+      `[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12`,
+      `$Host.UI.RawUI.WindowTitle = "JGoode AIO - Gaming Runtime Installer"`,
+      `Write-Host ""`,
+      `Write-Host "=== JGoode AIO — Gaming Runtime Installer ===" -ForegroundColor Cyan`,
+      `Write-Host "This will install all Visual C++ Redistributables and .NET Desktop Runtimes." -ForegroundColor Gray`,
+      `Write-Host "This may take several minutes. Please wait..." -ForegroundColor Gray`,
+      `Write-Host ""`,
+      ``,
+      `# Step 1 — NuGet provider`,
+      `Write-Host "[1/4] Installing NuGet package provider..." -ForegroundColor Yellow`,
+      `Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers | Out-Null`,
+      `Write-Host "      Done." -ForegroundColor Green`,
+      ``,
+      `# Step 2 — VcRedist module`,
+      `Write-Host "[2/4] Installing VcRedist module..." -ForegroundColor Yellow`,
+      `if (-not (Get-Module -ListAvailable -Name VcRedist)) {`,
+      `  Install-Module -Name VcRedist -Force -SkipPublisherCheck -AllowClobber -Scope AllUsers | Out-Null`,
+      `}`,
+      `Import-Module VcRedist -ErrorAction SilentlyContinue`,
+      `Write-Host "      Done." -ForegroundColor Green`,
+      ``,
+      `# Step 3 — Visual C++ Redistributables (2008 through 2022 x86 + x64)`,
+      `Write-Host "[3/4] Downloading Visual C++ Redistributables (may take a few minutes)..." -ForegroundColor Yellow`,
+      `$vcPath = Join-Path $env:TEMP "JGoode-VcRedist"`,
+      `if (-not (Test-Path $vcPath)) { New-Item -ItemType Directory -Path $vcPath -Force | Out-Null }`,
+      `try {`,
+      `  Get-VcList | Save-VcRedist -Path $vcPath | Install-VcRedist -Silent | Out-Null`,
+      `  Write-Host "      Visual C++ Redistributables installed successfully." -ForegroundColor Green`,
+      `} catch {`,
+      `  Write-Host "      Note: Some VC++ runtimes may already be up to date. ($_)" -ForegroundColor Yellow`,
+      `}`,
+      `try { Remove-Item $vcPath -Recurse -Force -EA SilentlyContinue } catch {}`,
+      ``,
+      `# Step 4 — .NET Desktop Runtimes (8 LTS + 9)`,
+      `Write-Host "[4/4] Installing .NET Desktop Runtimes..." -ForegroundColor Yellow`,
+      `$wc = New-Object System.Net.WebClient`,
+      `$wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")`,
+      ``,
+      `Write-Host "      Downloading .NET 8 Desktop Runtime (LTS)..." -ForegroundColor Gray`,
+      `$net8 = Join-Path $env:TEMP "dotnet8-desktop-runtime-x64.exe"`,
+      `$wc.DownloadFile("https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe", $net8)`,
+      `Start-Process -FilePath $net8 -ArgumentList "/install", "/quiet", "/norestart" -Wait`,
+      `Remove-Item $net8 -Force -EA SilentlyContinue`,
+      `Write-Host "      .NET 8 Desktop Runtime installed." -ForegroundColor Green`,
+      ``,
+      `Write-Host "      Downloading .NET 9 Desktop Runtime..." -ForegroundColor Gray`,
+      `$net9 = Join-Path $env:TEMP "dotnet9-desktop-runtime-x64.exe"`,
+      `$wc.DownloadFile("https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe", $net9)`,
+      `Start-Process -FilePath $net9 -ArgumentList "/install", "/quiet", "/norestart" -Wait`,
+      `Remove-Item $net9 -Force -EA SilentlyContinue`,
+      `Write-Host "      .NET 9 Desktop Runtime installed." -ForegroundColor Green`,
+      ``,
+      `Write-Host ""`,
+      `Write-Host "All gaming runtimes installed successfully!" -ForegroundColor Cyan`,
+      `Write-Host "A system restart may be required for changes to take full effect." -ForegroundColor Gray`,
+      `Write-Host ""`,
+      `Write-Host "Press any key to close this window..."`,
+      `$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")`,
+      `'@`,
+      `$tmp = Join-Path $env:TEMP "jgoode-runtime-install.ps1"`,
+      `[System.IO.File]::WriteAllText($tmp, $inner, [System.Text.Encoding]::UTF8)`,
+      `Start-Process powershell.exe -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $tmp -Verb RunAs`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.success) {
+        setRuntimeStatus("done");
+        toast({ title: "Runtime installer launched", description: "Installation is running in the admin window. Approve the UAC prompt if asked. Press any key to close when done." });
+      } else {
+        setRuntimeStatus("error");
+        toast({ title: "Launch failed", description: "Could not start the runtime installer. Check your internet connection.", variant: "destructive" });
+      }
+    } catch {
+      setRuntimeStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setRuntimeStatus("idle"), 6000);
+  };
+
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
     localStorage.setItem(key, String(value));
@@ -1462,7 +1550,7 @@ export default function Utilities() {
         </div>
 
         {/* ── ROW 5: Info & Advanced ──────────────────────────────────── */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
 
         {/* System Info */}
         <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.26}>
@@ -1517,6 +1605,48 @@ export default function Utilities() {
             </div>
             <div className="mt-1.5">
               <RunButton action="resmon" label="Resource Monitor" pending={isPending("resmon")} onRun={run} />
+            </div>
+          </div>
+        </UtilCard>
+
+        {/* Gaming Runtime Installer */}
+        <UtilCard icon={Download} title="Gaming Runtime Installer" description="Install .NET and Visual C++ runtimes for gaming" delay={0.31}>
+          <div className="flex flex-col flex-1 space-y-2.5">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Installs all supported Visual C++ Redistributables (2008–2022, x86 &amp; x64) and the latest .NET 8 LTS and .NET 9 Desktop Runtimes — fixing missing runtime errors in games and apps.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
+              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet access and an admin (UAC) prompt. A progress window will open — the download and install may take several minutes. A restart may be required when done.</p>
+            </div>
+            <div className="mt-auto space-y-1">
+              <Button
+                size="sm"
+                onClick={installGamingRuntimes}
+                disabled={runtimeStatus === "installing"}
+                className={cn(
+                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                  runtimeStatus === "done"
+                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                    : runtimeStatus === "error"
+                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                )}
+                data-testid="button-install-gaming-runtimes"
+              >
+                {runtimeStatus === "installing" ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching Installer...</>
+                ) : runtimeStatus === "done" ? (
+                  <><CheckCircle2 className="h-3.5 w-3.5" /> Installer Launched</>
+                ) : runtimeStatus === "error" ? (
+                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                ) : (
+                  <><Download className="h-3.5 w-3.5" /> Install Gaming Runtimes</>
+                )}
+              </Button>
+              {!window.electronAPI && (
+                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+              )}
             </div>
           </div>
         </UtilCard>
