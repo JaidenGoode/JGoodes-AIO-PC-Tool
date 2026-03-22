@@ -730,18 +730,32 @@ $out | ConvertTo-Json -Compress -Depth 1`;
   app.get("/api/system/temps/debug", async (_req, res) => {
     if (process.platform !== "win32") return res.json({ error: "Windows only" });
     const script = `
+$d = [ordered]@{}
+$lhmDir = "$env:LOCALAPPDATA\\JGoode-AIO\\LibreHardwareMonitor"
+$lhmExe = "$lhmDir\\LibreHardwareMonitor.exe"
+$d['lhm_exe_exists']   = (Test-Path $lhmExe)
+$d['lhm_version_file'] = if (Test-Path "$lhmDir\\version.txt") { Get-Content "$lhmDir\\version.txt" -Raw } else { "MISSING" }
+$d['lhm_process_running'] = (@(Get-Process "LibreHardwareMonitor" -EA SilentlyContinue)).Count -gt 0
 try {
-  $hw = @(Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Hardware -EA Stop)
-  $sensors = @(Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop |
-    Where-Object { $_.SensorType -eq "Temperature" })
-  [ordered]@{
-    hardware = $hw | ForEach-Object { [ordered]@{ Name=$_.Name; HardwareType=$_.HardwareType; Identifier=$_.Identifier; Parent=$_.Parent } }
-    sensors  = $sensors | ForEach-Object { [ordered]@{ Name=$_.Name; Identifier=$_.Identifier; Parent=$_.Parent; Value=$_.Value; Max=$_.Max } }
-  } | ConvertTo-Json -Depth 4 -Compress
-} catch { '{"error":"' + $_.Exception.Message + '"}' }`;
-    const raw = await runPowerShell(script, 8000).catch(() => "{}");
+  $all = @(Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop)
+  $temps = @($all | Where-Object { $_.SensorType -eq "Temperature" })
+  $d['lhm_wmi_total']  = $all.Count
+  $d['lhm_wmi_temps']  = $temps.Count
+  $d['lhm_sensors']    = @($temps | ForEach-Object { $_.Name + "=" + [math]::Round($_.Value,1) })
+} catch { $d['lhm_wmi_error'] = $_.Exception.Message }
+try {
+  $ctr = (Get-Counter '\Thermal Zone Information(*)\High Precision Temperature' -EA Stop).CounterSamples
+  $vals = @($ctr | Where-Object { $_.CookedValue -gt 0 } | ForEach-Object { [math]::Round($_.CookedValue/10.0-273.15,1) })
+  $d['thermal_zones'] = $vals
+} catch { $d['thermal_zone_error'] = $_.Exception.Message }
+try {
+  $az = @(Get-WmiObject MSAcpi_ThermalZoneTemperature -Namespace "root/wmi" -EA Stop)
+  $d['msacpi_temps'] = @($az | ForEach-Object { [math]::Round($_.CurrentTemperature/10.0-273.15,1) })
+} catch { $d['msacpi_error'] = $_.Exception.Message }
+$d | ConvertTo-Json -Depth 3 -Compress`;
+    const raw = await runPowerShell(script, 12000).catch(() => "{}");
     const m = raw.trim().match(/\{[\s\S]*\}/);
-    try { res.json(m ? JSON.parse(m[0]) : { error: "no output" }); }
+    try { res.json(m ? JSON.parse(m[0]) : { error: "no output", raw }); }
     catch { res.json({ error: "parse failed", raw }); }
   });
 

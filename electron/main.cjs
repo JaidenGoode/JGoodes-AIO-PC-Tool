@@ -46,22 +46,53 @@ function downloadFile(url, dest, maxRedirects) {
 }
 
 async function downloadLHM() {
+  const zipPath = path.join(os.tmpdir(), "JGoode-LHM.zip");
   try {
-    // Wipe old installation so we get a clean v0.9.6 copy
-    try { fs.rmSync(LHM_DIR, { recursive: true, force: true }); } catch {}
-    fs.mkdirSync(LHM_DIR, { recursive: true });
-    const zipPath = path.join(os.tmpdir(), "JGoode-LHM.zip");
     console.log("[LHM] Downloading LibreHardwareMonitor v" + LHM_VERSION + "...");
     await downloadFile(LHM_URL, zipPath);
+  } catch (err) {
+    console.log("[LHM] Download failed:", err.message);
+    try { fs.unlinkSync(zipPath); } catch {}
+    return false;
+  }
+  try {
+    // Only wipe AFTER successful download so old exe is not lost on network failure
+    const tmpExtract = path.join(os.tmpdir(), "JGoode-LHM-extract");
+    try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch {}
+    fs.mkdirSync(tmpExtract, { recursive: true });
     await new Promise((resolve) => {
       const ps = spawn("powershell.exe", [
         "-NoProfile", "-Command",
-        `Expand-Archive -Path '${zipPath}' -DestinationPath '${LHM_DIR}' -Force`
+        `Expand-Archive -Path '${zipPath.replace(/'/g, "''")}' -DestinationPath '${tmpExtract.replace(/'/g, "''")}' -Force`
       ], { windowsHide: true });
       ps.on("close", resolve);
       ps.on("error", resolve);
     });
     try { fs.unlinkSync(zipPath); } catch {}
+    // Find the exe — could be at root of zip or inside a subfolder
+    let foundExe = path.join(tmpExtract, "LibreHardwareMonitor.exe");
+    if (!fs.existsSync(foundExe)) {
+      const entries = fs.readdirSync(tmpExtract);
+      for (const e of entries) {
+        const candidate = path.join(tmpExtract, e, "LibreHardwareMonitor.exe");
+        if (fs.existsSync(candidate)) { foundExe = candidate; break; }
+      }
+    }
+    if (!fs.existsSync(foundExe)) {
+      console.log("[LHM] Exe not found in downloaded zip");
+      try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch {}
+      return false;
+    }
+    // Now safe to replace old installation
+    try { fs.rmSync(LHM_DIR, { recursive: true, force: true }); } catch {}
+    fs.mkdirSync(LHM_DIR, { recursive: true });
+    // Copy all extracted files to LHM_DIR
+    const srcDir = path.dirname(foundExe);
+    const srcFiles = fs.readdirSync(srcDir);
+    for (const f of srcFiles) {
+      try { fs.cpSync(path.join(srcDir, f), path.join(LHM_DIR, f), { recursive: true }); } catch {}
+    }
+    try { fs.rmSync(tmpExtract, { recursive: true, force: true }); } catch {}
     if (fs.existsSync(LHM_EXE)) {
       fs.writeFileSync(LHM_VERSION_FILE, LHM_VERSION, "utf8");
       console.log("[LHM] Download complete — v" + LHM_VERSION);
@@ -69,7 +100,7 @@ async function downloadLHM() {
     }
     return false;
   } catch (err) {
-    console.log("[LHM] Download failed:", err.message);
+    console.log("[LHM] Extract failed:", err.message);
     return false;
   }
 }
@@ -90,7 +121,14 @@ async function startLHM() {
     const isFirstInstall = needsDownload;
     if (needsDownload) {
       const ok = await downloadLHM();
-      if (!ok) { console.log("[LHM] Skipping — exe not found after download"); return; }
+      if (!ok) {
+        // Download failed — fall back to any existing exe rather than giving up
+        if (!fs.existsSync(LHM_EXE)) {
+          console.log("[LHM] Skipping — download failed and no existing exe");
+          return;
+        }
+        console.log("[LHM] Download failed — using existing exe");
+      }
     }
 
     // Pre-write LHM config to start minimized (only on first launch — don't overwrite user prefs)
