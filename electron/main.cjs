@@ -131,33 +131,42 @@ async function startLHM() {
       }
     }
 
-    // Pre-write LHM config to start minimized (only on first launch — don't overwrite user prefs)
+    // Always force-write config so LHM starts minimized to tray with no window
     const configPath = path.join(LHM_DIR, "LibreHardwareMonitor.config");
-    if (!fs.existsSync(configPath)) {
-      try {
-        fs.writeFileSync(configPath,
-          '<?xml version="1.0" encoding="utf-8"?>\n<settings>\n  <value name="startMinimized">true</value>\n  <value name="minimizeToTray">true</value>\n</settings>\n',
-          "utf8"
-        );
-      } catch {}
+    try {
+      fs.writeFileSync(configPath,
+        '<?xml version="1.0" encoding="utf-8"?>\n<settings>\n  <value name="startMinimized">true</value>\n  <value name="minimizeToTray">true</value>\n  <value name="startWithWindows">false</value>\n</settings>\n',
+        "utf8"
+      );
+    } catch {}
+
+    // Skip spawning if LHM is already running (avoids duplicate windows on app restart)
+    const alreadyRunning = await new Promise((resolve) => {
+      const chk = spawn("tasklist", ["/FI", "IMAGENAME eq LibreHardwareMonitor.exe", "/NH"], { windowsHide: true });
+      let out = "";
+      chk.stdout && chk.stdout.on("data", (d) => { out += d; });
+      chk.on("close", () => resolve(out.toLowerCase().includes("librehardwaremonitor")));
+      chk.on("error", () => resolve(false));
+    });
+    if (alreadyRunning) {
+      console.log("[LHM] Already running — skipping spawn");
+      return;
     }
 
     // Spawn LHM directly — detached so it outlives our process, unref'd so it doesn't block exit
-    // windowsHide suppresses the console (not the GUI); Win32 hide script handles the GUI window
     lhmProcess = spawn(LHM_EXE, [], {
       detached: true,
-      windowsHide: false,   // must be false for GUI exe or it fails to start on some systems
+      windowsHide: false,
       stdio: "ignore",
     });
     lhmProcess.unref();
     lhmPid = lhmProcess.pid;
-    console.log("[LHM] Started (PID " + lhmPid + ") — CPU/GPU sensors active (v" + LHM_VERSION + ")");
+    console.log("[LHM] Started (PID " + lhmPid + ") — v" + LHM_VERSION);
     lhmProcess.on("error", (e) => { console.log("[LHM] Spawn error:", e.message); lhmProcess = null; lhmPid = null; });
     lhmProcess.on("exit", (code) => { console.log("[LHM] Exited (code " + code + ")"); lhmProcess = null; });
 
-    // After LHM initialises (~3 s), hide its window via Win32 API
-    setTimeout(() => {
-      const hideScript = `
+    // Hide LHM window at 2 s, 5 s, 8 s, 12 s — catches window after WinRing0 driver install too
+    const hideScript = `
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -167,21 +176,24 @@ public class Win32Hide {
 '@
 $procs = Get-Process "LibreHardwareMonitor" -EA SilentlyContinue
 foreach ($p in $procs) { if ($p.MainWindowHandle -ne [IntPtr]::Zero) { [Win32Hide]::ShowWindow($p.MainWindowHandle, 0) } }`;
-      spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", hideScript], { windowsHide: true });
-    }, 3000);
+    const runHide = () => spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", hideScript], { windowsHide: true });
+    setTimeout(runHide, 2000);
+    setTimeout(runHide, 5000);
+    setTimeout(runHide, 8000);
+    setTimeout(runHide, 12000);
 
-    // On first install: show a one-time notice after the window is ready
+    // On first install: show a one-time notice
     if (isFirstInstall) {
       setTimeout(() => {
         dialog.showMessageBox(mainWindow || undefined, {
           type: "info",
           title: "Hardware Monitor Installed",
           message: "LibreHardwareMonitor has been installed.",
-          detail: "Temperature sensors are now loading. If WinRing0 prompted you to install a driver, please restart the app once for CPU temps to appear.\n\nGPU temperature will appear immediately.",
+          detail: "Temperature sensors are now loading.\n\nIf WinRing0 prompted you to install a driver, please restart the app once for CPU temperature to appear.",
           buttons: ["OK"],
           defaultId: 0,
         }).catch(() => {});
-      }, 6000);
+      }, 7000);
     }
 
   } catch (err) {
