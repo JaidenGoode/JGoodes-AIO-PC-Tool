@@ -16,7 +16,7 @@ let windowCreated = false;
 let lhmProcess = null;
 let lhmPid     = null;
 
-const LHM_VERSION      = "latest-2026-03";
+const LHM_VERSION      = "latest-2026-03b";
 const LHM_DIR          = path.join(os.homedir(), "AppData", "Local", "JGoode-AIO", "LibreHardwareMonitor");
 const LHM_EXE          = path.join(LHM_DIR, "LibreHardwareMonitor.exe");
 const LHM_VERSION_FILE = path.join(LHM_DIR, "version.txt");
