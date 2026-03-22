@@ -183,19 +183,27 @@ async function startLHM() {
     // Brief pause so Windows fully cleans up the process before we relaunch
     await new Promise((r) => setTimeout(r, 1500));
 
-    // Spawn LHM directly — detached so it outlives our process, unref'd so it doesn't block exit
-    lhmProcess = spawn(LHM_EXE, [], {
+    // Launch LHM via PowerShell Start-Process -WindowStyle Hidden so it never renders a visible
+    // window. Using PowerShell as the launcher means Windows sets dwFlags=STARTF_USESHOWWINDOW
+    // with SW_HIDE in STARTUPINFO *before* the process creates its window — no flash at all.
+    const lhmExeEscaped = LHM_EXE.replace(/'/g, "''");
+    const launchScript = `Start-Process -FilePath '${lhmExeEscaped}' -WindowStyle Hidden`;
+    lhmProcess = spawn("powershell.exe", [
+      "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden",
+      "-Command", launchScript,
+    ], {
       detached: true,
-      windowsHide: false,
+      windowsHide: true,
       stdio: "ignore",
     });
     lhmProcess.unref();
     lhmPid = lhmProcess.pid;
-    console.log("[LHM] Started (PID " + lhmPid + ") — v" + LHM_VERSION);
+    console.log("[LHM] Started (hidden) — v" + LHM_VERSION);
     lhmProcess.on("error", (e) => { console.log("[LHM] Spawn error:", e.message); lhmProcess = null; lhmPid = null; });
-    lhmProcess.on("exit", (code) => { console.log("[LHM] Exited (code " + code + ")"); lhmProcess = null; });
+    lhmProcess.on("exit", (code) => { console.log("[LHM] PS launcher exited (code " + code + ")"); lhmProcess = null; });
 
-    // Hide LHM window at 2 s, 5 s, 8 s, 12 s — catches window after WinRing0 driver install too
+    // Belt-and-suspenders: hide via Win32 ShowWindow in case any window slips through
+    // (e.g. WinRing0 driver prompt on very first run). Run early and often.
     const hideScript = `
 Add-Type -TypeDefinition @'
 using System;
@@ -207,10 +215,10 @@ public class Win32Hide {
 $procs = Get-Process "LibreHardwareMonitor" -EA SilentlyContinue
 foreach ($p in $procs) { if ($p.MainWindowHandle -ne [IntPtr]::Zero) { [Win32Hide]::ShowWindow($p.MainWindowHandle, 0) } }`;
     const runHide = () => spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", hideScript], { windowsHide: true });
+    setTimeout(runHide, 800);
     setTimeout(runHide, 2000);
     setTimeout(runHide, 5000);
-    setTimeout(runHide, 8000);
-    setTimeout(runHide, 12000);
+    setTimeout(runHide, 10000);
 
     // On first install: show a one-time notice
     if (isFirstInstall) {
