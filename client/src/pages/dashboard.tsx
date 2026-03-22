@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { useState, useMemo, type ReactNode, type ElementType } from "react";
+import { useState, useMemo } from "react";
 import {
   Cpu, MemoryStick, Monitor, HardDrive, Wrench,
   ArrowRight, Thermometer, Zap, ShieldCheck, Activity, Sparkles, Info,
@@ -44,17 +44,14 @@ function LiveBar({
   value,
   unit = "%",
   sublabel,
-  tooltip,
 }: {
   label: string;
   value: number | null;
   unit?: string;
   sublabel?: string;
-  tooltip?: ReactNode;
 }) {
   const pct = value ?? 0;
-
-  const bar = (
+  return (
     <div className="space-y-1">
       <div className="flex items-center gap-2.5">
         <span className="text-[11px] font-bold text-foreground/70 w-9 shrink-0 uppercase tracking-wide">
@@ -77,18 +74,6 @@ function LiveBar({
         <p className="text-[9.5px] text-muted-foreground/35 pl-11 leading-none">{sublabel}</p>
       )}
     </div>
-  );
-
-  if (!tooltip) return bar;
-  return (
-    <Tooltip delayDuration={120}>
-      <TooltipTrigger asChild>
-        <div className="cursor-default">{bar}</div>
-      </TooltipTrigger>
-      <TooltipContent side="left" className="p-0 border-border/60 bg-card shadow-xl w-52">
-        {tooltip}
-      </TooltipContent>
-    </Tooltip>
   );
 }
 
@@ -377,7 +362,7 @@ export default function Dashboard() {
       </div>
 
       {/* Live Usage + Temps */}
-      <TooltipProvider>
+      <TooltipProvider delayDuration={200}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Live Usage */}
@@ -388,82 +373,100 @@ export default function Dashboard() {
           className="p-4 rounded-xl border border-border bg-card card-premium"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-primary/10">
-                <Activity className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Live Usage
-              </span>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 cursor-default select-none group">
+                  <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <Activity className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground/70 uppercase tracking-wider transition-colors">
+                    Live Usage
+                  </span>
+                  <Info className="h-3 w-3 text-muted-foreground/25 group-hover:text-muted-foreground/50 transition-colors" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="start" className="p-0 border-border/60 bg-card shadow-2xl w-64">
+                <div className="px-3 py-2.5 border-b border-border/40 flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">System Usage</span>
+                </div>
+                <div className="p-3 space-y-2.5">
+                  {/* CPU */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Cpu className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                        <span className="text-[11px] text-muted-foreground">Processor</span>
+                      </div>
+                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.cpu?.usage == null ? "text-muted-foreground/30" : usage.cpu.usage < 50 ? "text-green-400" : usage.cpu.usage < 80 ? "text-amber-400" : "text-primary")}>
+                        {usage?.cpu?.usage != null ? `${usage.cpu.usage}%` : "N/A"}
+                      </span>
+                    </div>
+                    {sys?.cpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{sys.cpu.model}</p>}
+                    {usage?.cpu?.cores != null && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">{usage.cpu.cores} logical processors · {usage?.cpu?.usage != null ? `${100 - usage.cpu.usage}% idle` : ""}</p>}
+                  </div>
+                  <TipDivider />
+                  {/* RAM */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <MemoryStick className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                        <span className="text-[11px] text-muted-foreground">Memory</span>
+                      </div>
+                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.ram?.usage == null ? "text-muted-foreground/30" : usage.ram.usage < 60 ? "text-green-400" : usage.ram.usage < 85 ? "text-amber-400" : "text-primary")}>
+                        {usage?.ram?.usage != null ? `${usage.ram.usage}%` : "N/A"}
+                      </span>
+                    </div>
+                    {usage?.ram && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">{usage.ram.usedGb} GB used · {Math.max(0, parseFloat((usage.ram.totalGb - usage.ram.usedGb).toFixed(1)))} GB free · {usage.ram.totalGb} GB total</p>}
+                  </div>
+                  <TipDivider />
+                  {/* GPU */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Monitor className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                        <span className="text-[11px] text-muted-foreground">Graphics</span>
+                      </div>
+                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.gpu?.usage == null ? "text-muted-foreground/30" : usage.gpu.usage < 50 ? "text-green-400" : usage.gpu.usage < 85 ? "text-amber-400" : "text-primary")}>
+                        {usage?.gpu?.usage != null ? `${usage.gpu.usage}%` : "N/A"}
+                      </span>
+                    </div>
+                    {usage?.gpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{usage.gpu.model}</p>}
+                    {sys?.gpu?.vram && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">{sys.gpu.vram} VRAM</p>}
+                  </div>
+                  <TipDivider />
+                  {/* Disk */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <HardDrive className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                        <span className="text-[11px] text-muted-foreground">Primary Drive</span>
+                      </div>
+                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.disk?.usage == null ? "text-muted-foreground/30" : usage.disk.usage < 70 ? "text-green-400" : usage.disk.usage < 90 ? "text-amber-400" : "text-primary")}>
+                        {usage?.disk?.usage != null ? `${usage.disk.usage}%` : "N/A"}
+                      </span>
+                    </div>
+                    <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">
+                      R: {usage?.disk?.readMb ?? 0} MB/s · W: {usage?.disk?.writeMb ?? 0} MB/s
+                    </p>
+                  </div>
+                </div>
+                <div className="px-3 py-2 border-t border-border/40 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse shrink-0" />
+                  <span className="text-[9.5px] text-muted-foreground/40">Refreshes every 5 seconds</span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
             <div className="flex items-center gap-1">
               <div className="w-1 h-1 rounded-full bg-primary/60 animate-pulse" />
               <span className="text-[10px] text-muted-foreground/40 font-mono">5s refresh</span>
             </div>
           </div>
           <div className="space-y-3.5">
-            <LiveBar
-              label="CPU"
-              value={usage?.cpu?.usage ?? null}
-              sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} threads` : undefined}
-              tooltip={
-                <div className="p-3 space-y-2">
-                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">CPU Load</p>
-                  <TipDivider />
-                  <DetailRow label="Usage" value={usage?.cpu?.usage != null ? `${usage.cpu.usage}%` : "N/A"} color={usage?.cpu?.usage != null ? (usage.cpu.usage < 50 ? "text-green-400" : usage.cpu.usage < 80 ? "text-amber-400" : "text-primary") : undefined} />
-                  {usage?.cpu?.cores != null && <DetailRow label="Threads" value={`${usage.cpu.cores}`} />}
-                  {usage?.cpu?.usage != null && <DetailRow label="Idle" value={`${100 - usage.cpu.usage}%`} color="text-muted-foreground" />}
-                  {sys?.cpu?.model && <><TipDivider /><p className="text-[10px] text-muted-foreground/50 leading-tight">{sys.cpu.model}</p></>}
-                </div>
-              }
-            />
-            <LiveBar
-              label="RAM"
-              value={usage?.ram?.usage ?? null}
-              sublabel={usage?.ram ? `${usage.ram.usedGb} / ${usage.ram.totalGb} GB` : undefined}
-              tooltip={
-                <div className="p-3 space-y-2">
-                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">Memory</p>
-                  <TipDivider />
-                  {usage?.ram ? (
-                    <>
-                      <DetailRow label="Used" value={`${usage.ram.usedGb} GB`} />
-                      <DetailRow label="Total" value={`${usage.ram.totalGb} GB`} />
-                      <DetailRow label="Free" value={`${Math.max(0, parseFloat((usage.ram.totalGb - usage.ram.usedGb).toFixed(1)))} GB`} color="text-green-400" />
-                      <DetailRow label="Usage" value={`${usage.ram.usage}%`} color={usage.ram.usage < 60 ? "text-green-400" : usage.ram.usage < 85 ? "text-amber-400" : "text-primary"} />
-                    </>
-                  ) : <p className="text-[11px] text-muted-foreground/50">No data</p>}
-                </div>
-              }
-            />
-            <LiveBar
-              label="GPU"
-              value={usage?.gpu?.usage ?? null}
-              sublabel={usage?.gpu?.model ?? undefined}
-              tooltip={
-                <div className="p-3 space-y-2">
-                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">GPU Load</p>
-                  <TipDivider />
-                  <DetailRow label="Usage" value={usage?.gpu?.usage != null ? `${usage.gpu.usage}%` : "N/A"} color={usage?.gpu?.usage != null ? (usage.gpu.usage < 50 ? "text-green-400" : usage.gpu.usage < 85 ? "text-amber-400" : "text-primary") : undefined} />
-                  {usage?.gpu?.usage != null && <DetailRow label="Idle" value={`${100 - usage.gpu.usage}%`} color="text-muted-foreground" />}
-                  {sys?.gpu?.vram && <DetailRow label="VRAM" value={sys.gpu.vram} />}
-                  {usage?.gpu?.model && <><TipDivider /><p className="text-[10px] text-muted-foreground/50 leading-tight">{usage.gpu.model}</p></>}
-                </div>
-              }
-            />
-            <LiveBar
-              label="Disk"
-              value={usage?.disk?.usage ?? null}
-              tooltip={
-                <div className="p-3 space-y-2">
-                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">Primary Drive</p>
-                  <TipDivider />
-                  <DetailRow label="Used" value={usage?.disk?.usage != null ? `${usage.disk.usage}%` : "N/A"} color={usage?.disk?.usage != null ? (usage.disk.usage < 70 ? "text-green-400" : usage.disk.usage < 90 ? "text-amber-400" : "text-primary") : undefined} />
-                  <DetailRow label="Read" value={usage?.disk?.readMb != null ? `${usage.disk.readMb} MB/s` : "0 MB/s"} />
-                  <DetailRow label="Write" value={usage?.disk?.writeMb != null ? `${usage.disk.writeMb} MB/s` : "0 MB/s"} />
-                </div>
-              }
-            />
+            <LiveBar label="CPU" value={usage?.cpu?.usage ?? null} sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} threads` : undefined} />
+            <LiveBar label="RAM" value={usage?.ram?.usage ?? null} sublabel={usage?.ram ? `${usage.ram.usedGb} / ${usage.ram.totalGb} GB` : undefined} />
+            <LiveBar label="GPU" value={usage?.gpu?.usage ?? null} sublabel={usage?.gpu?.model ?? undefined} />
+            <LiveBar label="Disk" value={usage?.disk?.usage ?? null} />
           </div>
         </motion.div>
 
@@ -475,57 +478,84 @@ export default function Dashboard() {
           className="p-4 rounded-xl border border-border bg-card card-premium"
         >
           <div className="flex items-center gap-2 mb-4">
-            <div className="p-1.5 rounded-lg bg-primary/10">
-              <Thermometer className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              Temperatures
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 cursor-default select-none group">
+                  <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <Thermometer className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground/70 uppercase tracking-wider transition-colors">
+                    Temperatures
+                  </span>
+                  <Info className="h-3 w-3 text-muted-foreground/25 group-hover:text-muted-foreground/50 transition-colors" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="start" className="p-0 border-border/60 bg-card shadow-2xl w-64">
+                <div className="px-3 py-2.5 border-b border-border/40 flex items-center gap-2">
+                  <Thermometer className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">Thermal Readings</span>
+                </div>
+                <div className="p-3 space-y-2.5">
+                  {/* CPU temp */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Cpu className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                        <span className="text-[11px] text-muted-foreground">CPU Temperature</span>
+                      </div>
+                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", temps?.cpu?.current == null ? "text-muted-foreground/30" : temps.cpu.current < 55 ? "text-green-400" : temps.cpu.current < 75 ? "text-amber-400" : "text-primary")}>
+                        {temps?.cpu?.current != null ? `${temps.cpu.current}°C` : "N/A"}
+                      </span>
+                    </div>
+                    {sys?.cpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{sys.cpu.model}</p>}
+                    <p className="text-[9.5px] text-muted-foreground/35 pl-4.5 leading-none">
+                      {temps?.cpu?.current == null ? "Sensor not detected" : temps.cpu.current < 55 ? "Cool — normal idle" : temps.cpu.current < 75 ? "Warm — under load" : "Hot — check cooling"}
+                    </p>
+                  </div>
+                  <TipDivider />
+                  {/* CPU peak */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Thermometer className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                      <span className="text-[11px] text-muted-foreground">CPU Session Peak</span>
+                    </div>
+                    <span className={cn("text-[11px] font-bold font-mono tabular-nums", temps?.cpu?.max == null ? "text-muted-foreground/30" : temps.cpu.max < 75 ? "text-amber-400" : "text-primary")}>
+                      {temps?.cpu?.max != null ? `${temps.cpu.max}°C` : "N/A"}
+                    </span>
+                  </div>
+                  <TipDivider />
+                  {/* GPU temp */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Monitor className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                        <span className="text-[11px] text-muted-foreground">GPU Core</span>
+                      </div>
+                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", temps?.gpu?.current == null ? "text-muted-foreground/30" : temps.gpu.current < 55 ? "text-green-400" : temps.gpu.current < 80 ? "text-amber-400" : "text-primary")}>
+                        {temps?.gpu?.current != null ? `${temps.gpu.current}°C` : "N/A"}
+                      </span>
+                    </div>
+                    {temps?.gpu?.hotspot != null && (
+                      <div className="flex items-center justify-between pl-4.5">
+                        <span className="text-[9.5px] text-muted-foreground/50">Hot spot junction</span>
+                        <span className={cn("text-[9.5px] font-bold font-mono tabular-nums", temps.gpu.hotspot < 85 ? "text-amber-400/70" : "text-primary/70")}>{temps.gpu.hotspot}°C</span>
+                      </div>
+                    )}
+                    {sys?.gpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{sys.gpu.model}</p>}
+                  </div>
+                </div>
+                <div className="px-3 py-2 border-t border-border/40">
+                  <p className="text-[9.5px] text-muted-foreground/40">Via LibreHardwareMonitor · Admin required</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="space-y-3">
-            {([
-              {
-                label: "CPU Temp", temp: temps?.cpu?.current ?? null, icon: Cpu,
-                tip: (
-                  <div className="p-3 space-y-2">
-                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">CPU Temperature</p>
-                    <TipDivider />
-                    <DetailRow label="Current" value={temps?.cpu?.current != null ? `${temps.cpu.current}°C` : "N/A"} color={temps?.cpu?.current != null ? (temps.cpu.current < 55 ? "text-green-400" : temps.cpu.current < 75 ? "text-amber-400" : "text-primary") : undefined} />
-                    {temps?.cpu?.max != null && <DetailRow label="Session peak" value={`${temps.cpu.max}°C`} color="text-muted-foreground" />}
-                    <TipDivider />
-                    <p className="text-[10px] text-muted-foreground/50">Die sensor via LibreHardwareMonitor</p>
-                  </div>
-                ),
-              },
-              {
-                label: "GPU Temp", temp: temps?.gpu?.current ?? null, icon: Monitor,
-                tip: (
-                  <div className="p-3 space-y-2">
-                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">GPU Temperature</p>
-                    <TipDivider />
-                    <DetailRow label="Core" value={temps?.gpu?.current != null ? `${temps.gpu.current}°C` : "N/A"} color={temps?.gpu?.current != null ? (temps.gpu.current < 55 ? "text-green-400" : temps.gpu.current < 75 ? "text-amber-400" : "text-primary") : undefined} />
-                    {temps?.gpu?.hotspot != null && <DetailRow label="Hot spot" value={`${temps.gpu.hotspot}°C`} color={temps.gpu.hotspot < 85 ? "text-amber-400" : "text-primary"} />}
-                    <TipDivider />
-                    <p className="text-[10px] text-muted-foreground/50">Junction sensor via LibreHardwareMonitor</p>
-                  </div>
-                ),
-              },
-              {
-                label: "CPU Peak", temp: temps?.cpu?.max ?? null, icon: Thermometer,
-                tip: (
-                  <div className="p-3 space-y-2">
-                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">CPU Peak</p>
-                    <TipDivider />
-                    <DetailRow label="Peak" value={temps?.cpu?.max != null ? `${temps.cpu.max}°C` : "N/A"} color={temps?.cpu?.max != null ? (temps.cpu.max < 75 ? "text-amber-400" : "text-primary") : undefined} />
-                    {temps?.cpu?.current != null && temps?.cpu?.max != null && (
-                      <DetailRow label="Above current" value={`+${temps.cpu.max - temps.cpu.current}°C`} color="text-muted-foreground" />
-                    )}
-                    <TipDivider />
-                    <p className="text-[10px] text-muted-foreground/50">Highest recorded since launch</p>
-                  </div>
-                ),
-              },
-            ] as { label: string; temp: number | null; icon: ElementType; tip: ReactNode }[]).map(({ label, temp, icon: Icon, tip }) => {
+            {[
+              { label: "CPU Temp",  temp: temps?.cpu?.current ?? null, icon: Cpu },
+              { label: "GPU Temp",  temp: temps?.gpu?.current ?? null, icon: Monitor },
+              { label: "CPU Peak",  temp: temps?.cpu?.max    ?? null,  icon: Thermometer },
+            ].map(({ label, temp, icon: Icon }) => {
               const pct   = temp ? Math.min((temp / 110) * 100, 100) : 0;
               const barBg = temp
                 ? temp < 55
@@ -535,28 +565,21 @@ export default function Dashboard() {
                     : "linear-gradient(90deg,hsl(var(--primary)/0.6),hsl(var(--primary)))"
                 : undefined;
               return (
-                <Tooltip key={label} delayDuration={120}>
-                  <TooltipTrigger asChild>
-                    <div className="space-y-1 cursor-default">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Icon className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                          <span className="text-[11px] text-muted-foreground">{label}</span>
-                        </div>
-                        <TempDot temp={temp} />
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-secondary/50 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${pct}%`, background: barBg }}
-                        />
-                      </div>
+                <div key={label} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                      <span className="text-[11px] text-muted-foreground">{label}</span>
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="left" className="p-0 border-border/60 bg-card shadow-xl w-52">
-                    {tip}
-                  </TooltipContent>
-                </Tooltip>
+                    <TempDot temp={temp} />
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-secondary/50 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${pct}%`, background: barBg }}
+                    />
+                  </div>
+                </div>
               );
             })}
           </div>
