@@ -536,46 +536,65 @@ try {
       let gpuCurrent: number | null = null;
 
       if (process.platform === "win32") {
-        // Single PowerShell call reads CPU + GPU from LHM WMI (both in one query),
-        // falls back through OHM and MSAcpi for CPU if LHM isn't running.
+        // Single PowerShell call: CPU + GPU + CPU Peak from LHM WMI.
+        // Uses Identifier path (/amdcpu/, /intelcpu/, /gpu/) instead of sensor names
+        // so it works correctly with AMD Ryzen (Tctl/Tdie, CCD temps, etc.)
         const psScript = `
 $cpuTemp = $null
+$cpuPeak = $null
 $gpuTemp = $null
 
-# Method 1: LibreHardwareMonitor WMI — reads CPU Package + GPU Core in one call
+# Method 1: LibreHardwareMonitor WMI — filter by Identifier path, not Name
 try {
   $sensors = Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop |
     Where-Object { $_.SensorType -eq "Temperature" }
-  $cpuSensors = $sensors | Where-Object { $_.Name -match "CPU Package|CPU Core|CPU Total|Core #" }
-  if ($cpuSensors) {
-    $vals = @($cpuSensors) | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+
+  # CPU: match any sensor whose Identifier contains /cpu/ (works for AMD, Intel, ARM)
+  $cpuSensors = @($sensors | Where-Object { $_.Identifier -match "/cpu/" })
+  if ($cpuSensors.Count -gt 0) {
+    $vals = $cpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
     if ($vals) { $cpuTemp = ($vals | Measure-Object -Maximum).Maximum }
+    # CPU Peak — use LHM's own tracked Max per sensor
+    $maxVals = $cpuSensors | ForEach-Object { [math]::Round($_.Max, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+    if ($maxVals) { $cpuPeak = ($maxVals | Measure-Object -Maximum).Maximum }
   }
-  $gpuSensors = $sensors | Where-Object { $_.Name -eq "GPU Core" }
-  if ($gpuSensors) {
-    $vals = @($gpuSensors) | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 120 }
+
+  # GPU: GPU Core sensor (universal across NVIDIA, AMD, Intel Arc)
+  $gpuSensors = @($sensors | Where-Object { $_.Identifier -match "/gpu/" -and $_.Name -eq "GPU Core" })
+  if ($gpuSensors.Count -gt 0) {
+    $vals = $gpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 120 }
     if ($vals) { $gpuTemp = ($vals | Measure-Object -Maximum).Maximum }
   }
 } catch {}
 
-# Method 2: OpenHardwareMonitor WMI (CPU only, if LHM didn't supply it)
+# Method 2: OpenHardwareMonitor WMI (fallback if LHM not running)
 if (-not $cpuTemp) {
   try {
-    $sensors = Get-WmiObject -Namespace "root/OpenHardwareMonitor" -Class Sensor -EA Stop |
-      Where-Object { $_.SensorType -eq "Temperature" -and $_.Name -match "CPU Package|CPU Core|CPU Total|Core #" }
-    if ($sensors) {
-      $vals = @($sensors) | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+    $sensors = @(Get-WmiObject -Namespace "root/OpenHardwareMonitor" -Class Sensor -EA Stop |
+      Where-Object { $_.SensorType -eq "Temperature" })
+    $cpuSensors = @($sensors | Where-Object { $_.Identifier -match "/cpu/" })
+    if ($cpuSensors.Count -gt 0) {
+      $vals = $cpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
       if ($vals) { $cpuTemp = ($vals | Measure-Object -Maximum).Maximum }
+      $maxVals = $cpuSensors | ForEach-Object { [math]::Round($_.Max, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+      if ($maxVals) { $cpuPeak = ($maxVals | Measure-Object -Maximum).Maximum }
+    }
+    if (-not $gpuTemp) {
+      $gpuSensors = @($sensors | Where-Object { $_.Identifier -match "/gpu/" -and $_.Name -eq "GPU Core" })
+      if ($gpuSensors.Count -gt 0) {
+        $vals = $gpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 120 }
+        if ($vals) { $gpuTemp = ($vals | Measure-Object -Maximum).Maximum }
+      }
     }
   } catch {}
 }
 
-# Method 3: MSAcpi (CPU only, if still not found)
+# Method 3: MSAcpi thermal zones (last resort CPU fallback)
 if (-not $cpuTemp) {
   try {
     $zones = Get-WmiObject MSAcpi_ThermalZoneTemperature -Namespace "root/wmi" -EA Stop
-    $cpuZones = @($zones) | Where-Object { $_.InstanceName -match "CPU|PROC|CPUZ|CpuPackage|TZ0[01]" }
-    if (-not $cpuZones -or $cpuZones.Count -eq 0) { $cpuZones = @($zones) }
+    $cpuZones = @($zones | Where-Object { $_.InstanceName -match "CPU|PROC|CPUZ|CpuPackage|TZ0[01]" })
+    if ($cpuZones.Count -eq 0) { $cpuZones = @($zones) }
     $vals = $cpuZones | ForEach-Object { [math]::Round($_.CurrentTemperature / 10 - 273.15, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
     if ($vals) { $cpuTemp = ($vals | Sort-Object -Descending)[0] }
   } catch {}
@@ -583,6 +602,7 @@ if (-not $cpuTemp) {
 
 $out = [ordered]@{}
 if ($cpuTemp) { $out['cpu'] = $cpuTemp }
+if ($cpuPeak) { $out['cpuPeak'] = $cpuPeak }
 if ($gpuTemp) { $out['gpu'] = $gpuTemp }
 $out | ConvertTo-Json -Compress -Depth 1`;
 
@@ -592,6 +612,7 @@ $out | ConvertTo-Json -Compress -Depth 1`;
           if (m) {
             const j = JSON.parse(m[0]);
             if (isValidCpuTemp(j.cpu)) cpuCurrent = Math.round(j.cpu);
+            if (isValidCpuTemp(j.cpuPeak)) cpuMax = Math.round(j.cpuPeak);
             if (isValidGpuTemp(j.gpu)) gpuCurrent = Math.round(j.gpu);
           }
         } catch {}
