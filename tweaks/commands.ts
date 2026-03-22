@@ -12,10 +12,10 @@ export const TWEAK_COMMANDS: Record<string, TweakCommand> = {
   // ── PERFORMANCE ────────────────────────────────────────────────────────────
   "Disable SuperFetch / SysMain": {
     requiresAdmin: true,
-    enable: `Set-Service -Name SysMain -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name SysMain -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name SysMain -StartupType Automatic -ErrorAction SilentlyContinue
-Start-Service -Name SysMain -ErrorAction SilentlyContinue`,
+    enable: `Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue
+Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue`,
+    disable: `Set-Service -Name "SysMain" -StartupType Automatic -ErrorAction SilentlyContinue
+Start-Service -Name "SysMain" -ErrorAction SilentlyContinue`,
   },
 
   "Disable NTFS Access Timestamps": {
@@ -32,17 +32,17 @@ Start-Service -Name SysMain -ErrorAction SilentlyContinue`,
 
   "Disable Windows File Indexing": {
     requiresAdmin: true,
-    enable: `Set-Service -Name WSearch -StartupType Disabled -ErrorAction SilentlyContinue
-Stop-Service -Name WSearch -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name WSearch -StartupType Automatic -ErrorAction SilentlyContinue
-Start-Service -Name WSearch -ErrorAction SilentlyContinue`,
+    enable: `sc.exe stop "wsearch" 2>&1 | Out-Null
+sc.exe config "wsearch" start= disabled 2>&1 | Out-Null`,
+    disable: `sc.exe config "wsearch" start= delayed-auto 2>&1 | Out-Null
+sc.exe start "wsearch" 2>&1 | Out-Null`,
   },
 
   "Disable Multiplane Overlay (MPO)": {
     requiresAdmin: true,
     requiresRestart: true,
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v OverlayTestMode /t REG_DWORD /d 5 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v OverlayTestMode /t REG_DWORD /d 0 /f`,
+    disable: `Remove-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm" -Name "OverlayTestMode" -Force -ErrorAction SilentlyContinue`,
   },
 
   "Disable Hibernation": {
@@ -104,14 +104,12 @@ reg add "HKCU\\Control Panel\\Mouse" /v MouseSensitivity /t REG_SZ /d "10" /f`,
 
   "Keep All CPU Cores Active (Unpark Cores)": {
     requiresAdmin: true,
-    // Enable: set ValueMax=0 and ValueMin=0 — forces all cores to 100% capacity, bypassing core parking
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMax /t REG_DWORD /d 0 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMin /t REG_DWORD /d 0 /f
-powercfg /setactive scheme_current`,
-    // Revert: ValueMax=100 (0x64 hex) re-enables core parking, ValueMin=0 — Windows default
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMax /t REG_DWORD /d 100 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerSettings\\54533251-82be-4824-96c1-47b60b740d00\\0cc5b647-c1df-4637-891a-dec35c318583" /v ValueMin /t REG_DWORD /d 0 /f
-powercfg /setactive scheme_current`,
+    // Enable: set CPMINCORES (min active cores) to 100% — forces all cores to stay unparked
+    enable: `powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR 0cc5b647-c1df-4637-891a-dec35c318583 100
+powercfg -setactive SCHEME_CURRENT`,
+    // Revert: set min cores to 0% — restores Windows default (allows core parking as needed)
+    disable: `powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR 0cc5b647-c1df-4637-891a-dec35c318583 0
+powercfg -setactive SCHEME_CURRENT`,
   },
 
   "Win32 Priority Separation": {
@@ -127,22 +125,14 @@ powercfg /setactive scheme_current`,
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications" /v GlobalUserDisabled /t REG_DWORD /d 0 /f`,
   },
 
-  "Disable Network Power Saving": {
-    requiresAdmin: true,
-    enable: `Get-NetAdapter | ForEach-Object {
-    Disable-NetAdapterPowerManagement -Name $_.Name -WakeOnMagicPacket -WakeOnPattern -ErrorAction SilentlyContinue
-}`,
-    disable: `Get-NetAdapter | ForEach-Object {
-    Enable-NetAdapterPowerManagement -Name $_.Name -ErrorAction SilentlyContinue
-}`,
-  },
-
   "Disable GameBar": {
     requiresAdmin: true,
-    enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f
+    enable: `Get-AppxPackage -AllUsers Microsoft.XboxGamingOverlay -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f
 reg add "HKCU\\Software\\Microsoft\\GameBar" /v UseNexusForGameBarEnabled /t REG_DWORD /d 0 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 1 /f
+    disable: `Get-AppxPackage -AllUsers Microsoft.XboxGamingOverlay -ErrorAction SilentlyContinue | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\\AppXManifest.xml" -ErrorAction SilentlyContinue }
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR" /v AllowGameDVR /t REG_DWORD /d 1 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 1 /f
 reg add "HKCU\\Software\\Microsoft\\GameBar" /v UseNexusForGameBarEnabled /t REG_DWORD /d 1 /f`,
   },
@@ -157,11 +147,8 @@ reg add "HKCU\\System\\GameConfigStore" /v GameDVR_DSEBehavior /t REG_DWORD /d 0
   },
 
   "Optimize for Windowed & Borderless Games": {
-    requiresAdmin: true,
-    enable: `reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v DirectXUserGlobalSettings /t REG_SZ /d "SwapEffectUpgradeEnable=1;" /f
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v ForceEffectMode /t REG_DWORD /d 2 /f`,
-    disable: `Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\DirectX\\UserGpuPreferences" -Name "DirectXUserGlobalSettings" -Value "" -Type String -Force -ErrorAction SilentlyContinue
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v ForceEffectMode /t REG_DWORD /d 0 /f`,
+    enable: `reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEOptimization /t REG_DWORD /d 1 /f`,
+    disable: `reg add "HKCU\\System\\GameConfigStore" /v GameDVR_FSEOptimization /t REG_DWORD /d 0 /f`,
   },
 
   "Enable Game Mode": {
@@ -210,66 +197,30 @@ reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\Syst
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "SFIO Priority" /t REG_SZ /d "High" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Latency Sensitive" /t REG_SZ /d "True" /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f
+    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v Affinity /t REG_DWORD /d 0 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Background Only" /t REG_SZ /d "False" /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Clock Rate" /t REG_DWORD /d 10000 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "GPU Priority" /t REG_DWORD /d 8 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v Priority /t REG_DWORD /d 2 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "Medium" /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "SFIO Priority" /t REG_SZ /d "Normal" /f
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Background Only" /t REG_SZ /d "True" /f
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Latency Sensitive" /t REG_SZ /d "False" /f
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v Affinity /t REG_DWORD /d 0 /f
-reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Clock Rate" /t REG_DWORD /d 10000 /f`,
-  },
-
-  "Enable MSI Mode for GPU": {
-    requiresAdmin: true,
-    requiresRestart: true,
-    enable: `# Auto-detect primary GPU and enable Message Signaled Interrupts (MSI Mode)
-try {
-    $gpu = Get-PnpDevice -Class Display -Status OK | Where-Object { $_.FriendlyName -notmatch 'Microsoft|Remote|Basic' } | Select-Object -First 1
-    if (!$gpu) { Write-Host "No compatible GPU found."; exit 1 }
-    $regPath = "HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\" + $gpu.InstanceId + "\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties"
-    if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
-    reg add ("HKLM\\SYSTEM\\CurrentControlSet\\Enum\\" + $gpu.InstanceId + "\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties") /v MSISupported /t REG_DWORD /d 1 /f
-    Write-Host "MSI Mode ENABLED for: $($gpu.FriendlyName)"
-    Write-Host "A system restart is required for the change to take effect."
-} catch { Write-Host "Error: $_" }`,
-    disable: `# Auto-detect primary GPU and disable MSI Mode (revert to Windows default)
-try {
-    $gpu = Get-PnpDevice -Class Display -Status OK | Where-Object { $_.FriendlyName -notmatch 'Microsoft|Remote|Basic' } | Select-Object -First 1
-    if (!$gpu) { Write-Host "No compatible GPU found."; exit 1 }
-    reg add ("HKLM\\SYSTEM\\CurrentControlSet\\Enum\\" + $gpu.InstanceId + "\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties") /v MSISupported /t REG_DWORD /d 0 /f
-    Write-Host "MSI Mode DISABLED for: $($gpu.FriendlyName). Restart required."
-} catch { Write-Host "Error: $_" }`,
-  },
-
-  "High Scheduling Category for Gaming": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "High" /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Scheduling Category" /t REG_SZ /d "Medium" /f`,
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games" /v "Latency Sensitive" /t REG_SZ /d "False" /f`,
   },
 
   "Fortnite Process High Priority": {
     requiresAdmin: true,
     // CpuPriorityClass IFEO values: 1=Idle, 2=Below Normal, 3=Normal, 4=Above Normal, 5=High, 6=Real-time
     // IoPriority IFEO values: 0=Very Low, 1=Low, 2=Normal, 3=High
-    // Revert: set back to Normal priority (CpuPriorityClass=3, IoPriority=2) — Windows default for all processes
+    // Sets both CpuPriorityClass (5=High) and IoPriority (3=High) on both Fortnite executables.
+    // Revert: CpuPriorityClass=3 (Normal) and IoPriority=2 (Normal) — Windows default for all processes.
     enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 5 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 5 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 3 /f`,
     disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\FortniteClient-Win64-Shipping.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 2 /f
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v CpuPriorityClass /t REG_DWORD /d 3 /f
 reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\fortniteclient-win64-shipping_eac_eos.exe\\PerfOptions" /v IoPriority /t REG_DWORD /d 2 /f`,
-  },
-
-  "Global Timer Resolution for Gaming": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 0 /f`,
-  },
-
-  "Disable Dynamic Tick": {
-    requiresAdmin: true,
-    requiresRestart: true,
-    enable: `bcdedit /set disabledynamictick yes`,
-    disable: `bcdedit /set disabledynamictick no`,
   },
 
   "Disable Nagle's Algorithm": {
@@ -492,22 +443,6 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters" /v IRPStackSize /t REG_DWORD /d 15 /f`,
   },
 
-  "Optimize TCP/IP Network Stack": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v DefaultTTL /t REG_DWORD /d 64 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUDiscovery /t REG_DWORD /d 1 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUBHDetect /t REG_DWORD /d 1 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v SackOpts /t REG_DWORD /d 1 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v TcpMaxDataRetransmissions /t REG_DWORD /d 5 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Tcp1323Opts /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v DefaultTTL /t REG_DWORD /d 128 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUDiscovery /t REG_DWORD /d 1 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v EnablePMTUBHDetect /t REG_DWORD /d 0 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v SackOpts /t REG_DWORD /d 1 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v TcpMaxDataRetransmissions /t REG_DWORD /d 5 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters" /v Tcp1323Opts /t REG_DWORD /d 0 /f`,
-  },
-
   "Optimize DNS Resolution": {
     requiresAdmin: true,
     enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters" /v MaxCacheEntryTtlLimit /t REG_DWORD /d 86400 /f
@@ -686,15 +621,19 @@ sc.exe config WerSvc start= demand 2>&1 | Out-Null`,
 
   "Disable Connected Telemetry (DiagTrack)": {
     requiresAdmin: true,
-    // DiagTrack default startup: Automatic (2). Policy AllowTelemetry=0 blocks upload even if service restarts.
-    enable: `sc.exe stop DiagTrack 2>&1 | Out-Null
-sc.exe config DiagTrack start= disabled 2>&1 | Out-Null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack" /v Start /t REG_DWORD /d 4 /f
+    // DiagTrack default startup: Automatic (2). dmwappushservice: Automatic (2).
+    // Policy AllowTelemetry=0 blocks upload even if services restart.
+    enable: `Stop-Service -Name "DiagTrack" -Force -ErrorAction SilentlyContinue
+Set-Service -Name "DiagTrack" -StartupType Disabled -ErrorAction SilentlyContinue
+Stop-Service -Name "dmwappushservice" -Force -ErrorAction SilentlyContinue
+Set-Service -Name "dmwappushservice" -StartupType Disabled -ErrorAction SilentlyContinue
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f`,
-    // Revert: set AllowTelemetry=3 (Full, Windows default for Home/Pro), restore DiagTrack to Automatic
-    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 3 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DiagTrack" /v Start /t REG_DWORD /d 2 /f
-sc.exe config DiagTrack start= auto 2>&1 | Out-Null`,
+    // Revert: set AllowTelemetry=3 (Full, Windows default for Home/Pro), restore both services to Automatic
+    disable: `Set-Service -Name "DiagTrack" -StartupType Automatic -ErrorAction SilentlyContinue
+Start-Service -Name "DiagTrack" -ErrorAction SilentlyContinue
+Set-Service -Name "dmwappushservice" -StartupType Automatic -ErrorAction SilentlyContinue
+Start-Service -Name "dmwappushservice" -ErrorAction SilentlyContinue
+reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection" /v AllowTelemetry /t REG_DWORD /d 3 /f`,
   },
 
   "Disable Application Compatibility Telemetry": {
@@ -776,15 +715,14 @@ reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_
   "Disable Virtualization-Based Security (VBS)": {
     requiresAdmin: true,
     requiresRestart: true,
-    // All three DeviceGuard keys: EnableVirtualizationBasedSecurity=0 disables VBS,
-    // RequirePlatformSecurityFeatures=0 disables Secure Boot requirement for VBS,
-    // HypervisorEnforcedCodeIntegrity=0 disables HVCI (kernel code integrity enforcement).
-    // Keys do not exist by default on non-OEM systems — delete on revert to restore Windows default.
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f
+    // bcdedit disables the hypervisor, registry keys disable DeviceGuard/HVCI policies.
+    enable: `bcdedit /set hypervisorlaunchtype off 2>$null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
-    // Revert: restore Windows default VBS/HVCI values (VBS=1 enabled, Secure Boot=1 required, HVCI=0 off by default)
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 1 /f
+    // Revert: re-enable hypervisor via bcdedit, restore registry defaults
+    disable: `bcdedit /set hypervisorlaunchtype Auto 2>$null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 1 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 1 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
   },

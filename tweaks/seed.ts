@@ -100,14 +100,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Higher idle power consumption. All cores stay fully active permanently."
   },
   {
-    title: "Disable Network Power Saving",
-    description: "Prevents Windows from reducing the power state of the network adapter to save energy, eliminating network latency spikes that occur when the adapter wakes from sleep. These spikes can cause brief stutters or lag spikes during online gaming when your NIC transitions between power states.",
-    category: "gaming",
-    isActive: false,
-    warning: "LAPTOP USERS: Disabling network power management slightly increases battery drain as your Wi-Fi or Ethernet adapter stays fully powered at all times. Only apply on laptops when plugged into mains power. Desktop users can apply freely with no drawback.",
-    featureBreaks: "Slightly higher power draw from the network adapter. Eliminates power-state-related network latency spikes."
-  },
-  {
     title: "Disable GameBar",
     description: "Completely disables the Xbox GameBar overlay. Removes background GameBar processes and prevents it from hooking into games, freeing up minor system resources.",
     category: "gaming",
@@ -188,44 +180,12 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive fewer scheduler slots while a game is running. No side effects outside of gaming."
   },
   {
-    title: "Enable MSI Mode for GPU",
-    description: "Switches the primary GPU from legacy line-based interrupt mode to Message Signaled Interrupts (MSI). MSI mode gives the GPU a direct, low-latency communication channel to the CPU, eliminating shared IRQ conflicts and reducing GPU interrupt latency. Automatically detects your primary GPU's PCI device path — no manual registry editing required. Widely recommended by competitive gaming communities. Requires a restart to take effect.",
-    category: "gaming",
-    isActive: false,
-    warning: "Requires a full system restart to take effect. NVIDIA and AMD discrete GPUs are supported. If you experience GPU instability after enabling, use the Revert button and restart.",
-    featureBreaks: "Restart required. If MSI mode causes instability on a specific GPU, revert with the Revert button and restart."
-  },
-  {
-    title: "High Scheduling Category for Gaming",
-    description: "Sets the Scheduling Category for the Windows Multimedia SystemProfile Tasks\\Games entry to High. This tells the Windows scheduler to give game processes a higher-priority scheduling tier, reducing latency and improving frame consistency compared to the default Medium category.",
-    category: "gaming",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Background applications receive fewer scheduling slots while a game is running. No side effects outside of gaming."
-  },
-  {
     title: "Fortnite Process High Priority",
     description: "FORTNITE PLAYERS ONLY. Applies Image File Execution Options (IFEO) for FortniteClient-Win64-Shipping.exe: sets CPU priority class to High (5) and I/O priority to High (3). Ensures Fortnite gets elevated CPU and disk access priority over background processes. No effect if Fortnite is not installed.",
     category: "gaming",
     isActive: false,
     warning: "FORTNITE PLAYERS ONLY — skip this tweak if you do not play Fortnite. High CPU priority (not Realtime) is used — safe and stable. Revert removes the IFEO override entirely, returning Fortnite to its Windows default (no priority override).",
     featureBreaks: "Background applications receive lower CPU scheduling while Fortnite is running. No system stability risk — High priority is well below Realtime. Revert deletes the IFEO keys, fully restoring the Windows default state."
-  },
-  {
-    title: "Global Timer Resolution for Gaming",
-    description: "Sets GlobalTimerResolutionRequests to 1 in the Windows kernel session manager. This allows any application or game to request Windows' highest available timer resolution (0.5ms instead of the 15.6ms default). Lower timer resolution means the CPU scheduler wakes up more frequently, resulting in tighter frame timing, reduced micro-stutter, and more consistent frame delivery. Enabled: 1 — Disabled: 0 (Windows default).",
-    category: "gaming",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Marginal increase in background CPU wake frequency at idle. No effect on stability or applications outside of gaming."
-  },
-  {
-    title: "Disable Dynamic Tick",
-    description: "Disables the dynamic CPU timer tick so Windows uses a consistent high-resolution 1ms timer at all times instead of an adaptive tick that can cause inconsistent timing. Reduces micro-stutter and frame time variance in games that are sensitive to CPU scheduling precision.",
-    category: "gaming",
-    isActive: false,
-    warning: "Requires a reboot to take effect. Slightly increases idle CPU wake frequency which may marginally raise power consumption and heat on battery-powered devices.",
-    featureBreaks: "Requires reboot. Slightly more CPU activity at idle. Most noticeable improvement on systems with tight frame-time requirements."
   },
   {
     title: "Disable Nagle's Algorithm",
@@ -474,14 +434,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: null,
     featureBreaks: "Slightly more memory used for network buffers. Improves network file transfer speed."
-  },
-  {
-    title: "Optimize TCP/IP Network Stack",
-    description: "Applies multiple TCP/IP optimizations: sets TTL to 64 (standard for most internet traffic), enables Path MTU Discovery for automatic packet size optimization, enables Selective ACK (SACK) for faster error recovery, and tunes TCP retransmission. Improves overall network throughput and reduces latency on broadband connections.",
-    category: "system",
-    isActive: false,
-    warning: "Path MTU Discovery relies on ICMP packets — if your router or firewall blocks all ICMP, this may cause connection stalls to certain servers. Also, changing TTL from Windows default (128) to 64 is generally safe but may affect traceroute hop-count fingerprinting. Test your connection after applying.",
-    featureBreaks: "TTL changed from Windows default 128 to 64. ICMP-blocking firewalls may interfere with Path MTU Discovery. All optimizations are reversible — revert restores Windows defaults."
   },
   {
     title: "Optimize DNS Resolution",

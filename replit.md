@@ -58,14 +58,12 @@ A modern Windows PC optimization desktop app built with Electron + Express + Rea
 ## Tweaks Behavior
 
 - Toggle saves state instantly via `PATCH /api/tweaks/:id` to JSON storage
-- 129 tweaks across: debloat, privacy, performance, gaming, system, browser, network, services
+- 81 tweaks across: performance, gaming, system, network
 - "View CMD" shows correct command: `enable` command when tweak is off, `disable` command when on
 - "Export .ps1" generates a complete Administrator PowerShell script for all active tweaks
 - "Save Profile" exports active tweaks as a JSON file (uses Electron file dialog or browser download)
 - "Load Profile" imports a saved JSON profile and applies matching tweaks via the run dialog
 - Tweaks are applied by the user running the exported `.ps1` script as Administrator
-- **MSI Mode for GPU** (gaming): dynamically detects primary GPU PCI path, sets MSISupported=1/0
-- **Enable MSI Mode for GPU** tweak uses `Get-PnpDevice` to find GPU, no hardcoded registry path
 
 ## Windows Execution Logic (routes.ts)
 
