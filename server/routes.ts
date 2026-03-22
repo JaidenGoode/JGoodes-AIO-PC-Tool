@@ -549,13 +549,15 @@ try {
   $sensors = Get-WmiObject -Namespace "root/LibreHardwareMonitor" -Class Sensor -EA Stop |
     Where-Object { $_.SensorType -eq "Temperature" }
 
-  # CPU: match any sensor whose Identifier contains /cpu/ (works for AMD, Intel, ARM)
-  $cpuSensors = @($sensors | Where-Object { $_.Identifier -match "/cpu/" })
+  # CPU: match any sensor whose Identifier contains cpu (amdcpu, intelcpu, armcpu, cpu)
+  # NOTE: /amdcpu/0/temperature/0 does NOT contain the literal "/cpu/" substring —
+  # must match on "cpu" broadly since AMD identifiers are /amdcpu/... not /cpu/...
+  $cpuSensors = @($sensors | Where-Object { $_.Identifier -match "cpu" -and $_.Identifier -notmatch "gpu" })
   if ($cpuSensors.Count -gt 0) {
-    $vals = $cpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+    $vals = $cpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 115 }
     if ($vals) { $cpuTemp = ($vals | Measure-Object -Maximum).Maximum }
     # CPU Peak — use LHM's own tracked Max per sensor
-    $maxVals = $cpuSensors | ForEach-Object { [math]::Round($_.Max, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+    $maxVals = $cpuSensors | ForEach-Object { [math]::Round($_.Max, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 115 }
     if ($maxVals) { $cpuPeak = ($maxVals | Measure-Object -Maximum).Maximum }
   }
 
@@ -572,11 +574,11 @@ if (-not $cpuTemp) {
   try {
     $sensors = @(Get-WmiObject -Namespace "root/OpenHardwareMonitor" -Class Sensor -EA Stop |
       Where-Object { $_.SensorType -eq "Temperature" })
-    $cpuSensors = @($sensors | Where-Object { $_.Identifier -match "/cpu/" })
+    $cpuSensors = @($sensors | Where-Object { $_.Identifier -match "cpu" -and $_.Identifier -notmatch "gpu" })
     if ($cpuSensors.Count -gt 0) {
-      $vals = $cpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+      $vals = $cpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 115 }
       if ($vals) { $cpuTemp = ($vals | Measure-Object -Maximum).Maximum }
-      $maxVals = $cpuSensors | ForEach-Object { [math]::Round($_.Max, 0) } | Where-Object { $_ -ge 30 -and $_ -lt 115 }
+      $maxVals = $cpuSensors | ForEach-Object { [math]::Round($_.Max, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 115 }
       if ($maxVals) { $cpuPeak = ($maxVals | Measure-Object -Maximum).Maximum }
     }
     if (-not $gpuTemp) {

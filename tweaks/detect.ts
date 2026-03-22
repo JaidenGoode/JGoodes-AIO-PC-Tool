@@ -54,11 +54,10 @@ $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'Gam
 try{$_sp='HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile';$_nti=(Get-ItemProperty -Path $_sp -Name 'NetworkThrottlingIndex' -EA Stop).NetworkThrottlingIndex;$_sr=(Get-ItemProperty -Path $_sp -Name 'SystemResponsiveness' -EA Stop).SystemResponsiveness;$d['System Responsiveness & Network Throttling']=if(($_nti -eq -1 -or [uint32]$_nti -eq 4294967295) -and $_sr -eq 0){1}else{0}}catch{$d['System Responsiveness & Network Throttling']=0}
 $d['Maximum Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Latency Sensitive' 'True'
 $d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 5
-try{$ifaces=Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA Stop;$nag=0;foreach($i in $ifaces){try{if((Get-ItemProperty $i.PSPath 'TcpAckFrequency' -EA Stop).TcpAckFrequency -eq 1){$nag=1;break}}catch{}};$d["Disable Nagle's Algorithm"]=$nag}catch{$d["Disable Nagle's Algorithm"]=0}
 $d['Disable Xbox Core Services']=csvc 'XboxGipSvc'
 
 # System / Network
-try{$pfx=(netsh interface ipv6 show prefixpolicies 2>$null) -join ' ';$d['Prefer IPv4 over IPv6']=if($pfx -match '::ffff:0:0/96\s+60'){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
+try{$pfx=(netsh interface ipv6 show prefixpolicies 2>$null) -join ' ';$d['Prefer IPv4 over IPv6']=if($pfx -match '60\s+\d+\s+::ffff:0:0/96'){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
 $d['Disable Web Search in Windows Search']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0
 try{$tcp=(netsh int tcp show global 2>$null) -join ' ';$d['Disable Windows TCP Auto-Tuning']=if($tcp -match 'Receive Window Auto-Tuning Level\s*:\s*disabled'){1}else{0}}catch{$d['Disable Windows TCP Auto-Tuning']=0}
 $d['Disable Startup Program Delay']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0

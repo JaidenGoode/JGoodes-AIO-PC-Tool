@@ -33,7 +33,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Instant Menu Response (Zero Delay)",
       "Disable Full Screen Optimizations",
       "Maximum Priority for Games",
-      "Disable Nagle's Algorithm",
       "Disable Multiplane Overlay (MPO)",
       "Disable Power Throttling",
     ],

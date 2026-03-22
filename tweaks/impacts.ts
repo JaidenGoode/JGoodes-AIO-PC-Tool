@@ -24,7 +24,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Win32 Priority Separation":                     "Medium",
   "Disable GameBar":                               "Medium",
   "Disable GameBar Background Recording":          "Medium",
-  "Disable Nagle's Algorithm":                     "Medium",
   "Enable Game Mode":                              "Medium",
   "Disable Cortana":                               "Medium",
   "Disable Startup Program Delay":                 "Medium",

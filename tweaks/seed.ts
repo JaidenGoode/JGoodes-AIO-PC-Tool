@@ -180,14 +180,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive lower CPU scheduling while Fortnite is running. No system stability risk — High priority is well below Realtime. Revert deletes the IFEO keys, fully restoring the Windows default state."
   },
   {
-    title: "Disable Nagle's Algorithm",
-    description: "Nagle's Algorithm buffers small outgoing TCP packets together before sending to reduce bandwidth overhead — in online gaming this adds unnecessary latency to every packet. Disabling it via TcpAckFrequency and TCPNoDelay registry keys forces packets to be sent immediately with zero buffering delay, lowering in-game ping response time.",
-    category: "gaming",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Marginally higher bandwidth usage due to smaller, more frequent packets. Benefit is lower and more consistent in-game ping."
-  },
-  {
     title: "Disable Auto-Restart After Windows Updates",
     description: "Prevents Windows from automatically rebooting your PC after installing updates — even when you're in the middle of a game or important work. Windows normally schedules forced restarts and can interrupt active sessions. This tweak keeps your PC running until you choose to restart.",
     category: "system",
@@ -388,7 +380,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Network Optimization",
-    description: "Applies a comprehensive set of network optimizations in one click: sets Cloudflare DNS (1.1.1.1) on Wi-Fi and Ethernet, enables DNS over HTTPS, configures RSS CPU queues to match your hardware, disables Nagle's Algorithm for lower gaming latency, and enables MSI (Message Signaled Interrupts) for your NIC. All changes are fully reversible.",
+    description: "Applies a comprehensive set of network optimizations in one click: sets Cloudflare DNS (1.1.1.1) on Wi-Fi and Ethernet, enables DNS over HTTPS, configures RSS CPU queues to match your hardware, disables Nagle's Algorithm for lower gaming latency, applies ~50 NIC driver-level performance parameters, and enables MSI (Message Signaled Interrupts) for your NIC. All changes are fully reversible.",
     category: "network",
     isActive: false,
     warning: "DNS will be set to Cloudflare (1.1.1.1 / 1.0.0.1) on adapters named 'Wi-Fi' and 'Ethernet'. If your adapter has a different name, DNS settings may not apply to it. A restart is recommended after applying.",

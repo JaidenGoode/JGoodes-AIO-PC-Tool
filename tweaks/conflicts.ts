@@ -18,11 +18,6 @@ export const TWEAK_CONFLICTS: Record<string, string> = {
   // Disable Memory Compression writes the same key — redundant if both are active.
   "Disable Memory Compression":    "Optimize Boot Configuration",
 
-  // One-Click Network Optimization includes Nagle disable across all interfaces.
-  // Enabling both Nagle and Network Optimization writes to the same registry keys
-  // — the last one applied wins, causing redundancy.
-  "Disable Nagle's Algorithm":     "Network Optimization",
-  "Network Optimization":          "Disable Nagle's Algorithm",
 };
 
 export function getConflict(title: string): string | null {
