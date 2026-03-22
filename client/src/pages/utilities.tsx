@@ -911,7 +911,7 @@ export default function Utilities() {
 
         {/* Memory & Explorer */}
         <UtilCard icon={MemoryStick} title="Memory & Explorer" description="Free RAM and refresh the Windows shell" delay={0.14}>
-          <p className="text-[10px] text-muted-foreground mb-1">Flushes the Windows standby list via NtSetSystemInformation — instant, silent, no popup. Run before gaming for a clean memory baseline.</p>
+          <p className="text-[10px] text-muted-foreground mb-1">3-stage RAM clear (same as Mem Reduct): flushes process working sets → writes modified pages to disk → purges standby list. Run before gaming for a clean memory baseline.</p>
           <RunButton action="empty-standby-memory" label="Empty Standby Memory" pending={isPending("empty-standby-memory")} onRun={run} />
           <div className="pt-1 border-t border-border/30">
             <p className="text-[10px] text-muted-foreground mb-1.5">Fixes frozen taskbar, blank icons, or stuck Explorer.</p>
