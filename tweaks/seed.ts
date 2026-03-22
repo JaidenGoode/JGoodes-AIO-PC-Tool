@@ -26,14 +26,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Some backup or sync software that tracks file access times may not work correctly."
   },
   {
-    title: "Disable Windows Performance Counters",
-    description: "Disables background performance monitoring counters that constantly collect system metrics. The Perflib counters run continuously even when nothing is querying them. Disabling them frees minor CPU overhead and reduces background data collection.",
-    category: "performance",
-    isActive: false,
-    warning: "Task Manager's Performance tab and some third-party monitoring tools (HWInfo, MSI Afterburner, GPU-Z) may lose some counter data or display partial readings. If you rely on monitoring software for overclocking or system health, test before applying.",
-    featureBreaks: "Task Manager Performance tab may show limited data. Third-party monitoring tools that rely on Windows performance counters may show reduced metrics."
-  },
-  {
     title: "Disable Windows File Indexing",
     description: "Stops the Windows Search Indexer from continuously indexing files in the background. HDD users will see the biggest benefit — indexing causes constant disk activity on spinning drives. On SSDs the improvement is smaller, but it still eliminates unnecessary background writes that reduce SSD lifespan over time.",
     category: "performance",
@@ -43,7 +35,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Background UWP Apps",
-    description: "Prevents Windows Store (UWP) apps such as Spotify, Photos, Mail, Maps, and News from running and consuming CPU and RAM in the background when you are not using them. Sets GlobalUserDisabled=1 in the BackgroundAccessApplications policy key — the cleanest, fully reversible single-value approach. Enabled: 1 — Disabled: 0 (Windows default).",
+    description: "Prevents Windows Store (UWP) apps such as Spotify, Photos, Mail, Maps, and News from running and consuming CPU and RAM in the background when you are not using them.",
     category: "performance",
     isActive: false,
     warning: null,
@@ -67,7 +59,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Optimize Visual Effects for Performance",
-    description: "Disables all Windows visual effects for maximum performance — window animations, drop shadows, taskbar animations, thumbnail previews, menu fading, and transparent selection rectangles — while keeping 'Smooth edges of screen fonts' (ClearType) enabled so text stays crisp. Reduces Desktop Window Manager CPU and GPU overhead freeing resources for games.",
+    description: "Disables all Windows visual effects for maximum performance — window animations, drop shadows, taskbar animations, thumbnail previews, menu fading, and transparent selection rectangles — while keeping ClearType font rendering enabled so text stays crisp.",
     category: "performance",
     isActive: false,
     warning: null,
@@ -96,7 +88,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Forces all CPU cores to remain active and prevents Windows from parking (powering down) idle cores. Reduces latency spikes caused by cores waking up mid-game.",
     category: "gaming",
     isActive: false,
-    warning: "⚠️ NOT RECOMMENDED for AMD Ryzen X3D processors (5800X3D, 7800X3D, 7950X3D, 9800X3D etc.) — the X3D cache thermal design relies on Windows core parking for temperature management. Forcing cores active can cause thermal issues.",
+    warning: "NOT RECOMMENDED for AMD Ryzen X3D processors (5800X3D, 7800X3D, 7950X3D, 9800X3D etc.) — the X3D cache thermal design relies on Windows core parking for temperature management. Forcing cores active can cause thermal issues.",
     featureBreaks: "Higher idle power consumption. All cores stay fully active permanently."
   },
   {
@@ -157,7 +149,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "System Responsiveness & Network Throttling",
-    description: "Removes two Windows performance limiters from the Multimedia System Profile: (1) the network packet throttle that Windows applies to multimedia applications is fully disabled so game packets are never delayed, and (2) the background CPU reservation that Windows holds for system tasks is set to zero — giving games full access to every available CPU cycle. Both settings are restored to their exact Windows defaults when reverted.",
+    description: "Removes two Windows performance limiters from the Multimedia System Profile: (1) the network packet throttle that Windows applies to multimedia applications is fully disabled so game packets are never delayed, and (2) the background CPU reservation that Windows holds for system tasks is set to zero — giving games full access to every available CPU cycle.",
     category: "gaming",
     isActive: false,
     warning: null,
@@ -165,7 +157,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Win32 Priority Separation",
-    description: "Configures how the Windows CPU scheduler distributes processing time between the active foreground application and background tasks. The gaming-optimised setting gives your game a fixed, maximum CPU time boost with the shortest possible scheduling intervals — reducing micro-stutter and improving frame consistency. Revert restores the Windows default variable-boost scheduling value.",
+    description: "Configures how the Windows CPU scheduler distributes processing time between the active foreground application and background tasks. The gaming-optimised value (0x24) gives your game a fixed, maximum CPU time boost with the shortest possible scheduling intervals — reducing micro-stutter and improving frame consistency. Revert restores the Windows default (0x26).",
     category: "gaming",
     isActive: false,
     warning: null,
@@ -173,7 +165,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Maximum Priority for Games",
-    description: "Configures the Windows Multimedia SystemProfile Tasks\\Games entry to give games the highest possible scheduler priority: GPU Priority 8 (max), CPU Priority 6 (High), Scheduling Category High, SFIO Priority High, Background Only False, and Latency Sensitive True. Every process registered as a game gets maximum CPU, GPU, and disk access priority — reduces frame pacing issues and input lag.",
+    description: "Configures the Windows Multimedia SystemProfile Tasks\\Games entry to give games the highest possible scheduler priority: GPU Priority 8 (max), CPU Priority 6 (High), Scheduling Category High, SFIO Priority High, Background Only False, and Latency Sensitive True. Every process registered as a game gets maximum CPU, GPU, and disk access priority.",
     category: "gaming",
     isActive: false,
     warning: null,
@@ -196,14 +188,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Marginally higher bandwidth usage due to smaller, more frequent packets. Benefit is lower and more consistent in-game ping."
   },
   {
-    title: "Disable HPET (Platform Clock)",
-    description: "Disables the High Precision Event Timer (HPET) as the Windows platform clock source via boot configuration. HPET is a hardware timer that Windows uses for scheduling — on many modern CPUs (especially Intel and AMD Ryzen), switching away from HPET to the TSC (CPU's own clock) reduces timer overhead, improves timer resolution consistency, and can lower input latency and micro-stutter in games.",
-    category: "gaming",
-    isActive: false,
-    warning: "Requires a system restart to take effect. On some older systems or specific hardware combinations, disabling HPET may cause instability. Test after reboot — re-enable if you experience BSODs or timing issues.",
-    featureBreaks: "Restart required. Windows uses TSC/PM timer instead of HPET. May reduce micro-stutter and improve frame time consistency on modern hardware."
-  },
-  {
     title: "Disable Auto-Restart After Windows Updates",
     description: "Prevents Windows from automatically rebooting your PC after installing updates — even when you're in the middle of a game or important work. Windows normally schedules forced restarts and can interrupt active sessions. This tweak keeps your PC running until you choose to restart.",
     category: "system",
@@ -222,28 +206,12 @@ export const TWEAKS_SEED: TweakSeed[] = [
 
   // ── SYSTEM ───────────────────────────────────────────────────────────────────
   {
-    title: "Disable IPv6",
-    description: "Completely disables the IPv6 networking protocol stack on all network adapters. Forces all connections to use IPv4 only.",
-    category: "system",
-    isActive: false,
-    warning: "Some ISPs (particularly in regions with limited IPv4 availability) and some VPN services assign IPv6 as the primary address — disabling IPv6 on these connections can break internet access or cause DNS failures. Check your connection type before applying. If your internet stops working after applying, revert immediately.",
-    featureBreaks: "IPv6-only services or websites may be unreachable. Some VPN configurations that rely on IPv6 tunneling will not function. Most consumer IPv4 networks are unaffected."
-  },
-  {
     title: "Prefer IPv4 over IPv6",
-    description: "Configures Windows to prefer IPv4 connections over IPv6 when both are available. Keeps IPv6 functional but as a fallback, which can resolve connectivity issues on some networks.",
+    description: "Configures Windows to prefer IPv4 connections over IPv6 when both are available by adjusting the IPv6 prefix policy table. Keeps IPv6 fully functional as a fallback, which can resolve connectivity issues on some networks without breaking IPv6 entirely.",
     category: "system",
     isActive: false,
     warning: null,
-    featureBreaks: "Minimal. IPv6 still works but is deprioritized. Recommended alternative to fully disabling IPv6."
-  },
-  {
-    title: "Enable SSD TRIM Optimization",
-    description: "Ensures the TRIM command is enabled for SSDs, which tells the SSD controller to properly erase blocks no longer in use. Maintains SSD performance and longevity over time. HDDs do not support TRIM and are unaffected.",
-    category: "system",
-    isActive: false,
-    warning: null,
-    featureBreaks: "No negative effects. Safe for all systems. Only affects SSD drives."
+    featureBreaks: "Minimal. IPv6 still works but is deprioritized. Recommended over fully disabling IPv6."
   },
   {
     title: "Disable Web Search in Windows Search",
@@ -259,7 +227,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     category: "system",
     isActive: false,
     warning: "May reduce large file download speeds on high-latency connections (e.g. satellite internet or very long-distance servers). Test your download speeds after applying — if throughput drops significantly, revert. Broadband cable and fibre connections are generally unaffected.",
-    featureBreaks: "Large file download throughput may be reduced on high-latency connections. Gaming latency consistency typically improves. Revert restores Windows default (autotuninglevel=normal)."
+    featureBreaks: "Large file download throughput may be reduced on high-latency connections. Gaming latency consistency typically improves."
   },
   {
     title: "Disable Startup Program Delay",
@@ -274,8 +242,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     description: "Stops Windows from automatically running maintenance tasks (disk defragmentation, Windows Defender scans, system diagnostics) in the background. These tasks can cause unexpected CPU and disk spikes during gaming or work.",
     category: "system",
     isActive: false,
-    warning: "Automatic Windows Defender scans will no longer run on their own — you must open Windows Security and run manual scans periodically. Also disable scheduled defragmentation manually if needed for HDDs. This is safe if you are disciplined about running occasional scans and maintenance manually.",
-    featureBreaks: "Automatic maintenance disabled. Windows Defender scheduled scans stop. Disk Cleanup and defragmentation must be run manually. Recommended: run a manual Defender scan at least once a week."
+    warning: "Automatic Windows Defender scans will no longer run on their own — you must open Windows Security and run manual scans periodically. This is safe if you are disciplined about running occasional scans and maintenance manually.",
+    featureBreaks: "Automatic maintenance disabled. Windows Defender scheduled scans stop. Disk Cleanup and defragmentation must be run manually."
   },
   {
     title: "Disable Power Throttling",
@@ -284,16 +252,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: "LAPTOP USERS: Disabling Power Throttling will increase power consumption and heat. Only apply if you are plugged in and want maximum performance. Desktop users have no drawback.",
     featureBreaks: "Background apps may use more CPU power. Battery life reduced on laptops. Desktop users: no negative effect."
-  },
-
-  // ── SYSTEM (new standalone) ──────────────────────────────────────────────────
-  {
-    title: "Disable Remote Assistance",
-    description: "Prevents Windows from accepting remote assistance connection requests. Remote Assistance allows Microsoft or third parties to view and control your PC when invited. Disabling this removes the attack surface and prevents uninvited remote access.",
-    category: "system",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Cannot use Windows Remote Assistance to get help from another person. Does not affect Remote Desktop."
   },
   {
     title: "Disable Phone Link & Mobile Sync",
@@ -304,7 +262,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Phone Link app cannot sync with your phone. Cross-device clipboard and Continue on PC features disabled."
   },
 
-  // ── PERFORMANCE (Cortex Disk Cache & Desktop Menu Optimization) ────────────
+  // ── PERFORMANCE (Disk / Memory) ────────────────────────────────────────────
   {
     title: "Auto-End Unresponsive Programs",
     description: "Automatically terminates programs that stop responding instead of waiting indefinitely. Reduces the hung-app timeout from 5 seconds to 1 second and sets Windows to auto-end tasks on shutdown, preventing the 'This app is preventing shutdown' dialog.",
@@ -363,11 +321,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Optimize Boot Configuration",
-    description: "Enables boot-time file layout optimization and configures the prefetcher to optimize both boot and application launch. Windows rearranges boot files on disk for faster sequential reads during startup.",
+    description: "Enables fast startup (hybrid boot), reduces the boot menu timeout to 3 seconds, and configures Windows to use the CPU's own TSC clock instead of the platform clock — resulting in faster boot times and more consistent system timer resolution.",
     category: "performance",
     isActive: false,
-    warning: null,
-    featureBreaks: "No negative effects. Improves boot time by optimizing file placement on disk."
+    warning: "Restart required. Note: Enabling fast startup may conflict with the Hibernation tweak — apply one or the other, not both.",
+    featureBreaks: "Restart required. Fast startup enabled (hybrid shutdown). Boot menu shows for 3 seconds instead of 30. Platform clock replaced with TSC for timer resolution."
   },
   {
     title: "Increase System I/O Performance",
@@ -378,7 +336,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Slightly higher memory reserved for I/O operations. Beneficial for systems with 8GB+ RAM."
   },
 
-  // ── SYSTEM (Cortex Desktop Menu & Misc Optimization) ──────────────────────
+  // ── SYSTEM (Desktop / Misc) ────────────────────────────────────────────────
   {
     title: "Disable Taskbar & Menu Animations",
     description: "Disables taskbar button animations, Start menu animations, and the MinAnimate window minimize/maximize effect. Reduces visual overhead and makes the desktop feel snappier and more responsive.",
@@ -386,14 +344,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: null,
     featureBreaks: "Windows minimize/maximize will snap instantly without animation. Taskbar and Start menu transitions removed."
-  },
-  {
-    title: "Disable Startup Disk Check",
-    description: "Prevents Windows from automatically running chkdsk (Check Disk) on startup after an improper shutdown. While chkdsk repairs filesystem errors, the automatic scan can add minutes to boot time.",
-    category: "system",
-    isActive: false,
-    warning: "If your system crashes frequently, leaving automatic disk check enabled helps detect and repair filesystem corruption. Only disable if your system shuts down cleanly.",
-    featureBreaks: "Automatic filesystem check on boot disabled. Run chkdsk manually if you suspect disk errors."
   },
   {
     title: "Reduce Taskbar Preview Delay",
@@ -428,22 +378,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Keys repeat faster when held down. No negative effects."
   },
   {
-    title: "Increase Network Buffer Size",
-    description: "Increases the SMB/CIFS request buffer size and IRPStackSize for better network file transfer performance. Improves throughput when accessing shared network drives and transferring large files over LAN.",
-    category: "system",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Slightly more memory used for network buffers. Improves network file transfer speed."
-  },
-  {
-    title: "Optimize DNS Resolution",
-    description: "Increases the DNS cache limits and maximum UDP packet size for faster DNS lookups. Reduces DNS query latency by caching more resolved addresses locally and allowing larger DNS responses.",
-    category: "system",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Slightly more memory used for DNS cache. Improves web browsing and online gaming responsiveness."
-  },
-  {
     title: "Unlock Reserved Network Bandwidth",
     description: "Removes the default 20% network bandwidth reservation that Windows reserves for QoS (Quality of Service) and system processes. Unlocks the full bandwidth of your network adapter for applications.",
     category: "system",
@@ -451,32 +385,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "QoS bandwidth reservation removed. All bandwidth available to applications. Minimal impact on system network traffic."
   },
-  {
-    title: "Increase Browser Connection Limits",
-    description: "Increases the maximum concurrent HTTP connections per server from 2 to 16 for both HTTP/1.0 and HTTP/1.1. Allows browsers and download managers to open more simultaneous connections, improving download speeds and page load times.",
-    category: "system",
-    isActive: false,
-    warning: null,
-    featureBreaks: "More simultaneous connections to web servers. Some servers may rate-limit excessive connections."
-  },
 
   // ── NETWORK ───────────────────────────────────────────────────────────────
-  {
-    title: "Disable SMBv1 Protocol",
-    description: "Disables the legacy SMBv1 file-sharing protocol and removes the SMBv1 Windows Optional Feature. SMBv1 is a 1990s-era protocol with no security, exploited directly by WannaCry and NotPetya ransomware. All modern devices (NAS drives, printers, PCs) use SMBv2 or SMBv3. SMBv1 has been disabled by default since Windows 10 Fall Creators Update (2017) — this tweak ensures it stays off.",
-    category: "network",
-    isActive: false,
-    warning: "RESTART REQUIRED after applying. OLD NAS USERS: Devices manufactured before 2006 with unupdated firmware may only support SMBv1. Note: reverting this tweak keeps SMBv1 disabled (Windows 10/11 default) — to manually re-enable it you must use an admin PowerShell command.",
-    featureBreaks: "Requires a system restart to take effect. NAS devices or printers with only SMBv1 support (pre-2006, unupdated firmware) will be inaccessible. Reverting keeps SMBv1 disabled (the modern Windows default). All modern devices unaffected."
-  },
-  {
-    title: "Enable Receive Side Scaling (RSS)",
-    description: "Enables Receive Side Scaling which distributes incoming network packet processing across multiple CPU cores instead of funneling all traffic through a single core. On high-speed connections (100Mbps+) a single core can become a bottleneck. RSS eliminates this and reduces CPU latency spikes during heavy online gaming or streaming. RSS is enabled by default in Windows 10/11 — this tweak ensures it is on and explicitly enables it on all physical adapters.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "No negative effects. Improves multi-core CPU utilization for network traffic. Effective on connections of 100Mbps and above. Revert also keeps RSS enabled (Windows default) — RSS remains functional after reverting."
-  },
   {
     title: "Disable Delivery Optimization Service",
     description: "Disables the Windows Update Delivery Optimization service which silently uses your upload bandwidth to distribute Windows updates to other people's PCs over the internet, acting as a P2P node. Microsoft enables this by default without prominently informing users. Disabling stops all P2P upload activity.",
@@ -485,7 +395,16 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Your PC will no longer upload Windows update files to other PCs on the internet. Your own Windows updates download directly from Microsoft and are completely unaffected."
   },
-  // ── GAMING (Razer Cortex Speed Up style) ─────────────────────────────────
+  {
+    title: "One-Click Network Optimization",
+    description: "Applies a comprehensive set of network optimizations in one click: sets Cloudflare DNS (1.1.1.1) on Wi-Fi and Ethernet, enables DNS over HTTPS, configures RSS CPU queues to match your hardware, disables Nagle's Algorithm for lower gaming latency, and enables MSI (Message Signaled Interrupts) for your NIC. All changes are fully reversible.",
+    category: "network",
+    isActive: false,
+    warning: "DNS will be set to Cloudflare (1.1.1.1 / 1.0.0.1) on adapters named 'Wi-Fi' and 'Ethernet'. If your adapter has a different name, DNS settings may not apply to it. A restart is recommended after applying.",
+    featureBreaks: "Restart recommended. DNS is set to Cloudflare on standard adapter names. Nagle's Algorithm disabled (packets sent instantly, minor bandwidth increase). MSI enabled for NIC (improves interrupt handling). All changes revert cleanly."
+  },
+
+  // ── GAMING (USB / Timing) ─────────────────────────────────────────────────
   {
     title: "Disable USB Selective Suspend",
     description: "Prevents Windows from power-suspending USB devices after periods of inactivity. USB Selective Suspend can cause input devices — mice, keyboards, and gamepads — to momentarily disconnect or introduce input lag spikes when the device wakes from a suspended state during gaming.",
@@ -493,31 +412,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: "LAPTOP USERS: Disabling this will slightly increase battery drain as USB devices remain powered continuously. Desktop users have no drawback.",
     featureBreaks: "USB devices remain fully powered at all times. Eliminates USB input lag spikes during gaming. Slightly higher power draw on battery."
-  },
-  {
-    title: "Set TSC Sync Policy (Precise Game Timing)",
-    description: "Configures the processor's Time Stamp Counter synchronization policy to Enhanced mode via bcdedit. This ensures all CPU cores share a precisely synchronized clock source, reducing timer inconsistencies that cause micro-stutter and frame time variance in games and high-refresh-rate applications.",
-    category: "gaming",
-    isActive: false,
-    warning: "Requires a system restart to take effect. Supported on all modern Intel and AMD Ryzen processors.",
-    featureBreaks: "Restart required. Improves timer accuracy for games and high-refresh displays. No other effects."
-  },
-  // ── NETWORK (Razer Cortex Speed Up style) ────────────────────────────────
-  {
-    title: "Enable TCP Fast Open",
-    description: "Enables TCP Fast Open (TFO) which allows TCP connections to include data in the initial handshake packet, eliminating a full round-trip time for frequently-visited servers. Reduces connection setup latency for web browsing, gaming server connections, and any TCP-based communication.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Safe to enable — falls back to standard TCP handshake if the server does not support TFO. No negative effects."
-  },
-  {
-    title: "Disable NIC Interrupt Moderation",
-    description: "Disables Interrupt Moderation (also called Interrupt Coalescing) on physical network adapters. Interrupt Moderation batches multiple network interrupt signals before triggering the CPU, adding latency to every packet. Disabling it ensures each packet triggers an immediate CPU interrupt — critical for competitive gaming and low-latency applications.",
-    category: "network",
-    isActive: false,
-    warning: "LAPTOP USERS: Disabling interrupt moderation increases the frequency of CPU interrupts from your network adapter, which can slightly raise power consumption. Only apply on laptops when plugged in. Desktop users have no drawback. On some budget or older NIC models this setting may have no effect if the driver does not expose the interrupt moderation property.",
-    featureBreaks: "Slightly higher CPU utilization from the network adapter under heavy load. Reduces latency but increases CPU interrupt frequency. Ideal for competitive gaming on desktop; test on laptops."
   },
 
   // ── PERFORMANCE (additional) ─────────────────────────────────────────────
@@ -530,16 +424,8 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Taskbar, Start menu, and Action Center become fully opaque instead of translucent/blurred. Visual appearance change only — no functional effect."
   },
   {
-    title: "Increase Gaming Task Priority in System Scheduler",
-    description: "Configures the Windows Multimedia Class Scheduler Service (MMCSS) audio task profile with gaming-optimized values. By default, the audio scheduling category is Medium and runs as a background-only task — this means game audio competes with background processes for CPU time, causing audio stutters and crackling under load. Setting Priority to 6 (High), Scheduling Category to High, SFIO Priority to High, and Background Only to False ensures audio threads serving games are scheduled with the same urgency as the game process itself. Fully safe values taken from Microsoft's MMCSS documentation.",
-    category: "gaming",
-    isActive: false,
-    warning: "May slightly deprioritize background audio applications (music players, chat apps) while gaming. Game audio and in-game voice will be noticeably crisper.",
-    featureBreaks: "Background audio apps receive fewer CPU scheduler slots while gaming. No effect on game functionality — only affects audio thread scheduling priority."
-  },
-  {
     title: "Disable Tile Notification System",
-    description: "Disables the Windows Live Tile notification system which continuously polls the internet, wakes the CPU, writes notification data to disk, and keeps background UWP app processes alive to update Start menu tile content. On Windows 10/11, tiles silently generate disk I/O and consume memory even when the Start menu is not open. Disabling tile notifications reduces idle disk writes, lowers background memory usage, and improves system responsiveness — especially on HDDs and systems with limited RAM.",
+    description: "Disables the Windows Live Tile notification system which continuously polls the internet, wakes the CPU, writes notification data to disk, and keeps background UWP app processes alive to update Start menu tile content. Disabling tile notifications reduces idle disk writes, lowers background memory usage, and improves system responsiveness.",
     category: "performance",
     isActive: false,
     warning: null,
@@ -547,7 +433,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Windows Error Reporting",
-    description: "Disables the Windows Error Reporting service (WerSvc) which automatically generates crash dump files and uploads them to Microsoft whenever any program crashes. During gaming, if a background application crashes, WerSvc triggers a sudden spike in CPU and disk usage while writing minidump files — causing frame drops and stutters at the worst possible moment. Disabling it stops all crash dump generation and upload activity, reclaiming those resources for your game.",
+    description: "Disables the Windows Error Reporting service (WerSvc) which automatically generates crash dump files and uploads them to Microsoft whenever any program crashes. During gaming, if a background application crashes, WerSvc triggers a sudden spike in CPU and disk usage while writing minidump files — causing frame drops and stutters at the worst possible moment.",
     category: "performance",
     isActive: false,
     warning: "If you regularly experience application crashes and want to report them or investigate why they happen, leave this enabled — disabling it means no crash information is saved or sent. For stable systems this is a safe disable.",
@@ -555,7 +441,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Connected Telemetry (DiagTrack)",
-    description: "Disables the Connected User Experiences and Telemetry service (DiagTrack) — Microsoft's always-on background data collection engine that continuously monitors your system activity, writes telemetry data to disk, and uploads it over your internet connection at regular intervals. Even during gaming this service runs in the background consuming CPU cycles, generating disk I/O, and using upload bandwidth. Disabling it fully stops all of this background activity.",
+    description: "Disables the Connected User Experiences and Telemetry service (DiagTrack) — Microsoft's always-on background data collection engine that continuously monitors your system activity, writes telemetry data to disk, and uploads it over your internet connection at regular intervals. Even during gaming this service runs in the background consuming CPU cycles, generating disk I/O, and using upload bandwidth.",
     category: "performance",
     isActive: false,
     warning: null,
@@ -563,7 +449,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Application Compatibility Telemetry",
-    description: "Disables Windows Application Insights Telemetry (AITEnable) and the Program Compatibility Assistant service (PcaSvc) which intercept every single process launch on your system to log app compatibility data. Every time you start a game or application, Windows silently records it and checks it against a cloud compatibility database — adding overhead to every program start. Disabling stops all per-launch monitoring and frees the associated background service.",
+    description: "Disables Windows Application Insights Telemetry (AITEnable) and the Program Compatibility Assistant service (PcaSvc) which intercept every single process launch on your system to log app compatibility data. Every time you start a game or application, Windows silently records it and checks it against a cloud compatibility database — adding overhead to every program start.",
     category: "performance",
     isActive: false,
     warning: null,
@@ -571,7 +457,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Windows Activity History",
-    description: "Stops Windows from secretly logging every application, document, and file you open for the Windows Timeline (Task View history) feature. Activity History creates constant background disk writes throughout every work and gaming session as Windows records your activity. It also periodically uploads this history to Microsoft's servers. Disabling stops all activity logging, disk writes, and uploads immediately.",
+    description: "Stops Windows from secretly logging every application, document, and file you open for the Windows Timeline (Task View history) feature. Activity History creates constant background disk writes throughout every work and gaming session as Windows records your activity. It also periodically uploads this history to Microsoft's servers.",
     category: "system",
     isActive: false,
     warning: null,
@@ -587,7 +473,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Disable Windows Content Delivery Manager",
-    description: "Stops the Windows Content Delivery Manager from silently installing sponsored apps, pushing lock screen advertisements, adding suggested apps to your Start menu, and pre-installing OEM bloatware in the background without any notification. Microsoft uses this mechanism post-installation to add unwanted software to your PC. Disabling it prevents any future silent installs and suppresses all Start menu suggestions.",
+    description: "Stops the Windows Content Delivery Manager from silently installing sponsored apps, pushing lock screen advertisements, adding suggested apps to your Start menu, and pre-installing OEM bloatware in the background without any notification. Microsoft uses this mechanism post-installation to add unwanted software to your PC.",
     category: "system",
     isActive: false,
     warning: null,
@@ -611,66 +497,50 @@ export const TWEAKS_SEED: TweakSeed[] = [
   },
   {
     title: "Raise System Timer IRQ Priority",
-    description: "Sets IRQ8Priority=1 in Windows Priority Control, elevating the hardware interrupt priority of the system timer (the CMOS/RTC clock that drives all high-resolution timer APIs). This gives Windows' high-resolution timer interrupt higher CPU scheduling weight, reducing the jitter and latency variance in timer callbacks. The result is more consistent frame times and reduced micro-stutters — especially noticeable at 144Hz and above where each frame is only 6.9ms.",
+    description: "Enables GlobalTimerResolutionRequests to stabilize high-resolution timer callbacks, disables dynamic tick to prevent the CPU from dropping to lower timer frequencies, and sets TSC sync to Enhanced mode for consistent cross-core timing. Together these three changes reduce timer jitter and improve frame time consistency — especially noticeable at 144Hz and above.",
     category: "gaming",
     isActive: false,
-    warning: null,
-    featureBreaks: "No functional changes. Minor internal change to timer interrupt priority. Fully reversible by removing the registry value."
-  },
-  {
-    title: "Optimize AFD Network Socket Buffers",
-    description: "Increases the Windows Ancillary Function Driver (AFD) default socket send and receive buffer sizes from the Windows default of 8KB to 128KB. Larger socket buffers reduce the number of context switches and kernel system calls required to handle game network traffic — particularly beneficial for UDP-heavy online games. Fewer kernel interruptions means lower CPU overhead during online gaming and more consistent network latency.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Slightly more kernel memory allocated for network socket buffers (negligible on any modern PC with 4GB+ RAM). Beneficial for all online gaming. No negative effects on normal usage or browsing."
+    warning: "Restart required. Disabling dynamic tick means Windows always ticks at the timer resolution requested by applications — this slightly increases CPU idle power usage. Recommended for gaming desktops; test on laptops.",
+    featureBreaks: "Restart required. Slight increase in idle CPU power due to constant tick. Improves frame time consistency and reduces micro-stutters at high refresh rates."
   },
   {
     title: "Foreground Application Priority Lock Timeout",
-    description: "Sets ForegroundLockTimeout to 0 in the Windows Desktop registry, making Windows instantly begin boosting the foreground application's CPU priority the moment it becomes the active window. The Windows default of 200,000 microseconds (0.2 seconds) creates a brief but measurable delay before a game receives its full foreground CPU scheduling priority after being clicked or alt-tabbed into. This is entirely separate from Win32PrioritySeparation — that tweak controls the *magnitude* of the priority boost, while ForegroundLockTimeout controls the *delay* before the boost begins. Setting to 0 eliminates that delay entirely.",
+    description: "Sets ForegroundLockTimeout to 0ms so the foreground application priority boost activates instantly when you switch to a window. The default 200ms delay means your game can experience a brief priority drop whenever you alt-tab in or out. Setting to 0 eliminates this delay entirely.",
     category: "gaming",
     isActive: false,
     warning: null,
-    featureBreaks: "No functional changes. Windows instantly prioritizes whichever window you focus. Fully reversible by restoring the default 200,000 microsecond value."
+    featureBreaks: "Foreground priority boost kicks in immediately on window focus. No side effects."
   },
   {
     title: "Disable Print Spooler",
-    description: "Disables the Windows Print Spooler service which manages all printer communication and print job queuing. Even on systems with no printer attached, the Print Spooler runs as an Automatic background service and its interrupt handling routine causes documented DPC (Deferred Procedure Call) latency spikes. DPC spikes are a well-known source of micro-stutters in games — the CPU is briefly interrupted mid-frame to service the Spooler's timer routine. Disabling it eliminates these interruptions. Recommended by professional DPC latency analysis tools like LatencyMon and by gaming optimization guides.",
-    category: "performance",
-    isActive: false,
-    warning: "You cannot print while the Print Spooler is disabled. Re-enable this tweak before printing — printing resumes instantly after re-enabling.",
-    featureBreaks: "Printing is completely unavailable while applied. Re-enable the tweak before printing. Fax services also stop. All other functionality including networking, file sharing, and applications is fully unaffected."
-  },
-  {
-    title: "NTFS MFT Zone Reservation",
-    description: "Sets NtfsMftZoneReservation to zone 2 (12.5% of volume) via the Windows FileSystem registry key, instructing NTFS to reserve more contiguous space at the start of each volume for Master File Table growth. The MFT stores metadata entries for every file on the drive — when it runs out of pre-reserved space and fragments as the drive fills, file I/O performance degrades because the filesystem must jump to scattered locations to read/write file metadata. Zone 2 (12.5%) is Microsoft's recommended setting for drives with moderate file counts. Documented in Microsoft KB174619. No restart required.",
-    category: "performance",
-    isActive: false,
-    warning: null,
-    featureBreaks: "No functional changes whatsoever. NTFS behavior is identical from the user's perspective. The MFT simply has a larger pre-reserved contiguous growth area, preventing long-term fragmentation as the drive fills up."
-  },
-  {
-    title: "Exclude Driver Updates from Windows Update",
-    description: "Configures Windows Update Group Policy to exclude device driver updates from automatic Windows Quality Update installation. By default, Windows Update silently downloads and installs GPU drivers, NIC drivers, audio drivers, and other device drivers during update cycles — sometimes pushing beta or newly-signed drivers that cause game crashes, display issues, or audio problems without warning. With this tweak applied, driver updates are excluded and you install them manually via Device Manager or your GPU manufacturer's software. All Windows security patches, cumulative updates, and feature updates continue normally.",
+    description: "Stops and disables the Windows Print Spooler service. If you don't have a printer, the Spooler runs unnecessarily in the background consuming RAM, CPU, and disk I/O while also being a historically common Windows security vulnerability (PrintNightmare etc.).",
     category: "system",
     isActive: false,
-    warning: "MANUAL DRIVER MANAGEMENT REQUIRED: After applying this, your GPU, audio, and network card drivers will NOT update automatically. You must download new drivers yourself from NVIDIA/AMD/Intel's website. If you miss driver updates for months, you may experience bugs, poor performance in new games, or missing features. Check for GPU driver updates at least once per month.",
-    featureBreaks: "GPU, audio, and network drivers will not auto-update via Windows Update. Must install manually from manufacturer websites. All Windows security patches, cumulative updates, and OS feature updates are completely unaffected and continue as normal."
+    warning: "If you have a printer, DO NOT disable this — all printing will stop working immediately. Only apply if you have no printer connected and do not print from this PC.",
+    featureBreaks: "All printing functionality disabled. No documents can be printed from this PC while this is active. Revert instantly restores the Spooler and all printing."
   },
   {
     title: "Disable Windows Copilot AI Sidebar",
-    description: "Disables the Windows Copilot AI sidebar introduced in Windows 11 version 23H2 via the official Group Policy registry key. When Copilot is enabled, Windows runs a persistent background browser process that consumes RAM and makes continuous background network connections to Microsoft's AI servers — even when you never open the Copilot panel. Disabling it via the official Group Policy removes the Copilot button from the taskbar and completely stops its background process from running. If you are on Windows 10 or Windows 11 versions before 23H2, this tweak has absolutely no effect (the key is simply ignored).",
+    description: "Disables the Windows Copilot AI Sidebar via Group Policy on Windows 11 23H2 and newer. Stops the BingCoPilot background browser process and removes the Copilot taskbar button, freeing the associated system resources.",
     category: "system",
     isActive: false,
     warning: null,
-    featureBreaks: "The Windows Copilot AI sidebar is removed from the taskbar and its background process stops running. Copilot AI features are unavailable. Windows Search, Bing, and all other Windows features are completely unaffected. Has no effect on Windows 10 or Windows 11 versions before 23H2."
+    featureBreaks: "Windows Copilot AI sidebar disabled and taskbar button removed on Windows 11 23H2+. No effect on Windows 10 or older Windows 11 builds."
+  },
+  {
+    title: "Disable Phone Link App",
+    description: "Removes the Phone Link (Your Phone) app which runs background processes to sync your mobile device to Windows. If you don't use phone syncing, this app silently consumes memory and keeps unnecessary background services active.",
+    category: "system",
+    isActive: false,
+    warning: null,
+    featureBreaks: "Phone Link / Your Phone app is removed. Cannot sync Android or iPhone to Windows until reverted. Cross-device clipboard and Continue on PC features will stop working."
   },
   {
     title: "Disable Windows 11 Widgets Panel",
-    description: "Disables the Windows 11 Widgets panel via the official Group Policy registry key, stopping the background Widgets service from continuously fetching news headlines, weather forecasts, stock prices, and activity feed data. The Widgets panel — shown as a weather icon on the taskbar — runs a persistent background process that makes frequent internet requests and consumes CPU and memory even when you never click it. Disabling it removes the Widgets button from the taskbar and eliminates all associated background network and CPU activity. If you are on Windows 10, this tweak has absolutely no effect.",
+    description: "Disables the Windows 11 Widgets Panel (News and Interests) which runs a background fetch process that continuously polls for news, weather, and stock data — consuming CPU, RAM, and network bandwidth even when you never open Widgets. Disabling removes the Widgets taskbar button and stops all background activity.",
     category: "system",
     isActive: false,
     warning: null,
-    featureBreaks: "The Windows 11 Widgets panel (taskbar weather and news widget) is disabled and removed from the taskbar. Windows Search, notifications, and all other Windows features are completely unaffected. Has no effect on Windows 10."
+    featureBreaks: "Widgets taskbar button removed. No news, weather, or stock data in Widgets. No effect on Windows 10 — this key is ignored on Win10."
   },
 ];
