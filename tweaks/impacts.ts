@@ -39,7 +39,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable NTFS Access Timestamps":                "Medium",
   "Auto-End Unresponsive Programs":                "Medium",
   "Disable Scheduled Disk Defragmentation":        "Medium",
-  "Release Unused DLLs from Memory":               "Medium",
   "Svchost Process Isolation":                     "Medium",
   "Optimize Boot Configuration":                   "Medium",
   "Disable Notification Center":                   "Medium",

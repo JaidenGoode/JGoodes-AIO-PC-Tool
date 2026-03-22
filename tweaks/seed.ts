@@ -288,14 +288,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Windows will page to disk instead of compressing memory. May increase page file usage on low-RAM systems."
   },
   {
-    title: "Release Unused DLLs from Memory",
-    description: "Configures Windows to automatically unload DLL libraries from memory when they are no longer being used by any application. Frees RAM that would otherwise be held by idle shared libraries.",
-    category: "performance",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Applications that frequently reload the same DLLs may have slightly longer load times. Frees RAM for other tasks."
-  },
-  {
     title: "Svchost Process Isolation",
     description: "Lowers the memory threshold at which Windows splits services into individual svchost.exe processes rather than grouping them. Improves system stability by isolating services — if one service crashes, it won't take down other services running in the same process.",
     category: "performance",

@@ -304,12 +304,6 @@ reg add "HKCU\\Control Panel\\Desktop" /v WaitToKillAppTimeout /t REG_SZ /d "200
     disable: `Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue`,
   },
 
-  "Release Unused DLLs from Memory": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v AlwaysUnloadDLL /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer" /v AlwaysUnloadDLL /t REG_DWORD /d 0 /f`,
-  },
-
   "Svchost Process Isolation": {
     requiresAdmin: true,
     requiresRestart: true,
