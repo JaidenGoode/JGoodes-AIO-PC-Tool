@@ -1310,7 +1310,7 @@ export default function Utilities() {
         </div>
 
         {/* ── ROW 4c: Driver Tools + Game Profiles ────────────────────── */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
 
           <UtilCard icon={HardDrive} title="Display Driver Uninstaller (DDU)" description="Fully remove GPU drivers for a clean reinstall" delay={0.28}>
             <div className="flex flex-col flex-1 space-y-2.5">
@@ -1462,6 +1462,7 @@ export default function Utilities() {
         </div>
 
         {/* ── ROW 5: Info & Advanced ──────────────────────────────────── */}
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
 
         {/* System Info */}
         <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.26}>
@@ -1519,6 +1520,8 @@ export default function Utilities() {
             </div>
           </div>
         </UtilCard>
+
+        </div>
 
       </div>
     </div>
