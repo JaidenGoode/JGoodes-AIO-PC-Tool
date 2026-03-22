@@ -14,6 +14,7 @@ let windowCreated = false;
 
 // ── LibreHardwareMonitor (silent hardware sensor provider) ────────────────────
 let lhmProcess = null;
+let lhmPid     = null;
 
 const LHM_VERSION      = "0.9.6";
 const LHM_DIR          = path.join(os.homedir(), "AppData", "Local", "JGoode-AIO", "LibreHardwareMonitor");
@@ -83,28 +84,66 @@ async function startLHM() {
         const installed = fs.readFileSync(LHM_VERSION_FILE, "utf8").trim();
         if (installed !== LHM_VERSION) needsDownload = true;
       } catch {
-        needsDownload = true; // no version file = old install, upgrade it
+        needsDownload = true;
       }
     }
     if (needsDownload) {
       const ok = await downloadLHM();
       if (!ok) { console.log("[LHM] Skipping — exe not found after download"); return; }
     }
-    lhmProcess = spawn(LHM_EXE, [], { windowsHide: true, detached: false });
+
+    // Pre-write LHM config to start minimized (only on first launch — don't overwrite user prefs)
+    const configPath = path.join(LHM_DIR, "LibreHardwareMonitor.config");
+    if (!fs.existsSync(configPath)) {
+      try {
+        fs.writeFileSync(configPath,
+          '<?xml version="1.0" encoding="utf-8"?>\n<settings>\n  <value name="startMinimized">true</value>\n  <value name="minimizeToTray">true</value>\n</settings>\n',
+          "utf8"
+        );
+      } catch {}
+    }
+
+    // Launch via PowerShell with WindowStyle Hidden — this properly sets SW_HIDE in STARTUPINFO
+    // which suppresses the GUI window at the OS level (windowsHide:true only hides console windows)
+    const exeQ = LHM_EXE.replace(/'/g, "''");
+    const pidFile = path.join(os.tmpdir(), "jgoode-lhm.pid");
+    const psCmd = `$p = Start-Process -FilePath '${exeQ}' -WindowStyle Hidden -PassThru; if ($p) { $p.Id | Out-File '${pidFile.replace(/'/g, "''")}' -Encoding ASCII -Force }`;
+
+    lhmProcess = spawn("powershell.exe", [
+      "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden",
+      "-Command", psCmd
+    ], { windowsHide: true });
+
     lhmProcess.on("error", () => { lhmProcess = null; });
-    lhmProcess.on("exit",  () => { lhmProcess = null; });
-    console.log("[LHM] Running silently — CPU/GPU sensors active (v" + LHM_VERSION + ")");
+    lhmProcess.on("exit", () => {
+      lhmProcess = null;
+      // Read the PID that PowerShell wrote to disk
+      try {
+        const pidStr = fs.readFileSync(pidFile, "utf8").trim();
+        const pid = parseInt(pidStr);
+        if (!isNaN(pid) && pid > 0) {
+          lhmPid = pid;
+          console.log("[LHM] Running silently (PID " + lhmPid + ") — CPU/GPU sensors active (v" + LHM_VERSION + ")");
+        }
+      } catch {}
+    });
+
   } catch (err) {
     console.log("[LHM] Failed to start:", err.message);
     lhmProcess = null;
+    lhmPid = null;
   }
 }
 
 function stopLHM() {
+  if (lhmPid) {
+    try { spawn("taskkill", ["/PID", String(lhmPid), "/F"], { windowsHide: true }); } catch {}
+    lhmPid = null;
+    console.log("[LHM] Stopped");
+  }
   if (lhmProcess) {
     try { lhmProcess.kill(); } catch {}
     lhmProcess = null;
-    console.log("[LHM] Stopped");
   }
 }
 
