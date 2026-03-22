@@ -355,12 +355,6 @@ bcdedit /deletevalue useplatformclock 2>$null
 bcdedit /deletevalue useplatformtick 2>$null`,
   },
 
-  "Increase System I/O Performance": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v IoPageLockLimit /t REG_DWORD /d 983040 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v IoPageLockLimit /t REG_DWORD /d 0 /f`,
-  },
-
   "Disable Taskbar & Menu Animations": {
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced" /v TaskbarAnimations /t REG_DWORD /d 0 /f
 reg add "HKCU\\Control Panel\\Desktop\\WindowMetrics" /v MinAnimate /t REG_SZ /d "0" /f
@@ -554,7 +548,7 @@ reg add "HKCU\\Software\\Microsoft\\Clipboard" /v EnableClipboardHistory /t REG_
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 0 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
-    disable: `bcdedit /set hypervisorlaunchtype Auto 2>$null
+    disable: `bcdedit /set hypervisorlaunchtype auto 2>$null
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 1 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 1 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
@@ -609,7 +603,7 @@ Get-AppxPackage Microsoft.Link2Windows -AllUsers -ErrorAction SilentlyContinue |
   },
 
   // ── NETWORK (One-Click Optimization) ──────────────────────────────────────
-  "One-Click Network Optimization": {
+  "Network Optimization": {
     requiresAdmin: true,
     requiresRestart: true,
     enable: `# Set Cloudflare DNS on Wi-Fi and Ethernet

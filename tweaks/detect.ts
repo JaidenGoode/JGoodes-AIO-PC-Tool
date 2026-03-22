@@ -75,7 +75,6 @@ $d['Release Unused DLLs from Memory']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Cur
 try{$svch=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' -EA Stop).SvcHostSplitThresholdInKB;$d['Svchost Process Isolation']=if($svch -gt 1000000){1}else{0}}catch{$d['Svchost Process Isolation']=0}
 $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsDisable8dot3NameCreation' 1
 try{$bcd=(bcdedit /enum 2>$null) -join ' ';$d['Optimize Boot Configuration']=if($bcd -match 'useplatformclock\s+No'){1}else{0}}catch{$d['Optimize Boot Configuration']=0}
-$d['Increase System I/O Performance']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'IoPageLockLimit' 983040
 
 # System (Desktop / Misc)
 $d['Disable Taskbar & Menu Animations']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAnimations' 0
@@ -87,7 +86,7 @@ $d['Unlock Reserved Network Bandwidth']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\
 
 # Network
 $d['Disable Delivery Optimization Service']=csvc 'DoSvc'
-try{$doh=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'EnableAutoDoh' -EA Stop).EnableAutoDoh;$d['One-Click Network Optimization']=if($doh -eq 2){1}else{0}}catch{$d['One-Click Network Optimization']=0}
+try{$doh=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'EnableAutoDoh' -EA Stop).EnableAutoDoh;$d['Network Optimization']=if($doh -eq 2){1}else{0}}catch{$d['Network Optimization']=0}
 
 # Gaming (USB / Timing)
 try{

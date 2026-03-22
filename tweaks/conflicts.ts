@@ -17,8 +17,8 @@ export const TWEAK_CONFLICTS: Record<string, string> = {
   // One-Click Network Optimization includes Nagle disable across all interfaces.
   // Enabling both Nagle and Network Optimization writes to the same registry keys
   // — the last one applied wins, causing redundancy.
-  "Disable Nagle's Algorithm":     "One-Click Network Optimization",
-  "One-Click Network Optimization": "Disable Nagle's Algorithm",
+  "Disable Nagle's Algorithm":     "Network Optimization",
+  "Network Optimization":          "Disable Nagle's Algorithm",
 };
 
 export function getConflict(title: string): string | null {

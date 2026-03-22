@@ -327,15 +327,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: "Restart required. Note: Enabling fast startup may conflict with the Hibernation tweak — apply one or the other, not both.",
     featureBreaks: "Restart required. Fast startup enabled (hybrid shutdown). Boot menu shows for 3 seconds instead of 30. Platform clock replaced with TSC for timer resolution."
   },
-  {
-    title: "Increase System I/O Performance",
-    description: "Increases the I/O page lock limit, allowing Windows to lock more pages in memory during disk I/O operations. Improves throughput for large file transfers and disk-intensive workloads by reducing page faults during I/O.",
-    category: "performance",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Slightly higher memory reserved for I/O operations. Beneficial for systems with 8GB+ RAM."
-  },
-
   // ── SYSTEM (Desktop / Misc) ────────────────────────────────────────────────
   {
     title: "Disable Taskbar & Menu Animations",
@@ -396,7 +387,7 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Your PC will no longer upload Windows update files to other PCs on the internet. Your own Windows updates download directly from Microsoft and are completely unaffected."
   },
   {
-    title: "One-Click Network Optimization",
+    title: "Network Optimization",
     description: "Applies a comprehensive set of network optimizations in one click: sets Cloudflare DNS (1.1.1.1) on Wi-Fi and Ethernet, enables DNS over HTTPS, configures RSS CPU queues to match your hardware, disables Nagle's Algorithm for lower gaming latency, and enables MSI (Message Signaled Interrupts) for your NIC. All changes are fully reversible.",
     category: "network",
     isActive: false,
