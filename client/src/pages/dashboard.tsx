@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Cpu, MemoryStick, Monitor, HardDrive, Wrench,
   ArrowRight, Thermometer, Zap, ShieldCheck, Activity, Sparkles, Info,
@@ -9,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/stat-card";
-import { useSystemInfo, useSystemUsage } from "@/hooks/use-system";
+import { useSystemInfo, useSystemUsage, useTemps } from "@/hooks/use-system";
 import { useTweaks } from "@/hooks/use-tweaks";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -18,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { createRestorePoint, getTemps } from "@/lib/api";
+import { createRestorePoint } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type TempData = {
@@ -202,11 +201,7 @@ export default function Dashboard() {
   const { data: sysInfo, isLoading: sysLoading } = useSystemInfo();
   const { data: tweaks } = useTweaks();
   const { data: usage } = useSystemUsage();
-  const { data: temps } = useQuery<TempData>({
-    queryKey: ["/api/system/temps"],
-    queryFn: getTemps as () => Promise<TempData>,
-    refetchInterval: 15000,
-  });
+  const { data: temps } = useTemps() as { data: TempData | undefined };
   const { toast } = useToast();
   const [isRestoreOpen, setIsRestoreOpen] = useState(false);
   const [restoreName, setRestoreName] = useState("JGoode A.I.O - Pre-Optimization");
@@ -374,7 +369,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-1">
               <div className="w-1 h-1 rounded-full bg-primary/60 animate-pulse" />
-              <span className="text-[10px] text-muted-foreground/40 font-mono">4s refresh</span>
+              <span className="text-[10px] text-muted-foreground/40 font-mono">5s refresh</span>
             </div>
           </div>
           <div className="space-y-3.5">

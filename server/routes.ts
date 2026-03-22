@@ -462,17 +462,41 @@ try {
   if ($s) { [math]::Round(($s | Measure-Object -Property Value -Maximum).Maximum, 0) }
 } catch {}`;
 
+  // Cache for graphics() which is slow on Windows — only refetch every 60s
+  let graphicsCache: { data: si.Systeminformation.GraphicsData; expiresAt: number } | null = null;
+  // Concurrency lock — only one LHM GPU PowerShell query at a time for usage
+  let usageLhmInFlight: Promise<string> | null = null;
+
   app.get("/api/system/usage", async (_req, res) => {
     try {
+      let lhmPromise: Promise<string>;
+      if (process.platform === "win32") {
+        if (!usageLhmInFlight) {
+          usageLhmInFlight = runPowerShell(LHM_GPU_USAGE_SCRIPT, 2000)
+            .catch(() => "")
+            .finally(() => { usageLhmInFlight = null; });
+        }
+        lhmPromise = usageLhmInFlight;
+      } else {
+        lhmPromise = Promise.resolve("");
+      }
+
+      // Fetch graphics only every 60s — GPU model/VRAM don't change, and si.graphics() is slow on Windows
+      const graphicsPromise =
+        graphicsCache && Date.now() < graphicsCache.expiresAt
+          ? Promise.resolve(graphicsCache.data)
+          : si.graphics().then((g) => {
+              graphicsCache = { data: g, expiresAt: Date.now() + 60000 };
+              return g;
+            }).catch(() => graphicsCache?.data ?? { controllers: [] } as si.Systeminformation.GraphicsData);
+
       const [load, mem, graphics, fsSize, diskIO, lhmRaw] = await Promise.all([
         si.currentLoad(),
         si.mem(),
-        si.graphics(),
+        graphicsPromise,
         si.fsSize(),
         si.fsStats().catch(() => null as si.Systeminformation.FsStatsData | null),
-        process.platform === "win32"
-          ? runPowerShell(LHM_GPU_USAGE_SCRIPT, 2500).catch(() => "")
-          : Promise.resolve(""),
+        lhmPromise,
       ]);
 
       const controllers = graphics.controllers || [];
@@ -524,10 +548,16 @@ try {
   });
 
   // ── Temperatures ───────────────────────────────────────────────────────────
-  app.get("/api/system/temps", async (_req, res) => {
-    try {
+  // Cache + concurrency lock: the PowerShell WMI query can take up to 8s.
+  // Without this, back-to-back requests spawn multiple PS processes simultaneously
+  // which stalls the Windows WMI stack and freezes audio/system.
+  type TempResult = { cpu: { current: number | null; max: number | null }; gpu: { current: number | null } };
+  let tempCache: { data: TempResult; expiresAt: number } | null = null;
+  let tempInFlight: Promise<TempResult> | null = null;
+
+  async function fetchTempData(): Promise<TempResult> {
       const isValidCpuTemp = (t: unknown): t is number =>
-        typeof t === "number" && isFinite(t) && t >= 30 && t < 115;
+        typeof t === "number" && isFinite(t) && t >= 20 && t < 115;
       const isValidGpuTemp = (t: unknown): t is number =>
         typeof t === "number" && isFinite(t) && t >= 20 && t < 120;
 
@@ -608,7 +638,7 @@ if ($cpuPeak) { $out['cpuPeak'] = $cpuPeak }
 if ($gpuTemp) { $out['gpu'] = $gpuTemp }
 $out | ConvertTo-Json -Compress -Depth 1`;
 
-        const output = await runPowerShell(psScript, 12000).catch(() => "");
+        const output = await runPowerShell(psScript, 8000).catch(() => "");
         try {
           const m = output.trim().match(/\{[\s\S]*\}/);
           if (m) {
@@ -656,12 +686,25 @@ $out | ConvertTo-Json -Compress -Depth 1`;
         } catch {}
       }
 
-      res.json({
-        cpu: { current: cpuCurrent, max: cpuMax },
-        gpu: { current: gpuCurrent },
-      });
+      return { cpu: { current: cpuCurrent, max: cpuMax }, gpu: { current: gpuCurrent } };
+  }
+
+  app.get("/api/system/temps", async (_req, res) => {
+    try {
+      // Serve cache if it hasn't expired yet
+      if (tempCache && Date.now() < tempCache.expiresAt) {
+        return res.json(tempCache.data);
+      }
+      // If a fetch is already running, piggyback on it — don't spawn a second PS process
+      if (!tempInFlight) {
+        tempInFlight = fetchTempData().finally(() => { tempInFlight = null; });
+      }
+      const data = await tempInFlight;
+      // Cache for 25 seconds (client polls every 30s after this fix)
+      tempCache = { data, expiresAt: Date.now() + 25000 };
+      return res.json(data);
     } catch {
-      res.json({ cpu: { current: null, max: null }, gpu: { current: null } });
+      return res.json({ cpu: { current: null, max: null }, gpu: { current: null } });
     }
   });
 
