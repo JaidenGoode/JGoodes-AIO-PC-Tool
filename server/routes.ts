@@ -738,8 +738,8 @@ $out | ConvertTo-Json -Compress -Depth 1`;
         tempInFlight = fetchTempData().finally(() => { tempInFlight = null; });
       }
       const data = await tempInFlight;
-      // Cache for 25 seconds (client polls every 30s after this fix)
-      tempCache = { data, expiresAt: Date.now() + 25000 };
+      // Cache for 7 seconds (client polls every 8s)
+      tempCache = { data, expiresAt: Date.now() + 7000 };
       return res.json(data);
     } catch {
       return res.json({ cpu: { current: null, max: null }, gpu: { current: null } });

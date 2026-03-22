@@ -15,9 +15,9 @@ export function useTemps() {
   return useQuery({
     queryKey: ["/api/system/temps"],
     queryFn: getTemps,
-    refetchInterval: 30000,
+    refetchInterval: 8000,
     refetchIntervalInBackground: false,
-    staleTime: 25000,
+    staleTime: 7000,
   });
 }
 

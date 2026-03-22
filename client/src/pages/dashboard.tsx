@@ -477,7 +477,7 @@ export default function Dashboard() {
           transition={{ delay: 0.24 }}
           className="p-4 rounded-xl border border-border bg-card card-premium"
         >
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center justify-between mb-4">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 cursor-default select-none group">
@@ -538,6 +538,10 @@ export default function Dashboard() {
                 </div>
               </TooltipContent>
             </Tooltip>
+            <div className="flex items-center gap-1">
+              <div className="w-1 h-1 rounded-full bg-primary/60 animate-pulse" />
+              <span className="text-[10px] text-muted-foreground/40 font-mono">8s refresh</span>
+            </div>
           </div>
           <div className="space-y-4">
             {[
