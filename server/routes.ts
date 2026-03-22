@@ -551,7 +551,7 @@ try {
   // Cache + concurrency lock: the PowerShell WMI query can take up to 8s.
   // Without this, back-to-back requests spawn multiple PS processes simultaneously
   // which stalls the Windows WMI stack and freezes audio/system.
-  type TempResult = { cpu: { current: number | null; max: number | null }; gpu: { current: number | null } };
+  type TempResult = { cpu: { current: number | null; max: number | null }; gpu: { current: number | null; hotspot: number | null } };
   let tempCache: { data: TempResult; expiresAt: number } | null = null;
   let tempInFlight: Promise<TempResult> | null = null;
 
@@ -564,12 +564,14 @@ try {
       let cpuCurrent: number | null = null;
       let cpuMax: number | null = null;
       let gpuCurrent: number | null = null;
+      let gpuHotspot: number | null = null;
 
       if (process.platform === "win32") {
         const psScript = `
 $cpuTemp = $null
 $cpuPeak = $null
 $gpuTemp = $null
+$gpuHotspot = $null
 
 function Get-CpuTempFromSensors($sensors) {
   $result = @{ temp = $null; peak = $null }
@@ -647,6 +649,12 @@ try {
     $vals = $gpuSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 120 }
     if ($vals) { $gpuTemp = ($vals | Measure-Object -Maximum).Maximum }
   }
+  # GPU Hot Spot
+  $gpuHotSensors = @($sensors | Where-Object { $_.Name -eq "GPU Hot Spot" })
+  if ($gpuHotSensors.Count -gt 0) {
+    $vals = $gpuHotSensors | ForEach-Object { [math]::Round($_.Value, 0) } | Where-Object { $_ -ge 20 -and $_ -lt 130 }
+    if ($vals) { $gpuHotspot = ($vals | Measure-Object -Maximum).Maximum }
+  }
 } catch {}
 
 # ── Method 2: OpenHardwareMonitor WMI ────────────────────────────────────────
@@ -681,6 +689,7 @@ $out = [ordered]@{}
 if ($cpuTemp) { $out['cpu'] = $cpuTemp }
 if ($cpuPeak) { $out['cpuPeak'] = $cpuPeak }
 if ($gpuTemp) { $out['gpu'] = $gpuTemp }
+if ($gpuHotspot) { $out['gpuHotspot'] = $gpuHotspot }
 $out | ConvertTo-Json -Compress -Depth 1`;
 
         const output = await runPowerShell(psScript, 8000).catch(() => "");
@@ -691,6 +700,7 @@ $out | ConvertTo-Json -Compress -Depth 1`;
             if (isValidCpuTemp(j.cpu)) cpuCurrent = Math.round(j.cpu);
             if (isValidCpuTemp(j.cpuPeak)) cpuMax = Math.round(j.cpuPeak);
             if (isValidGpuTemp(j.gpu)) gpuCurrent = Math.round(j.gpu);
+            if (isValidGpuTemp(j.gpuHotspot)) gpuHotspot = Math.round(j.gpuHotspot);
           }
         } catch {}
       }
@@ -731,7 +741,7 @@ $out | ConvertTo-Json -Compress -Depth 1`;
         } catch {}
       }
 
-      return { cpu: { current: cpuCurrent, max: cpuMax }, gpu: { current: gpuCurrent } };
+      return { cpu: { current: cpuCurrent, max: cpuMax }, gpu: { current: gpuCurrent, hotspot: gpuHotspot } };
   }
 
   app.get("/api/system/temps", async (_req, res) => {
@@ -1495,17 +1505,9 @@ try {
 
   // ── Updates ────────────────────────────────────────────────────────────────
   app.get("/api/check-update", async (_req, res) => {
-    const APP_VERSION = "3.5.0";
-
-    function semverGte(a: string, b: string): boolean {
-      const pa = a.split(".").map((n) => parseInt(n, 10) || 0);
-      const pb = b.split(".").map((n) => parseInt(n, 10) || 0);
-      for (let i = 0; i < 3; i++) {
-        const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
-        if (diff !== 0) return diff > 0;
-      }
-      return true;
-    }
+    // Update detection is based on whether a newer GitHub release exists after
+    // the BUILD_DATE — no hardcoded version strings needed.
+    const BUILD_DATE = new Date("2026-03-22T00:00:00Z");
 
     try {
       const response = await fetch(
@@ -1515,8 +1517,6 @@ try {
 
       if (response.status === 404) {
         return res.json({
-          currentVersion: APP_VERSION,
-          latestVersion: APP_VERSION,
           isUpToDate: true,
           releaseUrl: "https://github.com/JaidenGoode/JGoode-s-AIO-PC-Tool/releases",
           releaseName: "",
@@ -1536,13 +1536,11 @@ try {
 
       if (!release.tag_name) throw new Error("Invalid release data from GitHub");
 
-      const latestVersion = release.tag_name.replace(/^v/, "");
+      const releaseDate = new Date(release.published_at);
       res.json({
-        currentVersion: APP_VERSION,
-        latestVersion,
-        isUpToDate: semverGte(APP_VERSION, latestVersion),
+        isUpToDate: releaseDate <= BUILD_DATE,
         releaseUrl: release.html_url,
-        releaseName: release.name || `v${latestVersion}`,
+        releaseName: release.name || release.tag_name,
         publishedAt: release.published_at,
       });
     } catch (err: any) {

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode, type ElementType } from "react";
 import {
   Cpu, MemoryStick, Monitor, HardDrive, Wrench,
   ArrowRight, Thermometer, Zap, ShieldCheck, Activity, Sparkles, Info,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/stat-card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSystemInfo, useSystemUsage, useTemps } from "@/hooks/use-system";
 import { useTweaks } from "@/hooks/use-tweaks";
 import {
@@ -22,23 +23,38 @@ import { cn } from "@/lib/utils";
 
 type TempData = {
   cpu: { current: number | null; max: number | null };
-  gpu: { current: number | null };
+  gpu: { current: number | null; hotspot?: number | null };
 };
+
+function DetailRow({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-[11px] text-muted-foreground/70 shrink-0">{label}</span>
+      <span className={cn("text-[11px] font-bold font-mono tabular-nums", color ?? "text-foreground")}>{value}</span>
+    </div>
+  );
+}
+
+function TipDivider() {
+  return <div className="border-t border-border/30 my-1.5" />;
+}
 
 function LiveBar({
   label,
   value,
   unit = "%",
   sublabel,
+  tooltip,
 }: {
   label: string;
   value: number | null;
   unit?: string;
   sublabel?: string;
+  tooltip?: ReactNode;
 }) {
   const pct = value ?? 0;
 
-  return (
+  const bar = (
     <div className="space-y-1">
       <div className="flex items-center gap-2.5">
         <span className="text-[11px] font-bold text-foreground/70 w-9 shrink-0 uppercase tracking-wide">
@@ -61,6 +77,18 @@ function LiveBar({
         <p className="text-[9.5px] text-muted-foreground/35 pl-11 leading-none">{sublabel}</p>
       )}
     </div>
+  );
+
+  if (!tooltip) return bar;
+  return (
+    <Tooltip delayDuration={120}>
+      <TooltipTrigger asChild>
+        <div className="cursor-default">{bar}</div>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="p-0 border-border/60 bg-card shadow-xl w-52">
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -349,6 +377,7 @@ export default function Dashboard() {
       </div>
 
       {/* Live Usage + Temps */}
+      <TooltipProvider>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Live Usage */}
@@ -377,24 +406,63 @@ export default function Dashboard() {
               label="CPU"
               value={usage?.cpu?.usage ?? null}
               sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} threads` : undefined}
+              tooltip={
+                <div className="p-3 space-y-2">
+                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">CPU Load</p>
+                  <TipDivider />
+                  <DetailRow label="Usage" value={usage?.cpu?.usage != null ? `${usage.cpu.usage}%` : "N/A"} color={usage?.cpu?.usage != null ? (usage.cpu.usage < 50 ? "text-green-400" : usage.cpu.usage < 80 ? "text-amber-400" : "text-primary") : undefined} />
+                  {usage?.cpu?.cores != null && <DetailRow label="Threads" value={`${usage.cpu.cores}`} />}
+                  {usage?.cpu?.usage != null && <DetailRow label="Idle" value={`${100 - usage.cpu.usage}%`} color="text-muted-foreground" />}
+                  {sys?.cpu?.model && <><TipDivider /><p className="text-[10px] text-muted-foreground/50 leading-tight">{sys.cpu.model}</p></>}
+                </div>
+              }
             />
             <LiveBar
               label="RAM"
               value={usage?.ram?.usage ?? null}
-              sublabel={
-                usage?.ram
-                  ? `${usage.ram.usedGb} / ${usage.ram.totalGb} GB`
-                  : undefined
+              sublabel={usage?.ram ? `${usage.ram.usedGb} / ${usage.ram.totalGb} GB` : undefined}
+              tooltip={
+                <div className="p-3 space-y-2">
+                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">Memory</p>
+                  <TipDivider />
+                  {usage?.ram ? (
+                    <>
+                      <DetailRow label="Used" value={`${usage.ram.usedGb} GB`} />
+                      <DetailRow label="Total" value={`${usage.ram.totalGb} GB`} />
+                      <DetailRow label="Free" value={`${Math.max(0, parseFloat((usage.ram.totalGb - usage.ram.usedGb).toFixed(1)))} GB`} color="text-green-400" />
+                      <DetailRow label="Usage" value={`${usage.ram.usage}%`} color={usage.ram.usage < 60 ? "text-green-400" : usage.ram.usage < 85 ? "text-amber-400" : "text-primary"} />
+                    </>
+                  ) : <p className="text-[11px] text-muted-foreground/50">No data</p>}
+                </div>
               }
             />
             <LiveBar
               label="GPU"
               value={usage?.gpu?.usage ?? null}
               sublabel={usage?.gpu?.model ?? undefined}
+              tooltip={
+                <div className="p-3 space-y-2">
+                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">GPU Load</p>
+                  <TipDivider />
+                  <DetailRow label="Usage" value={usage?.gpu?.usage != null ? `${usage.gpu.usage}%` : "N/A"} color={usage?.gpu?.usage != null ? (usage.gpu.usage < 50 ? "text-green-400" : usage.gpu.usage < 85 ? "text-amber-400" : "text-primary") : undefined} />
+                  {usage?.gpu?.usage != null && <DetailRow label="Idle" value={`${100 - usage.gpu.usage}%`} color="text-muted-foreground" />}
+                  {sys?.gpu?.vram && <DetailRow label="VRAM" value={sys.gpu.vram} />}
+                  {usage?.gpu?.model && <><TipDivider /><p className="text-[10px] text-muted-foreground/50 leading-tight">{usage.gpu.model}</p></>}
+                </div>
+              }
             />
             <LiveBar
               label="Disk"
               value={usage?.disk?.usage ?? null}
+              tooltip={
+                <div className="p-3 space-y-2">
+                  <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">Primary Drive</p>
+                  <TipDivider />
+                  <DetailRow label="Used" value={usage?.disk?.usage != null ? `${usage.disk.usage}%` : "N/A"} color={usage?.disk?.usage != null ? (usage.disk.usage < 70 ? "text-green-400" : usage.disk.usage < 90 ? "text-amber-400" : "text-primary") : undefined} />
+                  <DetailRow label="Read" value={usage?.disk?.readMb != null ? `${usage.disk.readMb} MB/s` : "0 MB/s"} />
+                  <DetailRow label="Write" value={usage?.disk?.writeMb != null ? `${usage.disk.writeMb} MB/s` : "0 MB/s"} />
+                </div>
+              }
             />
           </div>
         </motion.div>
@@ -415,11 +483,49 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="space-y-3">
-            {[
-              { label: "CPU Temp",  temp: temps?.cpu?.current ?? null, icon: Cpu },
-              { label: "GPU Temp",  temp: temps?.gpu?.current ?? null, icon: Monitor },
-              { label: "CPU Peak",  temp: temps?.cpu?.max ?? null,     icon: Thermometer },
-            ].map(({ label, temp, icon: Icon }) => {
+            {([
+              {
+                label: "CPU Temp", temp: temps?.cpu?.current ?? null, icon: Cpu,
+                tip: (
+                  <div className="p-3 space-y-2">
+                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">CPU Temperature</p>
+                    <TipDivider />
+                    <DetailRow label="Current" value={temps?.cpu?.current != null ? `${temps.cpu.current}°C` : "N/A"} color={temps?.cpu?.current != null ? (temps.cpu.current < 55 ? "text-green-400" : temps.cpu.current < 75 ? "text-amber-400" : "text-primary") : undefined} />
+                    {temps?.cpu?.max != null && <DetailRow label="Session peak" value={`${temps.cpu.max}°C`} color="text-muted-foreground" />}
+                    <TipDivider />
+                    <p className="text-[10px] text-muted-foreground/50">Die sensor via LibreHardwareMonitor</p>
+                  </div>
+                ),
+              },
+              {
+                label: "GPU Temp", temp: temps?.gpu?.current ?? null, icon: Monitor,
+                tip: (
+                  <div className="p-3 space-y-2">
+                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">GPU Temperature</p>
+                    <TipDivider />
+                    <DetailRow label="Core" value={temps?.gpu?.current != null ? `${temps.gpu.current}°C` : "N/A"} color={temps?.gpu?.current != null ? (temps.gpu.current < 55 ? "text-green-400" : temps.gpu.current < 75 ? "text-amber-400" : "text-primary") : undefined} />
+                    {temps?.gpu?.hotspot != null && <DetailRow label="Hot spot" value={`${temps.gpu.hotspot}°C`} color={temps.gpu.hotspot < 85 ? "text-amber-400" : "text-primary"} />}
+                    <TipDivider />
+                    <p className="text-[10px] text-muted-foreground/50">Junction sensor via LibreHardwareMonitor</p>
+                  </div>
+                ),
+              },
+              {
+                label: "CPU Peak", temp: temps?.cpu?.max ?? null, icon: Thermometer,
+                tip: (
+                  <div className="p-3 space-y-2">
+                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider">CPU Peak</p>
+                    <TipDivider />
+                    <DetailRow label="Peak" value={temps?.cpu?.max != null ? `${temps.cpu.max}°C` : "N/A"} color={temps?.cpu?.max != null ? (temps.cpu.max < 75 ? "text-amber-400" : "text-primary") : undefined} />
+                    {temps?.cpu?.current != null && temps?.cpu?.max != null && (
+                      <DetailRow label="Above current" value={`+${temps.cpu.max - temps.cpu.current}°C`} color="text-muted-foreground" />
+                    )}
+                    <TipDivider />
+                    <p className="text-[10px] text-muted-foreground/50">Highest recorded since launch</p>
+                  </div>
+                ),
+              },
+            ] as { label: string; temp: number | null; icon: ElementType; tip: ReactNode }[]).map(({ label, temp, icon: Icon, tip }) => {
               const pct   = temp ? Math.min((temp / 110) * 100, 100) : 0;
               const barBg = temp
                 ? temp < 55
@@ -429,21 +535,28 @@ export default function Dashboard() {
                     : "linear-gradient(90deg,hsl(var(--primary)/0.6),hsl(var(--primary)))"
                 : undefined;
               return (
-                <div key={label} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Icon className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                      <span className="text-[11px] text-muted-foreground">{label}</span>
+                <Tooltip key={label} delayDuration={120}>
+                  <TooltipTrigger asChild>
+                    <div className="space-y-1 cursor-default">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Icon className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                          <span className="text-[11px] text-muted-foreground">{label}</span>
+                        </div>
+                        <TempDot temp={temp} />
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-secondary/50 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: barBg }}
+                        />
+                      </div>
                     </div>
-                    <TempDot temp={temp} />
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-secondary/50 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, background: barBg }}
-                    />
-                  </div>
-                </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="p-0 border-border/60 bg-card shadow-xl w-52">
+                    {tip}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -458,6 +571,7 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </div>
+      </TooltipProvider>
 
       {/* Quick Access */}
       <motion.div

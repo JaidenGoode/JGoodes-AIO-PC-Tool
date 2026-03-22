@@ -9,8 +9,9 @@ import { useTheme, THEME_COLORS } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 type UpdateInfo = {
-  currentVersion: string; latestVersion: string; isUpToDate: boolean;
+  isUpToDate: boolean;
   releaseUrl: string; releaseName: string; publishedAt: string | null;
+  note?: string;
 };
 
 function Section({ title, icon: Icon, children, delay = 0 }: {
@@ -186,7 +187,7 @@ export default function SettingsPage() {
               }
               <div>
                 <p className="text-xs font-semibold text-foreground">
-                  {updateInfo.isUpToDate ? "You're up to date!" : `Update available: ${updateInfo.latestVersion}`}
+                  {updateInfo.isUpToDate ? "You're up to date!" : `Update available: ${updateInfo.releaseName}`}
                 </p>
                 {!updateInfo.isUpToDate && (
                   <button

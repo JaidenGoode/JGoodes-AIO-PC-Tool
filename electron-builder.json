@@ -8,7 +8,7 @@
   "extraMetadata": {
     "name": "jgoodes-aio-pc-tool",
     "main": "electron/main.cjs",
-    "version": "3.5.0",
+    "version": "1.0.0",
     "description": "JGoode's A.I.O PC Tool — All-in-one Windows optimizer with 100 PowerShell tweaks, system cleaner, DNS manager, restore points and live system monitoring.",
     "author": "JaidenGoode"
   },
