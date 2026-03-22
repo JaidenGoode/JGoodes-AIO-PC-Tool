@@ -1681,5 +1681,24 @@ Write-Output 'OK'
     }
   });
 
+  // ── Downloadable profiles ──────────────────────────────────────────
+  // In Electron production, files are in process.resourcesPath/profiles (extraResources)
+  // In development, they live at server/profiles/ relative to CWD
+  const PROFILES_DIR = process.env.ELECTRON_RESOURCES_PATH
+    ? path.join(process.env.ELECTRON_RESOURCES_PATH, "profiles")
+    : fs.existsSync(path.resolve(process.cwd(), "server", "profiles"))
+      ? path.resolve(process.cwd(), "server", "profiles")
+      : path.resolve(process.cwd(), "profiles");
+  app.get("/api/profiles/:filename", (req, res) => {
+    const name = path.basename(req.params.filename);
+    const allowed = ["JsFortniteNPI.nip", "JsTCPOptimizer.spg"];
+    if (!allowed.includes(name)) return res.status(404).json({ error: "Not found" });
+    const filePath = path.join(PROFILES_DIR, name);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File missing" });
+    res.setHeader("Content-Disposition", `attachment; filename="${name}"`);
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.sendFile(filePath);
+  });
+
   return httpServer;
 }

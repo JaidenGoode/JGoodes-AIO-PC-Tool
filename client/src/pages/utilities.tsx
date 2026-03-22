@@ -13,7 +13,7 @@ import {
 import {
   HardDrive, Zap, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
-  Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Activity, Settings2, Gamepad2,
+  Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Settings2, Gamepad2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +82,8 @@ export default function Utilities() {
   const [winaerotStatus, setWinaerotStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
   const [cortexStatus, setCortexStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [exitlagStatus, setExitlagStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [msiStatus, setMsiStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
+  const [dduStatus, setDduStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -526,6 +528,159 @@ export default function Utilities() {
     setTimeout(() => setExitlagStatus("idle"), 4000);
   };
 
+  const launchMsiUtility = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "MSI Utility v3 can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setMsiStatus("downloading");
+    const script = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$cacheDir = Join-Path $env:LOCALAPPDATA 'JGoode-AIO\\MsiUtility'`,
+      `$exePath = $null`,
+      ``,
+      `# Check registry App Paths`,
+      `foreach ($rp in @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\MsiUtility.exe','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\MsiUtility.exe')) {`,
+      `  if (Test-Path $rp) {`,
+      `    $val = (Get-ItemProperty $rp -EA SilentlyContinue).'(default)'`,
+      `    if ($val -and (Test-Path $val)) { $exePath = $val; break }`,
+      `  }`,
+      `}`,
+      ``,
+      `# Check common install paths`,
+      `if (-not $exePath) {`,
+      `  $candidates = @(`,
+      `    "$env:ProgramFiles\\MsiUtility\\MsiUtility.exe",`,
+      `    "\${env:ProgramFiles(x86)}\\MsiUtility\\MsiUtility.exe",`,
+      `    "$env:LOCALAPPDATA\\Programs\\MsiUtility\\MsiUtility.exe"`,
+      `  )`,
+      `  foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
+      `}`,
+      ``,
+      `# Check cached portable copy`,
+      `if (-not $exePath) {`,
+      `  $cached = Get-ChildItem $cacheDir -Filter 'MsiUtility*.exe' -Recurse -EA SilentlyContinue | Where-Object { $_.Length -ge 102400 } | Select-Object -First 1`,
+      `  if ($cached) { $exePath = $cached.FullName }`,
+      `}`,
+      ``,
+      `# Download latest from GitHub releases`,
+      `if (-not $exePath) {`,
+      `  $ErrorActionPreference = 'Stop'`,
+      `  try {`,
+      `    $wc = New-Object System.Net.WebClient`,
+      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0")`,
+      `    $api = $wc.DownloadString("https://api.github.com/repos/Sathango/Msi-Utility-v3/releases/latest")`,
+      `    $asset = ($api | ConvertFrom-Json).assets | Where-Object { $_.name -like '*.exe' } | Select-Object -First 1`,
+      `    if (-not $asset) { Write-Error "No EXE asset found in latest release"; exit 1 }`,
+      `    if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null }`,
+      `    $dest = Join-Path $cacheDir $asset.name`,
+      `    $wc2 = New-Object System.Net.WebClient`,
+      `    $wc2.Headers.Add("User-Agent", "Mozilla/5.0")`,
+      `    $wc2.DownloadFile($asset.browser_download_url, $dest)`,
+      `    if ((Get-Item $dest -EA SilentlyContinue).Length -lt 102400) { Write-Error "Download invalid or too small"; exit 1 }`,
+      `    $exePath = $dest`,
+      `  } catch { Write-Error "Download failed: $_"; exit 1 }`,
+      `}`,
+      ``,
+      `Start-Process -FilePath $exePath -WindowStyle Normal`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.success) {
+        setMsiStatus("done");
+        toast({ title: "MSI Utility v3 launched", description: "The app window should appear momentarily." });
+      } else {
+        setMsiStatus("error");
+        toast({ title: "Launch failed", description: "Could not download or launch MSI Utility v3. Check your internet connection.", variant: "destructive" });
+      }
+    } catch {
+      setMsiStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setMsiStatus("idle"), 4000);
+  };
+
+  const launchDDU = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "Display Driver Uninstaller can only launch from the installed desktop app.", variant: "destructive" });
+      return;
+    }
+    setDduStatus("downloading");
+    const script = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$cacheDir = Join-Path $env:LOCALAPPDATA 'JGoode-AIO\\DDU'`,
+      `$exePath = $null`,
+      ``,
+      `# Check common DDU paths`,
+      `$candidates = @(`,
+      `  "$env:ProgramFiles\\DDU\\Display Driver Uninstaller.exe",`,
+      `  "\${env:ProgramFiles(x86)}\\DDU\\Display Driver Uninstaller.exe",`,
+      `  "C:\\DDU\\Display Driver Uninstaller.exe",`,
+      `  "$env:USERPROFILE\\Desktop\\DDU\\Display Driver Uninstaller.exe"`,
+      `)`,
+      `foreach ($c in $candidates) { if (Test-Path $c) { $exePath = $c; break } }`,
+      ``,
+      `# Check cached portable copy`,
+      `if (-not $exePath) {`,
+      `  $cached = Get-ChildItem $cacheDir -Filter 'Display Driver Uninstaller.exe' -Recurse -EA SilentlyContinue | Where-Object { $_.Length -ge 102400 } | Select-Object -First 1`,
+      `  if ($cached) { $exePath = $cached.FullName }`,
+      `}`,
+      ``,
+      `# Download latest DDU from GitHub`,
+      `if (-not $exePath) {`,
+      `  $ErrorActionPreference = 'Stop'`,
+      `  try {`,
+      `    $wc = New-Object System.Net.WebClient`,
+      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0")`,
+      `    $api = $wc.DownloadString("https://api.github.com/repos/Wagnardsoft/display-driver-uninstaller/releases/latest")`,
+      `    $asset = ($api | ConvertFrom-Json).assets | Where-Object { $_.name -like '*.exe' -or $_.name -like '*.zip' } | Select-Object -First 1`,
+      `    if (-not $asset) { Start-Process "https://www.guru3d.com/files-details/display-driver-uninstaller-download.html"; exit 2 }`,
+      `    if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null }`,
+      `    $dest = Join-Path $cacheDir $asset.name`,
+      `    $wc2 = New-Object System.Net.WebClient`,
+      `    $wc2.Headers.Add("User-Agent", "Mozilla/5.0")`,
+      `    $wc2.DownloadFile($asset.browser_download_url, $dest)`,
+      `    if ($dest -like '*.zip') {`,
+      `      Expand-Archive -Path $dest -DestinationPath $cacheDir -Force`,
+      `      $found = Get-ChildItem $cacheDir -Filter 'Display Driver Uninstaller.exe' -Recurse -EA SilentlyContinue | Select-Object -First 1`,
+      `      if ($found) { $exePath = $found.FullName } else { Start-Process "https://www.guru3d.com/files-details/display-driver-uninstaller-download.html"; exit 2 }`,
+      `    } else {`,
+      `      $exePath = $dest`,
+      `    }`,
+      `  } catch { Start-Process "https://www.guru3d.com/files-details/display-driver-uninstaller-download.html"; exit 2 }`,
+      `}`,
+      ``,
+      `Start-Process -FilePath $exePath -WindowStyle Normal`,
+    ].join("\r\n");
+    try {
+      const result = await window.electronAPI.runScript(script);
+      if (result.code === 2) {
+        setDduStatus("done");
+        toast({ title: "DDU download page opened", description: "Download and extract DDU, then click the button again to launch." });
+      } else if (result.success) {
+        setDduStatus("done");
+        toast({ title: "DDU launched", description: "Remember: for a clean uninstall, boot into Safe Mode first." });
+      } else {
+        setDduStatus("error");
+        toast({ title: "Launch failed", description: "Could not find or launch DDU.", variant: "destructive" });
+      }
+    } catch {
+      setDduStatus("error");
+      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+    }
+    setTimeout(() => setDduStatus("idle"), 4000);
+  };
+
+  const downloadProfile = (filename: string) => {
+    const a = document.createElement("a");
+    a.href = `/api/profiles/${filename}`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast({ title: "Download started", description: `${filename} is being saved to your Downloads folder.` });
+  };
+
   const handleToggle = (key: string, action: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value);
     localStorage.setItem(key, String(value));
@@ -908,7 +1063,7 @@ export default function Utilities() {
         </div>
 
         {/* ── ROW 4b: Gaming Optimization Tools (full width) ──────────── */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
 
           <UtilCard icon={Gamepad2} title="Razer Cortex" description="Game booster & FPS optimizer by Razer" delay={0.25}>
             <div className="flex flex-col flex-1 space-y-2.5">
@@ -992,6 +1147,124 @@ export default function Utilities() {
             </div>
           </UtilCard>
 
+          <UtilCard icon={Cpu} title="MSI Utility v3" description="IRQ & interrupt affinity optimizer for gaming" delay={0.27}>
+            <div className="flex flex-col flex-1 space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Open-source tool by Sathango. Assigns CPU core affinity to device interrupts (GPU, NIC, audio) — reduces latency spikes and stabilizes frame times in competitive games.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads the latest release from GitHub and caches it. Subsequent launches are instant.</p>
+              </div>
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchMsiUtility}
+                  disabled={msiStatus === "downloading"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    msiStatus === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : msiStatus === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-msiutility"
+                >
+                  {msiStatus === "downloading" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
+                  ) : msiStatus === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+                  ) : msiStatus === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Download className="h-3.5 w-3.5" /> Launch MSI Utility v3</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+                )}
+              </div>
+            </div>
+          </UtilCard>
+
+        </div>
+
+        {/* ── ROW 4c: Driver Tools + Game Profiles ────────────────────── */}
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <UtilCard icon={HardDrive} title="Display Driver Uninstaller (DDU)" description="Fully remove GPU drivers for a clean reinstall" delay={0.28}>
+            <div className="flex flex-col flex-1 space-y-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                The gold standard for GPU driver removal. Strips NVIDIA, AMD, and Intel GPU drivers completely — no leftovers, no conflicts. Use before reinstalling or switching driver versions.
+              </p>
+              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-red-500/8 border border-red-500/20 flex-1">
+                <AlertTriangle className="h-3 w-3 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-red-400/90 leading-relaxed">For best results: boot into Safe Mode before running DDU. Do not use in normal Windows — drivers may reinstall mid-removal.</p>
+              </div>
+              <div className="mt-auto space-y-1">
+                <Button
+                  size="sm"
+                  onClick={launchDDU}
+                  disabled={dduStatus === "downloading"}
+                  className={cn(
+                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
+                    dduStatus === "done"
+                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
+                      : dduStatus === "error"
+                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
+                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
+                  )}
+                  data-testid="button-launch-ddu"
+                >
+                  {dduStatus === "downloading" ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching...</>
+                  ) : dduStatus === "done" ? (
+                    <><CheckCircle2 className="h-3.5 w-3.5" /> Done</>
+                  ) : dduStatus === "error" ? (
+                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+                  ) : (
+                    <><Download className="h-3.5 w-3.5" /> Launch DDU</>
+                  )}
+                </Button>
+                {!window.electronAPI && (
+                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
+                )}
+              </div>
+            </div>
+          </UtilCard>
+
+          <UtilCard icon={Gamepad2} title="Game Profiles" description="Download optimized config profiles" delay={0.29}>
+            <div className="flex flex-col flex-1 space-y-3">
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold text-foreground">NVIDIA Profile Inspector — Fortnite</p>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Pre-tuned NVIDIA driver profile for Fortnite. Import via NVIDIA Profile Inspector: File → Import Profile(s).</p>
+                <Button
+                  size="sm"
+                  onClick={() => downloadProfile("JsFortniteNPI.nip")}
+                  className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1.5"
+                  data-testid="button-download-fortnite-npi"
+                >
+                  <Download className="h-3 w-3" />
+                  Download Fortnite .nip Profile
+                </Button>
+              </div>
+              <div className="pt-2 border-t border-border/30 space-y-1.5">
+                <p className="text-[11px] font-semibold text-foreground">TCP Optimizer — Optimal Settings</p>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Pre-configured TCP Optimizer profile with optimized network stack settings. Open TCP Optimizer → File → Load Settings.</p>
+                <Button
+                  size="sm"
+                  onClick={() => downloadProfile("JsTCPOptimizer.spg")}
+                  className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1.5"
+                  data-testid="button-download-tcp-profile"
+                >
+                  <Download className="h-3 w-3" />
+                  Download TCP Optimizer .spg Profile
+                </Button>
+              </div>
+            </div>
+          </UtilCard>
+
         </div>
 
         {/* ── ROW 5: Info & Advanced ──────────────────────────────────── */}
@@ -1036,18 +1309,6 @@ export default function Utilities() {
               )}
             </motion.div>
           )}
-        </UtilCard>
-
-        {/* Hardware Monitors */}
-        <UtilCard icon={Activity} title="Hardware Monitors" description="Launch system monitoring & diagnostics tools" delay={0.28}>
-          <RunButton action="hwinfo" label="HWiNFO64" pending={isPending("hwinfo")} onRun={run} />
-          <RunButton action="gpuz" label="GPU-Z" pending={isPending("gpuz")} onRun={run} />
-          <RunButton action="cpuz" label="CPU-Z" pending={isPending("cpuz")} onRun={run} />
-          <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 mt-1">
-            <p className="text-[10px] text-muted-foreground leading-relaxed">
-              Launches from your install path. If not installed, opens the download page in your browser.
-            </p>
-          </div>
         </UtilCard>
 
         {/* Windows Admin Tools */}
