@@ -457,10 +457,6 @@ export default function Dashboard() {
                 </div>
               </TooltipContent>
             </Tooltip>
-            <div className="flex items-center gap-1">
-              <div className="w-1 h-1 rounded-full bg-primary/60 animate-pulse" />
-              <span className="text-[10px] text-muted-foreground/40 font-mono">5s refresh</span>
-            </div>
           </div>
           <div className="space-y-3.5">
             <LiveBar label="CPU" value={usage?.cpu?.usage ?? null} sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} threads` : undefined} />
