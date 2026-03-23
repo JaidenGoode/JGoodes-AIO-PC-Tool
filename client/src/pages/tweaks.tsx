@@ -640,128 +640,157 @@ export default function Tweaks() {
       </Dialog>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">
-            System <span className="text-primary">Tweaks</span>
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Auto-detected from your system
-            {hasInitialDetect && (
-              <span className="ml-1.5">
-                <span className="text-primary font-bold">{optimizedCount}</span>
-                <span className="text-muted-foreground/60">/{totalCount} optimized</span>
-                {selectedCount > 0 && (
-                  <span className="ml-2 text-primary font-bold">{selectedCount} selected</span>
-                )}
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <div className="relative w-full sm:w-52">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
-              <Input
-                placeholder="Search tweaks..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 h-8 text-sm bg-secondary border-border/60 focus:border-primary/40"
-                data-testid="input-search-tweaks"
-              />
+      <div
+        className="relative overflow-hidden rounded-2xl border border-border/60"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 55%, hsl(var(--primary) / 0.04) 100%)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px hsl(var(--border) / 0.4)"
+        }}
+      >
+        {/* radial glow */}
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%)" }} />
+        {/* top accent line */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-55" />
+
+        <div className="px-5 py-4 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-primary/25 bg-primary/8">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.18em] text-primary/80 font-mono">
+                    {hasInitialDetect ? `${optimizedCount}/${totalCount} Optimized` : "Registry Scanner"}
+                  </span>
+                </div>
+              </div>
+              <h1 className="text-[24px] font-black text-foreground tracking-tight leading-none">
+                System <span className="text-primary">Tweaks</span>
+              </h1>
+              <p className="text-[11px] text-muted-foreground/55 mt-1.5">
+                {hasInitialDetect
+                  ? `${totalCount} registry tweaks · ${optimizedCount} applied · ${totalCount - optimizedCount} available`
+                  : "Auto-detected from your Windows registry on startup"}
+              </p>
             </div>
-            {selectedCount > 0 && (
-              <Button
-                size="sm"
-                onClick={handleOptimizeSelected}
-                disabled={applyingAll || isRunning || isBulkPending}
-                className="h-8 gap-1.5 text-xs font-bold shrink-0 bg-primary hover:bg-primary/90 text-white"
-                data-testid="button-optimize-selected"
-                title={`Apply ${selectedCount} selected tweaks`}
-              >
-                {(applyingAll || isBulkPending) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                Optimize Selected
-                <span className="px-1.5 py-0.5 rounded text-[9px] bg-white/20 font-bold">{selectedCount}</span>
-              </Button>
-            )}
-            {selectedCount > 0 && tweaks?.some(t => selectedIds.has(t.id) && t.isActive) && (
-              <Button
-                size="sm"
-                onClick={handleRevertSelected}
-                disabled={isRunning || isBulkPending}
-                className="h-8 gap-1.5 text-xs font-bold shrink-0 border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/70"
-                data-testid="button-revert-selected"
-                title="Revert selected applied tweaks back to Windows defaults"
-              >
-                {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
-                Revert Selected
-                <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 font-bold">
-                  {tweaks?.filter(t => selectedIds.has(t.id) && t.isActive).length}
-                </span>
-              </Button>
-            )}
-            <Button
-              size="sm"
-              onClick={handleExportProfile}
-              disabled={optimizedCount === 0}
-              className={cn(
-                "h-8 gap-1.5 text-xs font-semibold shrink-0",
-                optimizedCount > 0
-                  ? "bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 hover:border-primary/30"
-                  : "bg-secondary text-muted-foreground cursor-not-allowed border border-border/40"
-              )}
-              data-testid="button-save-profile"
-              title="Save active tweaks as a reusable JSON profile"
-            >
-              <Database className="h-3.5 w-3.5 text-primary" />
-              Save Profile
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleImportProfile}
-              disabled={isRunning || isBulkPending}
-              className="h-8 gap-1.5 text-xs font-semibold shrink-0 bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 hover:border-primary/30"
-              data-testid="button-load-profile"
-              title="Load and apply a saved JSON profile"
-            >
-              <Upload className="h-3.5 w-3.5 text-primary" />
-              Load Profile
-            </Button>
-            {optimizedCount > 0 && (
-              <Button
-                size="sm"
-                onClick={handleRevertAll}
-                disabled={isRunning || isBulkPending}
-                className="h-8 gap-1.5 text-xs font-semibold shrink-0 border border-red-500/30 bg-red-500/8 text-red-400/80 hover:bg-red-500/15 hover:text-red-300 hover:border-red-500/50"
-                data-testid="button-revert-all"
-                title="Revert ALL applied tweaks back to Windows defaults"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Revert All ({optimizedCount})
-              </Button>
-            )}
-          </div>
-          <div className={cn("flex items-center gap-1 text-[10px] text-primary/60", !isDetecting && !lastDetectedAt && "invisible")}>
-            {isDetecting ? (
-              <>
-                <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                Scanning system registry...
-              </>
-            ) : lastDetectedAt ? (
-              <span className="text-muted-foreground/40">
-                Auto-synced {lastDetectedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            ) : null}
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <div className="relative w-full sm:w-52">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+                  <Input
+                    placeholder="Search tweaks..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8 h-8 text-sm bg-secondary border-border/60 focus:border-primary/40"
+                    data-testid="input-search-tweaks"
+                  />
+                </div>
+                {selectedCount > 0 && (
+                  <Button
+                    size="sm"
+                    onClick={handleOptimizeSelected}
+                    disabled={applyingAll || isRunning || isBulkPending}
+                    className="h-8 gap-1.5 text-xs font-bold shrink-0 bg-primary hover:bg-primary/90 text-white"
+                    data-testid="button-optimize-selected"
+                    title={`Apply ${selectedCount} selected tweaks`}
+                  >
+                    {(applyingAll || isBulkPending) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                    Optimize Selected
+                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-white/20 font-bold">{selectedCount}</span>
+                  </Button>
+                )}
+                {selectedCount > 0 && tweaks?.some(t => selectedIds.has(t.id) && t.isActive) && (
+                  <Button
+                    size="sm"
+                    onClick={handleRevertSelected}
+                    disabled={isRunning || isBulkPending}
+                    className="h-8 gap-1.5 text-xs font-bold shrink-0 border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/70"
+                    data-testid="button-revert-selected"
+                    title="Revert selected applied tweaks back to Windows defaults"
+                  >
+                    {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                    Revert Selected
+                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 font-bold">
+                      {tweaks?.filter(t => selectedIds.has(t.id) && t.isActive).length}
+                    </span>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleExportProfile}
+                  disabled={optimizedCount === 0}
+                  className={cn(
+                    "h-8 gap-1.5 text-xs font-semibold shrink-0",
+                    optimizedCount > 0
+                      ? "bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 hover:border-primary/30"
+                      : "bg-secondary text-muted-foreground cursor-not-allowed border border-border/40"
+                  )}
+                  data-testid="button-save-profile"
+                  title="Save active tweaks as a reusable JSON profile"
+                >
+                  <Database className="h-3.5 w-3.5 text-primary" />
+                  Save Profile
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleImportProfile}
+                  disabled={isRunning || isBulkPending}
+                  className="h-8 gap-1.5 text-xs font-semibold shrink-0 bg-secondary hover:bg-secondary/80 text-foreground border border-border/60 hover:border-primary/30"
+                  data-testid="button-load-profile"
+                  title="Load and apply a saved JSON profile"
+                >
+                  <Upload className="h-3.5 w-3.5 text-primary" />
+                  Load Profile
+                </Button>
+                {optimizedCount > 0 && (
+                  <Button
+                    size="sm"
+                    onClick={handleRevertAll}
+                    disabled={isRunning || isBulkPending}
+                    className="h-8 gap-1.5 text-xs font-semibold shrink-0 border border-red-500/30 bg-red-500/8 text-red-400/80 hover:bg-red-500/15 hover:text-red-300 hover:border-red-500/50"
+                    data-testid="button-revert-all"
+                    title="Revert ALL applied tweaks back to Windows defaults"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Revert All ({optimizedCount})
+                  </Button>
+                )}
+              </div>
+              <div className={cn("flex items-center gap-1 text-[10px] text-primary/60", !isDetecting && !lastDetectedAt && "invisible")}>
+                {isDetecting ? (
+                  <>
+                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                    Scanning system registry...
+                  </>
+                ) : lastDetectedAt ? (
+                  <span className="text-muted-foreground/40">
+                    Auto-synced {lastDetectedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── Optimization Progress Bar ────────────────────────────────────── */}
       {hasInitialDetect && (
-        <div className="p-4 rounded-xl border border-border/40 bg-secondary/10">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-foreground">System Optimization</span>
-            <span className="text-xs font-bold text-primary">{optimizedPercent}%</span>
+        <div
+          className="p-4 rounded-xl border border-border/50 bg-secondary/10 relative overflow-hidden"
+          style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}
+        >
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black text-foreground/80 uppercase tracking-wide">System Optimization</span>
+              {optimizedPercent === 100 && (
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full border border-primary/30 bg-primary/10 text-primary uppercase tracking-wider">Fully Optimized</span>
+              )}
+            </div>
+            <span
+              className="text-[20px] font-black font-mono tabular-nums leading-none"
+              style={{ color: "hsl(var(--primary))", textShadow: "0 0 12px hsl(var(--primary) / 0.4)" }}
+            >{optimizedPercent}%</span>
           </div>
           <div className="h-2 rounded-full bg-secondary/60 overflow-hidden">
             <motion.div
@@ -769,11 +798,12 @@ export default function Tweaks() {
               initial={{ width: 0 }}
               animate={{ width: `${optimizedPercent}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
+              style={{ boxShadow: "0 0 8px hsl(var(--primary) / 0.5)" }}
             />
           </div>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-[10px] text-muted-foreground/60">
-              {optimizedCount} of {totalCount} tweaks optimized
+            <span className="text-[10px] text-muted-foreground/50">
+              {optimizedCount} of {totalCount} tweaks applied
             </span>
             {optimizedCount < totalCount && (
               <button

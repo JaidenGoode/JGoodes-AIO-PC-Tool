@@ -302,7 +302,7 @@ export default function Dashboard() {
               <div
                 key={label}
                 className={cn(
-                  "flex items-center gap-3 p-3 rounded-xl border transition-colors",
+                  "flex items-center gap-2.5 p-3 rounded-xl border transition-colors",
                   highlight
                     ? "bg-primary/8 border-primary/20"
                     : "bg-secondary/20 border-border/30 hover:border-border/50"
@@ -314,12 +314,12 @@ export default function Dashboard() {
                 )}>
                   <Icon className={cn("h-3.5 w-3.5", highlight ? "text-primary" : "text-muted-foreground/50")} />
                 </div>
-                <div className="min-w-0">
-                  <div className={cn("text-[14px] font-black font-mono tabular-nums leading-none", highlight ? "text-primary" : "text-foreground")}>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[8.5px] font-black text-muted-foreground/35 uppercase tracking-[0.15em] leading-none mb-1">{label}</div>
+                  <div className={cn("text-[15px] font-black font-mono tabular-nums leading-none", highlight ? "text-primary" : "text-foreground")}>
                     {value}
                   </div>
-                  <div className="text-[9.5px] text-muted-foreground/45 mt-0.5 leading-none truncate">{sub}</div>
-                  <div className="text-[9px] text-muted-foreground/30 mt-0.5 leading-none uppercase tracking-wide">{label}</div>
+                  <div className="text-[9px] text-muted-foreground/40 mt-0.5 leading-none truncate">{sub}</div>
                 </div>
               </div>
             ))}
