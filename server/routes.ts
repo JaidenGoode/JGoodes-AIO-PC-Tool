@@ -273,8 +273,8 @@ function getCleanCategories(): CleanCategory[] {
       name: "Delivery Optimization",
       description: "Windows P2P update delivery cache used to share updates between devices on your network",
       paths: [],
-      psScan: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;$c=0;Stop-Service DoSvc -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 400;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Start-Service DoSvc -EA SilentlyContinue;Write-Output "$t $c"`,
-      psClean: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;Stop-Service DoSvc -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 400;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service DoSvc -EA SilentlyContinue;Write-Output $t`,
+      psScan: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;$c=0;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Write-Output "$t $c"`,
+      psClean: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;Stop-Service DoSvc -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 500;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service DoSvc -EA SilentlyContinue;Write-Output $t`,
     },
     {
       id: "errorreports",
@@ -347,6 +347,34 @@ function getCleanCategories(): CleanCategory[] {
         path.join(local, "AMD", "DXCache"),
         path.join(local, "Intel", "ShaderCache"),
       ],
+    },
+
+    {
+      id: "localservice",
+      group: "system",
+      name: "Service Profile Temps",
+      description: "LocalService, NetworkService and LocalSystem profile temp caches — built up by Windows system services",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @('C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Local\\Temp','C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\LocalLow\\Temp','C:\\Windows\\ServiceProfiles\\NetworkService\\AppData\\Local\\Temp','C:\\Windows\\System32\\config\\systemprofile\\AppData\\Local\\Temp')){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @('C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Local\\Temp','C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\LocalLow\\Temp','C:\\Windows\\ServiceProfiles\\NetworkService\\AppData\\Local\\Temp','C:\\Windows\\System32\\config\\systemprofile\\AppData\\Local\\Temp')){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+    },
+    {
+      id: "event_logs",
+      group: "system",
+      name: "Windows Event Logs",
+      description: "Delivery Optimization, Update Orchestrator, WDI diagnostic, and Windows Update event log files",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @('C:\\Windows\\Logs\\dosvc','C:\\ProgramData\\USOShared\\Logs','C:\\Windows\\System32\\WDI\\LogFiles','C:\\Windows\\SoftwareDistribution\\EventCache')){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -File -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=$items.Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @('C:\\Windows\\Logs\\dosvc','C:\\ProgramData\\USOShared\\Logs','C:\\Windows\\System32\\WDI\\LogFiles','C:\\Windows\\SoftwareDistribution\\EventCache')){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -File -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+    },
+    {
+      id: "cert_cache",
+      group: "system",
+      name: "Windows Certificate Cache",
+      description: "Cached certification files and SoftwareDistribution DataStore logs — safe to clear, rebuilt automatically",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:WINDIR\\SoftwareDistribution\\DataStore\\Logs","$env:WINDIR\\System32\\LogFiles\\WMI")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -File -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=$items.Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:WINDIR\\SoftwareDistribution\\DataStore\\Logs","$env:WINDIR\\System32\\LogFiles\\WMI")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -File -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
 
     // ── APP JUNK ───────────────────────────────────────────────────────────────
@@ -585,6 +613,16 @@ function getCleanCategories(): CleanCategory[] {
         path.join(local, "Battle.net", "Cache"),
         path.join(local, "Battle.net", "Logs"),
       ],
+    },
+    {
+      id: "fortnite",
+      group: "games",
+      name: "Fortnite",
+      description: "Fortnite game logs, crash dumps, and saved temporary files",
+      installCheck: [],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\FortniteGame\\Saved\\Logs","$env:LOCALAPPDATA\\FortniteGame\\Saved\\Crashes","$env:LOCALAPPDATA\\FortniteGame\\Saved\\Config\\CrashReportClient")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\FortniteGame\\Saved\\Logs","$env:LOCALAPPDATA\\FortniteGame\\Saved\\Crashes","$env:LOCALAPPDATA\\FortniteGame\\Saved\\Config\\CrashReportClient")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
 
     // ── BROWSER JUNK (cache only) ───────────────────────────────────────────────
