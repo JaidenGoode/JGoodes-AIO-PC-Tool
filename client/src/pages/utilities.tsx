@@ -25,23 +25,32 @@ function UtilCard({
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="h-full">
-      <div className="h-full flex flex-col rounded-xl border border-border/80 bg-card hover:border-primary/40 transition-all duration-200 overflow-hidden group"
-        style={{ boxShadow: "0 0 0 0 transparent" }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px hsl(var(--primary) / 0.07), 0 2px 12px rgba(0,0,0,0.4)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 0 transparent"; }}
+      <div
+        className="h-full flex flex-col rounded-xl border border-border/70 bg-card hover:border-primary/35 transition-all duration-200 overflow-hidden group relative"
+        style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 22px hsl(var(--primary) / 0.1), 0 4px 18px rgba(0,0,0,0.4)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.25)"; }}
       >
-        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50 bg-secondary/10 shrink-0 relative overflow-hidden">
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-          <div className="w-7 h-7 rounded-lg bg-primary/12 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/18 group-hover:border-primary/30 transition-all duration-200"
-            style={{ boxShadow: "0 0 8px hsl(var(--primary) / 0.12)" }}>
+        {/* Gradient top accent strip — matches tweaks card style */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-secondary/8 shrink-0">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-200"
+            style={{
+              background: "hsl(var(--primary) / 0.1)",
+              borderColor: "hsl(var(--primary) / 0.22)",
+              boxShadow: "0 0 10px hsl(var(--primary) / 0.1)",
+            }}
+          >
             <Icon className="h-3.5 w-3.5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-[12.5px] text-foreground tracking-tight leading-tight">{title}</h3>
-            <p className="text-[9.5px] text-muted-foreground/50 mt-0.5 leading-none truncate">{description}</p>
+            <p className="text-[9.5px] text-muted-foreground/45 mt-0.5 leading-none truncate">{description}</p>
           </div>
         </div>
-        <div className="flex-1 flex flex-col space-y-1.5 p-3">{children}</div>
+        <div className="flex-1 flex flex-col space-y-1.5 p-3.5">{children}</div>
       </div>
     </motion.div>
   );
@@ -59,13 +68,13 @@ function RunButton({ action, label, pending, onRun }: {
         "w-full h-7 text-xs font-semibold justify-start gap-2 transition-all duration-150 border",
         pending
           ? "bg-primary/8 border-primary/25 text-primary cursor-not-allowed"
-          : "bg-transparent hover:bg-primary/8 text-foreground/65 hover:text-primary border-border/35 hover:border-primary/30"
+          : "bg-secondary/20 hover:bg-primary/8 text-foreground/60 hover:text-primary border-border/30 hover:border-primary/30"
       )}
       data-testid={`button-utility-${action}`}
     >
       {pending
         ? <Loader2 className="h-2.5 w-2.5 animate-spin text-primary shrink-0" />
-        : <div className="h-1.5 w-1.5 rounded-full bg-primary/40 shrink-0 group-hover:bg-primary transition-colors" />}
+        : <div className="h-1.5 w-1.5 rounded-full bg-primary/35 shrink-0" />}
       <span className="truncate">{pending ? "Running..." : label}</span>
     </Button>
   );
@@ -73,10 +82,10 @@ function RunButton({ action, label, pending, onRun }: {
 
 function SectionLabel({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-3 pt-2">
-      <div className="h-[1px] w-3 bg-gradient-to-r from-primary/50 to-primary/20 shrink-0" />
-      <span className="text-[9.5px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 shrink-0 whitespace-nowrap">{title}</span>
-      <div className="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
+    <div className="flex items-center gap-2 pt-1">
+      <div className="h-[1px] w-4 bg-primary/50 rounded-full shrink-0" />
+      <span className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground/40 shrink-0 whitespace-nowrap">{title}</span>
+      <div className="flex-1 h-[1px] bg-border/30 rounded-full" />
     </div>
   );
 }
@@ -990,11 +999,20 @@ export default function Utilities() {
   return (
     <div className="space-y-4 pb-8">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div>
-        <h1 className="text-2xl font-black text-foreground tracking-tight">
-          System <span className="text-primary">Utilities</span>
-        </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Run as Administrator for full effect</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
+            System <span className="text-primary">Utilities</span>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Tools, launchers & quick controls
+            <span className="ml-2 text-muted-foreground/40">· Run as Administrator for full effect</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/15 bg-primary/6 shrink-0">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <span className="text-[10px] font-black text-primary/70 uppercase tracking-widest font-mono">Admin Required</span>
+        </div>
       </div>
 
       {/* ── SYSTEM MAINTENANCE ─────────────────────────────────────────────── */}
