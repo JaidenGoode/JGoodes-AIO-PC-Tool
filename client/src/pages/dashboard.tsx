@@ -38,84 +38,79 @@ function UsageBar({
   icon: React.ElementType;
 }) {
   const pct = value ?? 0;
-  const color =
-    value == null ? "text-muted-foreground/30"
-    : pct < 50 ? "text-green-400"
-    : pct < 80 ? "text-amber-400"
-    : "text-primary";
 
   return (
     <div className="flex items-center gap-3">
-      <div className="p-1.5 rounded-lg bg-secondary/40 shrink-0 border border-border/30">
-        <Icon className="h-3.5 w-3.5 text-muted-foreground/50" />
+      <div
+        className="p-1.5 rounded-lg shrink-0 border transition-all"
+        style={{ background: "hsl(var(--primary) / 0.1)", borderColor: "hsl(var(--primary) / 0.2)" }}
+      >
+        <Icon className="h-3.5 w-3.5 text-primary" />
       </div>
-      <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-wide">
-            {label}
-          </span>
-          <span className={cn("text-[13px] font-black font-mono tabular-nums leading-none", color)}>
-            {value == null ? "N/A" : `${value}%`}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-[11px] font-bold text-foreground/55 uppercase tracking-wide">{label}</span>
+          <span className="text-[14px] font-black font-mono tabular-nums leading-none text-primary"
+            style={{ textShadow: "0 0 10px hsl(var(--primary) / 0.35)" }}>
+            {value == null ? "—" : `${value}%`}
           </span>
         </div>
-        <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+        <div className="h-1.5 rounded-full bg-secondary/60 overflow-hidden">
           <motion.div
-            className="h-full rounded-full progress-gradient-fill"
+            className="h-full rounded-full"
+            style={{
+              background: "linear-gradient(90deg, hsl(var(--primary) / 0.65), hsl(var(--primary)))",
+              boxShadow: "0 0 8px hsl(var(--primary) / 0.45)",
+            }}
             initial={{ width: 0 }}
             animate={{ width: `${Math.min(100, pct)}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </div>
-        {sublabel && (
-          <p className="text-[9.5px] text-muted-foreground/30 leading-none">{sublabel}</p>
-        )}
+        {sublabel && <p className="text-[9.5px] text-muted-foreground/30 mt-1 leading-none">{sublabel}</p>}
       </div>
     </div>
   );
 }
 
 function TempGauge({ label, temp, icon: Icon }: { label: string; temp: number | null; icon: React.ElementType }) {
-  const color =
-    temp == null ? "text-muted-foreground/25"
-    : temp < 55 ? "text-green-400"
-    : temp < 75 ? "text-amber-400"
-    : "text-primary";
-  const bgColor =
-    temp == null ? "bg-secondary/30"
-    : temp < 55 ? "bg-green-400/10"
-    : temp < 75 ? "bg-amber-400/10"
-    : "bg-primary/10";
-  const borderColor =
-    temp == null ? "border-border/30"
-    : temp < 55 ? "border-green-400/20"
-    : temp < 75 ? "border-amber-400/20"
-    : "border-primary/25";
-  const status =
-    temp == null ? "No sensor"
-    : temp < 55 ? "Cool"
-    : temp < 75 ? "Warm"
-    : "Hot";
-
+  const status = temp == null ? "No sensor" : temp < 55 ? "Cool" : temp < 75 ? "Warm" : "Hot";
   const pct = temp ? Math.min((temp / 110) * 100, 100) : 0;
 
   return (
-    <div className={cn("flex items-center gap-3.5 p-3 rounded-xl border transition-all", bgColor, borderColor)}>
-      <div className={cn("p-2 rounded-lg border", bgColor, borderColor)}>
-        <Icon className={cn("h-4 w-4", color)} />
+    <div
+      className="flex items-center gap-3.5 p-3 rounded-xl border transition-all"
+      style={{ background: "hsl(var(--primary) / 0.05)", borderColor: "hsl(var(--primary) / 0.15)" }}
+    >
+      <div
+        className="p-2 rounded-lg border shrink-0"
+        style={{ background: "hsl(var(--primary) / 0.1)", borderColor: "hsl(var(--primary) / 0.2)" }}
+      >
+        <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-wide">{label}</span>
           <div className="flex items-center gap-1.5">
-            <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full border", color, bgColor, borderColor)}>{status}</span>
-            <span className={cn("text-[18px] font-black font-mono tabular-nums leading-none", color)}>
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border text-primary"
+              style={{ background: "hsl(var(--primary) / 0.1)", borderColor: "hsl(var(--primary) / 0.25)" }}
+            >{status}</span>
+            <span
+              className="text-[18px] font-black font-mono tabular-nums leading-none text-primary"
+              style={{ textShadow: "0 0 12px hsl(var(--primary) / 0.4)" }}
+            >
               {temp != null ? `${temp}°` : "—"}
             </span>
           </div>
         </div>
         <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
           <motion.div
-            className="h-full rounded-full progress-gradient-fill"
+            className="h-full rounded-full"
+            style={{
+              background: "linear-gradient(90deg, hsl(var(--primary) / 0.65), hsl(var(--primary)))",
+              boxShadow: "0 0 8px hsl(var(--primary) / 0.45)",
+            }}
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.9, ease: "easeOut" }}
@@ -127,38 +122,43 @@ function TempGauge({ label, temp, icon: Icon }: { label: string; temp: number | 
 }
 
 function QuickCard({
-  href, Icon, label, desc, iconColor, glowColor, borderHover,
+  Icon, label, desc,
 }: {
-  href: string;
   Icon: React.ElementType;
   label: string;
   desc: string;
-  iconColor: string;
-  glowColor: string;
-  borderHover: string;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
       data-testid={`card-quick-${label.toLowerCase().replace(/\s+/g, "-")}`}
-      className="flex flex-col items-center gap-2 p-3.5 rounded-xl border cursor-pointer text-center transition-all duration-200"
+      className="flex flex-col items-center gap-2 p-3.5 rounded-xl border cursor-pointer text-center transition-all duration-200 relative overflow-hidden group"
       style={{
-        background: hovered ? glowColor : "hsl(var(--secondary) / 0.12)",
-        borderColor: hovered ? borderHover : "hsl(var(--border) / 0.35)",
-        boxShadow: hovered ? `0 0 16px ${glowColor}` : "none",
+        background: hovered ? "hsl(var(--primary) / 0.08)" : "hsl(var(--secondary) / 0.12)",
+        borderColor: hovered ? "hsl(var(--primary) / 0.35)" : "hsl(var(--border) / 0.35)",
+        boxShadow: hovered ? "0 0 18px hsl(var(--primary) / 0.12), 0 2px 12px rgba(0,0,0,0.3)" : "0 1px 4px rgba(0,0,0,0.15)",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div
+        className="absolute inset-x-0 top-0 h-[1.5px] transition-opacity duration-200"
+        style={{
+          background: "linear-gradient(90deg, transparent, hsl(var(--primary) / 0.5), transparent)",
+          opacity: hovered ? 1 : 0,
+        }}
+      />
+      <div
         className="p-2.5 rounded-xl border transition-all duration-200"
         style={{
-          background: hovered ? glowColor : "hsl(var(--secondary) / 0.35)",
-          borderColor: hovered ? borderHover : "hsl(var(--border) / 0.25)",
+          background: hovered ? "hsl(var(--primary) / 0.12)" : "hsl(var(--secondary) / 0.35)",
+          borderColor: hovered ? "hsl(var(--primary) / 0.3)" : "hsl(var(--border) / 0.25)",
+          boxShadow: hovered ? "0 0 10px hsl(var(--primary) / 0.2)" : "none",
         }}
       >
         <Icon
-          style={{ width: "18px", height: "18px", color: hovered ? iconColor : "hsl(var(--muted-foreground) / 0.4)", transition: "color 0.2s" }}
+          className="w-[18px] h-[18px] transition-colors duration-200"
+          style={{ color: hovered ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.4)" }}
         />
       </div>
       <div>
@@ -175,12 +175,12 @@ function QuickCard({
 }
 
 const QUICK_LINKS = [
-  { href: "/cleaner",   icon: Sparkles,    label: "PC Cleaner",   desc: "Remove junk files",    iconColor: "#60a5fa", glowColor: "rgba(96,165,250,0.1)",  borderHover: "rgba(96,165,250,0.2)"  },
-  { href: "/tweaks",    icon: Wrench,      label: "Tweaks",       desc: "Optimize Windows",     iconColor: "hsl(var(--primary))", glowColor: "hsl(var(--primary) / 0.1)", borderHover: "hsl(var(--primary) / 0.25)" },
-  { href: "/utilities", icon: Activity,   label: "Utilities",    desc: "System tools",         iconColor: "#a78bfa", glowColor: "rgba(167,139,250,0.1)", borderHover: "rgba(167,139,250,0.2)" },
-  { href: "/dns",       icon: Globe,       label: "DNS Manager",  desc: "Network DNS",          iconColor: "#22d3ee", glowColor: "rgba(34,211,238,0.1)",  borderHover: "rgba(34,211,238,0.2)"  },
-  { href: "/startup",   icon: MonitorCheck,label: "Startup Mgr",  desc: "Startup apps",         iconColor: "#fbbf24", glowColor: "rgba(251,191,36,0.1)",  borderHover: "rgba(251,191,36,0.2)"  },
-  { href: "/restore",   icon: ShieldCheck, label: "Restore",      desc: "System protection",    iconColor: "#4ade80", glowColor: "rgba(74,222,128,0.1)",  borderHover: "rgba(74,222,128,0.2)"  },
+  { href: "/cleaner",   icon: Sparkles,     label: "PC Cleaner",  desc: "Remove junk files"  },
+  { href: "/tweaks",    icon: Wrench,       label: "Tweaks",      desc: "Optimize Windows"   },
+  { href: "/utilities", icon: Activity,     label: "Utilities",   desc: "System tools"       },
+  { href: "/dns",       icon: Globe,        label: "DNS Manager", desc: "Network DNS"        },
+  { href: "/startup",   icon: MonitorCheck, label: "Startup Mgr", desc: "Startup apps"       },
+  { href: "/restore",   icon: ShieldCheck,  label: "Restore",     desc: "System protection"  },
 ];
 
 export default function Dashboard() {
@@ -527,18 +527,10 @@ export default function Dashboard() {
             Quick Access
           </span>
         </div>
-        <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
-          {QUICK_LINKS.map(({ href, icon: Icon, label, desc, iconColor, glowColor, borderHover }) => (
+        <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+          {QUICK_LINKS.map(({ href, icon: Icon, label, desc }) => (
             <Link key={href} href={href}>
-              <QuickCard
-                href={href}
-                Icon={Icon}
-                label={label}
-                desc={desc}
-                iconColor={iconColor}
-                glowColor={glowColor}
-                borderHover={borderHover}
-              />
+              <QuickCard Icon={Icon} label={label} desc={desc} />
             </Link>
           ))}
         </div>
