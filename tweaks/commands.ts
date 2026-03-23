@@ -224,10 +224,10 @@ Remove-Item -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image
 
   "Prefer IPv4 over IPv6": {
     requiresAdmin: true,
-    enable: `netsh interface ipv6 set prefix ::ffff:0:0/96 60 4 2>$null
-netsh interface ipv6 set prefix ::/0 50 3 2>$null`,
-    disable: `netsh interface ipv6 delete prefixpolicy ::ffff:0:0/96 2>$null
-netsh interface ipv6 set prefix ::/0 40 1 2>$null`,
+    enable: `netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 60 4 store=persistent 2>$null
+netsh interface ipv6 set prefixpolicy ::/0 50 3 store=persistent 2>$null`,
+    disable: `netsh interface ipv6 set prefixpolicy ::ffff:0:0/96 35 4 store=persistent 2>$null
+netsh interface ipv6 set prefixpolicy ::/0 40 1 store=persistent 2>$null`,
   },
 
   "Disable Web Search in Windows Search": {
