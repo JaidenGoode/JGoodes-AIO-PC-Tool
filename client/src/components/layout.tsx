@@ -196,8 +196,8 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main content */}
-          <main className="flex-1 overflow-y-auto w-full">
-            <div className="container mx-auto p-5 md:p-7 max-w-[1600px]">
+          <main className="flex-1 min-h-0 overflow-y-auto w-full">
+            <div className="container mx-auto p-5 md:p-7 max-w-[1600px] min-h-full flex flex-col">
               {children}
             </div>
           </main>

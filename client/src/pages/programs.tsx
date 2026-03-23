@@ -868,36 +868,18 @@ function ExternalTab() {
                             >
                               {app.name}
                             </span>
-                            <div className="flex items-center gap-0.5 shrink-0">
-                              {/* External link — always visible, brightens on hover */}
-                              {app.url && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); openUrl(app.url!); }}
-                                  className="p-0.5 rounded transition-all duration-150"
-                                  style={{ color: "hsl(var(--primary) / 0.35)" }}
-                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--primary))"; }}
-                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--primary) / 0.35)"; }}
-                                  title={`Open ${app.name} download page`}
-                                >
-                                  <ExternalLink className="h-2.5 w-2.5" />
-                                </button>
-                              )}
-                              {/* Quick action — only on hover */}
+                            {app.url && (
                               <button
-                                onClick={(e) => { e.stopPropagation(); handleSingleAction(app.id, app.name, installed ? "uninstall" : "install"); }}
-                                disabled={isThisActing || bulkActing}
-                                className="p-0.5 rounded transition-all duration-150 opacity-0 group-hover:opacity-100"
-                                style={{ color: installed ? "hsl(var(--destructive) / 0.7)" : "hsl(var(--primary) / 0.7)" }}
-                                title={installed ? `Uninstall ${app.name}` : `Install ${app.name}`}
+                                onClick={(e) => { e.stopPropagation(); openUrl(app.url!); }}
+                                className="p-0.5 rounded shrink-0 transition-all duration-150"
+                                style={{ color: "hsl(var(--primary) / 0.35)" }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--primary))"; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--primary) / 0.35)"; }}
+                                title={`Open ${app.name} download page`}
                               >
-                                {isThisActing
-                                  ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                  : installed
-                                    ? <Trash2 className="h-2.5 w-2.5" />
-                                    : <Download className="h-2.5 w-2.5" />
-                                }
+                                <ExternalLink className="h-2.5 w-2.5" />
                               </button>
-                            </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1232,7 +1214,7 @@ export default function Programs() {
   const [tab, setTab] = useState<TabKey>("winApps");
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Page Header ── */}
       <div
         className="shrink-0 px-6 pt-5 pb-0 border-b border-border/50"
@@ -1296,13 +1278,13 @@ export default function Programs() {
 
       {/* ── Tab Content ── */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={tab}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
+            transition={{ duration: 0.1 }}
             style={{ height: "100%", display: "flex", flexDirection: "column" }}
           >
             {tab === "winApps" && <WinAppsTab />}
