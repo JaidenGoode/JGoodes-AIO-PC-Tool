@@ -266,61 +266,49 @@ export default function Dashboard() {
           </div>
 
           {/* Stats row */}
-          <div className="mt-5 pt-4 border-t border-border/30 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="mt-4 pt-3 border-t border-border/30 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
               {
                 label: "Active Tweaks",
-                value: activeTweaks > 0 ? `${activeTweaks}` : "None",
-                sub: `of ${totalTweaks} available`,
-                icon: Zap,
+                value: activeTweaks > 0 ? `${activeTweaks}` : "0",
+                sub: `of ${totalTweaks} total`,
                 highlight: activeTweaks > 0,
               },
               {
                 label: "CPU Usage",
                 value: usage?.cpu?.usage != null ? `${usage.cpu.usage}%` : "—",
                 sub: usage?.cpu?.cores ? `${usage.cpu.cores} threads` : "Processor",
-                icon: Cpu,
                 highlight: false,
               },
               {
                 label: "RAM Used",
                 value: usage?.ram?.usedGb != null ? `${usage.ram.usedGb} GB` : "—",
-                sub: usage?.ram?.totalGb ? `of ${usage.ram.totalGb} GB total` : "Memory",
-                icon: MemoryStick,
+                sub: usage?.ram?.totalGb ? `/ ${usage.ram.totalGb} GB` : "Memory",
                 highlight: false,
               },
               {
                 label: "CPU Temp",
-                value: temps?.cpu?.current != null ? `${temps.cpu.current}°C` : "—",
+                value: temps?.cpu?.current != null ? `${temps.cpu.current}°` : "—",
                 sub: temps?.cpu?.current != null
-                  ? (temps.cpu.current < 55 ? "Running cool" : temps.cpu.current < 75 ? "Under load" : "Running hot")
-                  : "Sensor N/A",
-                icon: Thermometer,
+                  ? (temps.cpu.current < 55 ? "Cool" : temps.cpu.current < 75 ? "Warm" : "Hot")
+                  : "No sensor",
                 highlight: false,
               },
-            ].map(({ label, value, sub, icon: Icon, highlight }) => (
+            ].map(({ label, value, sub, highlight }) => (
               <div
                 key={label}
                 className={cn(
-                  "flex items-center gap-2.5 p-3 rounded-xl border transition-colors",
+                  "p-2.5 rounded-xl border transition-colors",
                   highlight
                     ? "bg-primary/8 border-primary/20"
-                    : "bg-secondary/20 border-border/30 hover:border-border/50"
+                    : "bg-secondary/15 border-border/25"
                 )}
               >
-                <div className={cn(
-                  "p-1.5 rounded-lg border shrink-0",
-                  highlight ? "bg-primary/15 border-primary/20" : "bg-secondary/40 border-border/30"
-                )}>
-                  <Icon className={cn("h-3.5 w-3.5", highlight ? "text-primary" : "text-muted-foreground/50")} />
+                <div className="text-[8px] font-black text-muted-foreground/35 uppercase tracking-[0.12em] leading-none mb-1.5 truncate">{label}</div>
+                <div className={cn("text-[13px] font-black font-mono tabular-nums leading-none", highlight ? "text-primary" : "text-foreground")}>
+                  {value}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[8.5px] font-black text-muted-foreground/35 uppercase tracking-[0.15em] leading-none mb-1">{label}</div>
-                  <div className={cn("text-[15px] font-black font-mono tabular-nums leading-none", highlight ? "text-primary" : "text-foreground")}>
-                    {value}
-                  </div>
-                  <div className="text-[9px] text-muted-foreground/40 mt-0.5 leading-none truncate">{sub}</div>
-                </div>
+                <div className="text-[8px] text-muted-foreground/35 mt-1 leading-none truncate">{sub}</div>
               </div>
             ))}
           </div>
