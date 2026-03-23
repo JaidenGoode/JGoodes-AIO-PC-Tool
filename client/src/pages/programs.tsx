@@ -24,7 +24,7 @@ import { openUrl } from "@/lib/api";
 type WinApp = { name: string; pkg: string };
 type WinCap = { name: string; cap: string };
 type WinFeat = { name: string; feature: string };
-type ExtApp = { name: string; id: string };
+type ExtApp = { name: string; id: string; url?: string };
 type ExtCategory = { category: string; icon: React.ElementType; apps: ExtApp[] };
 type SortKey = "name" | "size" | "publisher" | "date";
 type TabKey = "winApps" | "external" | "allPrograms";
@@ -113,152 +113,152 @@ const WIN_FEATURES: WinFeat[] = [
 const EXTERNAL_CATEGORIES: ExtCategory[] = [
   {
     category: "Browsers", icon: Globe, apps: [
-      { name: "Arc Browser", id: "TheBrowserCompany.Arc" },
-      { name: "Brave", id: "Brave.Brave" },
-      { name: "DuckDuckGo Browser", id: "DuckDuckGo.DesktopBrowser" },
-      { name: "Google Chrome", id: "Google.Chrome" },
-      { name: "LibreWolf", id: "LibreWolf.LibreWolf" },
-      { name: "Mozilla Firefox", id: "Mozilla.Firefox" },
-      { name: "Opera", id: "Opera.Opera" },
-      { name: "Opera GX", id: "Opera.OperaGX" },
-      { name: "Tor Browser", id: "TorProject.TorBrowser" },
-      { name: "Vivaldi", id: "Vivaldi.Vivaldi" },
-      { name: "Waterfox", id: "Waterfox.Waterfox" },
-      { name: "Zen Browser", id: "Zen-Team.Zen-Browser.Specific" },
+      { name: "Arc Browser", id: "TheBrowserCompany.Arc", url: "https://arc.net" },
+      { name: "Brave", id: "Brave.Brave", url: "https://brave.com" },
+      { name: "DuckDuckGo Browser", id: "DuckDuckGo.DesktopBrowser", url: "https://duckduckgo.com/windows" },
+      { name: "Google Chrome", id: "Google.Chrome", url: "https://www.google.com/chrome" },
+      { name: "LibreWolf", id: "LibreWolf.LibreWolf", url: "https://librewolf.net" },
+      { name: "Mozilla Firefox", id: "Mozilla.Firefox", url: "https://www.mozilla.org/firefox" },
+      { name: "Opera", id: "Opera.Opera", url: "https://www.opera.com" },
+      { name: "Opera GX", id: "Opera.OperaGX", url: "https://www.opera.com/gx" },
+      { name: "Tor Browser", id: "TorProject.TorBrowser", url: "https://www.torproject.org" },
+      { name: "Vivaldi", id: "Vivaldi.Vivaldi", url: "https://vivaldi.com" },
+      { name: "Waterfox", id: "Waterfox.Waterfox", url: "https://www.waterfox.net" },
+      { name: "Zen Browser", id: "Zen-Team.Zen-Browser.Specific", url: "https://www.zen-browser.app" },
     ],
   },
   {
     category: "Compression", icon: Archive, apps: [
-      { name: "7-Zip", id: "7zip.7zip" },
-      { name: "NanaZip", id: "M2Team.NanaZip" },
-      { name: "PeaZip", id: "Giorgiotani.Peazip" },
-      { name: "WinRAR", id: "RARLab.WinRAR" },
+      { name: "7-Zip", id: "7zip.7zip", url: "https://www.7-zip.org" },
+      { name: "NanaZip", id: "M2Team.NanaZip", url: "https://github.com/M2Team/NanaZip" },
+      { name: "PeaZip", id: "Giorgiotani.Peazip", url: "https://peazip.github.io" },
+      { name: "WinRAR", id: "RARLab.WinRAR", url: "https://www.win-rar.com" },
     ],
   },
   {
     category: "Development", icon: Code2, apps: [
-      { name: "Git", id: "Git.Git" },
-      { name: "GitHub Desktop", id: "GitHub.GitHubDesktop" },
-      { name: "Node.js LTS", id: "OpenJS.NodeJS.LTS" },
-      { name: "Notepad++", id: "Notepad++.Notepad++" },
-      { name: "Python 3", id: "Python.Python.3" },
-      { name: "PuTTY", id: "PuTTY.PuTTY" },
-      { name: "Visual Studio Code", id: "Microsoft.VisualStudioCode" },
-      { name: "WinMerge", id: "WinMerge.WinMerge" },
-      { name: "WinSCP", id: "WinSCP.WinSCP" },
+      { name: "Git", id: "Git.Git", url: "https://git-scm.com" },
+      { name: "GitHub Desktop", id: "GitHub.GitHubDesktop", url: "https://desktop.github.com" },
+      { name: "Node.js LTS", id: "OpenJS.NodeJS.LTS", url: "https://nodejs.org" },
+      { name: "Notepad++", id: "Notepad++.Notepad++", url: "https://notepad-plus-plus.org" },
+      { name: "Python 3", id: "Python.Python.3", url: "https://www.python.org" },
+      { name: "PuTTY", id: "PuTTY.PuTTY", url: "https://www.putty.org" },
+      { name: "Visual Studio Code", id: "Microsoft.VisualStudioCode", url: "https://code.visualstudio.com" },
+      { name: "WinMerge", id: "WinMerge.WinMerge", url: "https://winmerge.org" },
+      { name: "WinSCP", id: "WinSCP.WinSCP", url: "https://winscp.net" },
     ],
   },
   {
     category: "Document Viewers", icon: FileText, apps: [
-      { name: "Adobe Acrobat Reader DC", id: "Adobe.Acrobat.Reader.64-bit" },
-      { name: "LibreOffice", id: "TheDocumentFoundation.LibreOffice" },
-      { name: "ONLYOFFICE Desktop", id: "ONLYOFFICE.DesktopEditors" },
-      { name: "OpenOffice", id: "Apache.OpenOffice" },
-      { name: "SumatraPDF", id: "SumatraPDF.SumatraPDF" },
+      { name: "Adobe Acrobat Reader DC", id: "Adobe.Acrobat.Reader.64-bit", url: "https://acrobat.adobe.com/us/en/acrobat/pdf-reader.html" },
+      { name: "LibreOffice", id: "TheDocumentFoundation.LibreOffice", url: "https://www.libreoffice.org" },
+      { name: "ONLYOFFICE Desktop", id: "ONLYOFFICE.DesktopEditors", url: "https://www.onlyoffice.com/desktop.aspx" },
+      { name: "OpenOffice", id: "Apache.OpenOffice", url: "https://www.openoffice.org" },
+      { name: "SumatraPDF", id: "SumatraPDF.SumatraPDF", url: "https://www.sumatrapdfreader.org" },
     ],
   },
   {
     category: "File & Disk Management", icon: FolderOpen, apps: [
-      { name: "Advanced Renamer", id: "DenisKutlubaev.AdvancedRenamer" },
-      { name: "Crystal Disk Info", id: "CrystalDewWorld.CrystalDiskInfo" },
-      { name: "Everything", id: "voidtools.Everything" },
-      { name: "Rufus", id: "Rufus.Rufus" },
-      { name: "TeraCopy", id: "CodeSector.TeraCopy" },
-      { name: "TreeSize Free", id: "JAMSoftware.TreeSize.Free" },
-      { name: "WinDirStat", id: "WinDirStat.WinDirStat" },
-      { name: "WizTree", id: "AntibodySoftware.WizTree" },
+      { name: "Advanced Renamer", id: "DenisKutlubaev.AdvancedRenamer", url: "https://www.advancedrenamer.com" },
+      { name: "Crystal Disk Info", id: "CrystalDewWorld.CrystalDiskInfo", url: "https://crystalmark.info/en/software/crystaldiskinfo" },
+      { name: "Everything", id: "voidtools.Everything", url: "https://www.voidtools.com" },
+      { name: "Rufus", id: "Rufus.Rufus", url: "https://rufus.ie" },
+      { name: "TeraCopy", id: "CodeSector.TeraCopy", url: "https://www.codesector.com/teracopy" },
+      { name: "TreeSize Free", id: "JAMSoftware.TreeSize.Free", url: "https://www.jam-software.com/treesize_free" },
+      { name: "WinDirStat", id: "WinDirStat.WinDirStat", url: "https://windirstat.net" },
+      { name: "WizTree", id: "AntibodySoftware.WizTree", url: "https://www.diskanalyzer.com" },
     ],
   },
   {
     category: "Gaming", icon: Gamepad2, apps: [
-      { name: "Epic Games Launcher", id: "EpicGames.EpicGamesLauncher" },
-      { name: "GOG Galaxy", id: "GOG.Galaxy" },
-      { name: "Steam", id: "Valve.Steam" },
+      { name: "Epic Games Launcher", id: "EpicGames.EpicGamesLauncher", url: "https://store.epicgames.com/en-US/download" },
+      { name: "GOG Galaxy", id: "GOG.Galaxy", url: "https://www.gog.com/galaxy" },
+      { name: "Steam", id: "Valve.Steam", url: "https://store.steampowered.com/about" },
     ],
   },
   {
     category: "Imaging & Design", icon: Monitor, apps: [
-      { name: "Blender", id: "BlenderFoundation.Blender" },
-      { name: "GIMP", id: "GIMP.GIMP" },
-      { name: "Greenshot", id: "Greenshot.Greenshot" },
-      { name: "ImageGlass", id: "DuyHoang-Tiger.ImageGlass" },
-      { name: "Inkscape", id: "Inkscape.Inkscape" },
-      { name: "IrfanView", id: "IrfanSkiljan.IrfanView" },
-      { name: "Krita", id: "KDE.Krita" },
-      { name: "Paint.NET", id: "dotPDN.PaintDotNet" },
-      { name: "ShareX", id: "ShareX.ShareX" },
+      { name: "Blender", id: "BlenderFoundation.Blender", url: "https://www.blender.org" },
+      { name: "GIMP", id: "GIMP.GIMP", url: "https://www.gimp.org" },
+      { name: "Greenshot", id: "Greenshot.Greenshot", url: "https://getgreenshot.org" },
+      { name: "ImageGlass", id: "DuyHoang-Tiger.ImageGlass", url: "https://imageglass.org" },
+      { name: "Inkscape", id: "Inkscape.Inkscape", url: "https://inkscape.org" },
+      { name: "IrfanView", id: "IrfanSkiljan.IrfanView", url: "https://www.irfanview.com" },
+      { name: "Krita", id: "KDE.Krita", url: "https://krita.org" },
+      { name: "Paint.NET", id: "dotPDN.PaintDotNet", url: "https://www.getpaint.net" },
+      { name: "ShareX", id: "ShareX.ShareX", url: "https://getsharex.com" },
     ],
   },
   {
     category: "Messaging & Email", icon: MessageSquare, apps: [
-      { name: "Discord", id: "Discord.Discord" },
-      { name: "Element", id: "Element.Element" },
-      { name: "Mozilla Thunderbird", id: "Mozilla.Thunderbird" },
-      { name: "Signal", id: "OpenWhisperSystems.Signal" },
-      { name: "Slack", id: "SlackTechnologies.Slack" },
-      { name: "Telegram Desktop", id: "Telegram.TelegramDesktop" },
-      { name: "WhatsApp", id: "WhatsApp.WhatsApp" },
-      { name: "Zoom", id: "Zoom.Zoom" },
+      { name: "Discord", id: "Discord.Discord", url: "https://discord.com" },
+      { name: "Element", id: "Element.Element", url: "https://element.io" },
+      { name: "Mozilla Thunderbird", id: "Mozilla.Thunderbird", url: "https://www.thunderbird.net" },
+      { name: "Signal", id: "OpenWhisperSystems.Signal", url: "https://signal.org" },
+      { name: "Slack", id: "SlackTechnologies.Slack", url: "https://slack.com" },
+      { name: "Telegram Desktop", id: "Telegram.TelegramDesktop", url: "https://telegram.org" },
+      { name: "WhatsApp", id: "WhatsApp.WhatsApp", url: "https://www.whatsapp.com/download" },
+      { name: "Zoom", id: "Zoom.Zoom", url: "https://zoom.us/download" },
     ],
   },
   {
     category: "Multimedia", icon: Music, apps: [
-      { name: "Audacity", id: "Audacity.Audacity" },
-      { name: "foobar2000", id: "PeterPawlowski.foobar2000" },
-      { name: "HandBrake", id: "HandBrake.HandBrake" },
-      { name: "iTunes", id: "Apple.iTunes" },
-      { name: "K-Lite Codec Pack", id: "CodecGuide.K-LiteCodecPackMega" },
-      { name: "MPC-HC", id: "clsid2.mpc-hc" },
-      { name: "MusicBee", id: "MusicBee.MusicBee" },
-      { name: "OBS Studio", id: "OBSProject.OBSStudio" },
-      { name: "PotPlayer", id: "Daum.PotPlayer" },
-      { name: "Spotify", id: "Spotify.Spotify" },
-      { name: "VLC Media Player", id: "VideoLAN.VLC" },
+      { name: "Audacity", id: "Audacity.Audacity", url: "https://www.audacityteam.org" },
+      { name: "foobar2000", id: "PeterPawlowski.foobar2000", url: "https://www.foobar2000.org" },
+      { name: "HandBrake", id: "HandBrake.HandBrake", url: "https://handbrake.fr" },
+      { name: "iTunes", id: "Apple.iTunes", url: "https://www.apple.com/itunes" },
+      { name: "K-Lite Codec Pack", id: "CodecGuide.K-LiteCodecPackMega", url: "https://codecguide.com/download_kl.htm" },
+      { name: "MPC-HC", id: "clsid2.mpc-hc", url: "https://github.com/clsid2/mpc-hc" },
+      { name: "MusicBee", id: "MusicBee.MusicBee", url: "https://www.getmusicbee.com" },
+      { name: "OBS Studio", id: "OBSProject.OBSStudio", url: "https://obsproject.com" },
+      { name: "PotPlayer", id: "Daum.PotPlayer", url: "https://potplayer.daum.net" },
+      { name: "Spotify", id: "Spotify.Spotify", url: "https://www.spotify.com/download" },
+      { name: "VLC Media Player", id: "VideoLAN.VLC", url: "https://www.videolan.org/vlc" },
     ],
   },
   {
     category: "Online Storage & Backup", icon: Cloud, apps: [
-      { name: "Dropbox", id: "Dropbox.Dropbox" },
-      { name: "FreeFileSync", id: "FreeFileSync.FreeFileSync" },
-      { name: "Google Drive", id: "Google.GoogleDrive" },
-      { name: "Nextcloud Desktop", id: "Nextcloud.NextcloudDesktop" },
-      { name: "Proton Drive", id: "ProtonTechnologies.ProtonDrive" },
+      { name: "Dropbox", id: "Dropbox.Dropbox", url: "https://www.dropbox.com/install" },
+      { name: "FreeFileSync", id: "FreeFileSync.FreeFileSync", url: "https://freefilesync.org" },
+      { name: "Google Drive", id: "Google.GoogleDrive", url: "https://www.google.com/drive/download" },
+      { name: "Nextcloud Desktop", id: "Nextcloud.NextcloudDesktop", url: "https://nextcloud.com/install/#install-clients" },
+      { name: "Proton Drive", id: "ProtonTechnologies.ProtonDrive", url: "https://proton.me/drive/download" },
     ],
   },
   {
     category: "Privacy & Security", icon: Shield, apps: [
-      { name: "Bitwarden", id: "Bitwarden.Bitwarden" },
-      { name: "Malwarebytes", id: "Malwarebytes.Malwarebytes" },
-      { name: "Malwarebytes AdwCleaner", id: "Malwarebytes.AdwCleaner" },
-      { name: "O&O ShutUp10++", id: "OO-Software.ShutUp10" },
-      { name: "OnionShare", id: "OnionShare.OnionShare" },
-      { name: "Proton VPN", id: "ProtonTechnologies.ProtonVPN" },
+      { name: "Bitwarden", id: "Bitwarden.Bitwarden", url: "https://bitwarden.com/download" },
+      { name: "Malwarebytes", id: "Malwarebytes.Malwarebytes", url: "https://www.malwarebytes.com/mwb-download" },
+      { name: "Malwarebytes AdwCleaner", id: "Malwarebytes.AdwCleaner", url: "https://www.malwarebytes.com/adwcleaner" },
+      { name: "O&O ShutUp10++", id: "OO-Software.ShutUp10", url: "https://www.oo-software.com/en/shutup10" },
+      { name: "OnionShare", id: "OnionShare.OnionShare", url: "https://onionshare.org" },
+      { name: "Proton VPN", id: "ProtonTechnologies.ProtonVPN", url: "https://protonvpn.com/download" },
     ],
   },
   {
     category: "System Utilities", icon: Wrench, apps: [
-      { name: "CCleaner", id: "Piriform.CCleaner" },
-      { name: "CPU-Z", id: "CPUID.CPU-Z" },
-      { name: "CrystalDiskMark", id: "CrystalDewWorld.CrystalDiskMark" },
-      { name: "GPU-Z", id: "TechPowerUp.GPU-Z" },
-      { name: "HWiNFO64", id: "REALiX.HWiNFO" },
-      { name: "MSI Afterburner", id: "Guru3D.MSIAfterburner" },
-      { name: "OpenRGB", id: "OpenRGBdotorg.OpenRGB" },
-      { name: "Oracle VirtualBox", id: "Oracle.VirtualBox" },
-      { name: "UniGetUI", id: "MartiCliment.UniGetUI" },
-      { name: "Wise Registry Cleaner", id: "WiseCleaner.WiseRegistryCleaner" },
+      { name: "CCleaner", id: "Piriform.CCleaner", url: "https://www.ccleaner.com" },
+      { name: "CPU-Z", id: "CPUID.CPU-Z", url: "https://www.cpuid.com/softwares/cpu-z.html" },
+      { name: "CrystalDiskMark", id: "CrystalDewWorld.CrystalDiskMark", url: "https://crystalmark.info/en/software/crystaldiskmark" },
+      { name: "GPU-Z", id: "TechPowerUp.GPU-Z", url: "https://www.techpowerup.com/gpuz" },
+      { name: "HWiNFO64", id: "REALiX.HWiNFO", url: "https://www.hwinfo.com" },
+      { name: "MSI Afterburner", id: "Guru3D.MSIAfterburner", url: "https://www.msi.com/page/afterburner" },
+      { name: "OpenRGB", id: "OpenRGBdotorg.OpenRGB", url: "https://openrgb.org" },
+      { name: "Oracle VirtualBox", id: "Oracle.VirtualBox", url: "https://www.virtualbox.org" },
+      { name: "UniGetUI", id: "MartiCliment.UniGetUI", url: "https://www.marticliment.com/wingetui" },
+      { name: "Wise Registry Cleaner", id: "WiseCleaner.WiseRegistryCleaner", url: "https://www.wisecleaner.com/wise-registry-cleaner.html" },
     ],
   },
   {
     category: "Runtimes & Dependencies", icon: Box, apps: [
-      { name: ".NET Runtime 6", id: "Microsoft.DotNet.Runtime.6" },
-      { name: ".NET Runtime 7", id: "Microsoft.DotNet.Runtime.7" },
-      { name: ".NET Runtime 8", id: "Microsoft.DotNet.Runtime.8" },
-      { name: ".NET Runtime 9", id: "Microsoft.DotNet.Runtime.9" },
-      { name: "DirectX Runtime", id: "Microsoft.DirectX" },
-      { name: "Java Runtime (JRE)", id: "Oracle.JavaRuntimeEnvironment" },
-      { name: "Visual C++ 2015-2022 x64", id: "Microsoft.VCRedist.x64.14" },
-      { name: "Visual C++ 2015-2022 x86", id: "Microsoft.VCRedist.x86.14" },
+      { name: ".NET Runtime 6", id: "Microsoft.DotNet.Runtime.6", url: "https://dotnet.microsoft.com/download" },
+      { name: ".NET Runtime 7", id: "Microsoft.DotNet.Runtime.7", url: "https://dotnet.microsoft.com/download" },
+      { name: ".NET Runtime 8", id: "Microsoft.DotNet.Runtime.8", url: "https://dotnet.microsoft.com/download" },
+      { name: ".NET Runtime 9", id: "Microsoft.DotNet.Runtime.9", url: "https://dotnet.microsoft.com/download" },
+      { name: "DirectX Runtime", id: "Microsoft.DirectX", url: "https://www.microsoft.com/en-us/download/details.aspx?id=35" },
+      { name: "Java Runtime (JRE)", id: "Oracle.JavaRuntimeEnvironment", url: "https://www.java.com/download" },
+      { name: "Visual C++ 2015-2022 x64", id: "Microsoft.VCRedist.x64.14", url: "https://aka.ms/vs/17/release/vc_redist.x64.exe" },
+      { name: "Visual C++ 2015-2022 x86", id: "Microsoft.VCRedist.x86.14", url: "https://aka.ms/vs/17/release/vc_redist.x86.exe" },
     ],
   },
 ];
@@ -310,68 +310,54 @@ function ItemCB({ checked, onChange, disabled }: { checked: boolean; onChange: (
 }
 
 function BulkBar({
-  totalSelected, totalInstalled, totalNotInstalled, onSelectAll,
-  onSelectInstalled, onSelectNotInstalled, onDeselectAll,
-  onInstallSelected, onUninstallSelected, isActing, loading,
+  totalSelected, onSelectAll, onSelectInstalled, onSelectNotInstalled, onDeselectAll,
 }: {
-  totalSelected: number; totalInstalled: number; totalNotInstalled: number;
-  onSelectAll: () => void; onSelectInstalled: () => void; onSelectNotInstalled: () => void;
-  onDeselectAll: () => void; onInstallSelected: () => void; onUninstallSelected: () => void;
-  isActing: boolean; loading: boolean;
+  totalSelected: number;
+  onSelectAll: () => void; onSelectInstalled: () => void;
+  onSelectNotInstalled: () => void; onDeselectAll: () => void;
 }) {
   return (
     <div
-      className="flex items-center gap-2 px-5 py-2.5 border-b border-border/40"
-      style={{ background: "hsl(var(--card) / 0.5)" }}
+      className="flex items-center gap-2 px-5 py-2 border-b border-border/30 shrink-0"
+      style={{ background: "hsl(var(--card) / 0.6)" }}
     >
-      {/* Selection checkboxes */}
-      <div className="flex items-center gap-3 text-[11px] font-medium text-muted-foreground/60">
-        <div
-          onClick={totalSelected > 0 ? onDeselectAll : onSelectAll}
-          className="flex items-center gap-1.5 hover:text-foreground/80 transition-colors cursor-pointer select-none"
-          data-testid="button-select-all"
-        >
-          <ItemCB checked={totalSelected > 0} onChange={() => {}} />
-          {totalSelected > 0 ? `${totalSelected} selected` : "Select All"}
-        </div>
-        <span className="text-border/50">|</span>
-        <div onClick={onSelectInstalled} className="cursor-pointer hover:text-foreground/80 transition-colors select-none">
-          Select Installed
-        </div>
-        <span className="text-border/50">|</span>
-        <div onClick={onSelectNotInstalled} className="cursor-pointer hover:text-foreground/80 transition-colors select-none">
-          Select Not Installed
-        </div>
+      {/* Selection toggle */}
+      <div
+        onClick={totalSelected > 0 ? onDeselectAll : onSelectAll}
+        className="flex items-center gap-1.5 cursor-pointer select-none group"
+        data-testid="button-select-all"
+      >
+        <ItemCB checked={totalSelected > 0} onChange={() => {}} />
+        {totalSelected > 0 ? (
+          <span
+            className="text-[11px] font-black tracking-wide"
+            style={{ color: "hsl(var(--primary))" }}
+          >
+            {totalSelected} selected
+          </span>
+        ) : (
+          <span className="text-[11px] font-semibold text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors">
+            Select All
+          </span>
+        )}
       </div>
 
-      <div className="flex-1" />
+      <div className="w-px h-3.5 bg-border/30 mx-1" />
 
-      {/* Action buttons */}
-      <Button
-        size="sm"
-        onClick={onInstallSelected}
-        disabled={isActing || loading || totalSelected === 0}
-        data-testid="button-install-selected"
-        className="h-7 px-3 text-[11px] font-bold gap-1.5"
-        style={{
-          background: totalSelected > 0 ? "hsl(var(--primary) / 0.15)" : "transparent",
-          border: "1px solid hsl(var(--primary) / 0.3)",
-          color: totalSelected > 0 ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.3)",
-        }}
-      >
-        {isActing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-        Install Selected
-      </Button>
-      <Button
-        size="sm"
-        onClick={onUninstallSelected}
-        disabled={isActing || loading || totalSelected === 0}
-        data-testid="button-uninstall-selected"
-        className="h-7 px-3 text-[11px] font-bold gap-1.5 bg-red-950/20 hover:bg-red-900/30 text-red-400/60 hover:text-red-300 border border-red-900/30"
-      >
-        {isActing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-        Uninstall Selected
-      </Button>
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={onSelectInstalled}
+          className="px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide text-muted-foreground/40 hover:text-foreground/80 hover:bg-secondary/25 transition-all duration-100 select-none"
+        >
+          Installed
+        </button>
+        <button
+          onClick={onSelectNotInstalled}
+          className="px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide text-muted-foreground/40 hover:text-foreground/80 hover:bg-secondary/25 transition-all duration-100 select-none"
+        >
+          Not Installed
+        </button>
+      </div>
     </div>
   );
 }
@@ -480,19 +466,30 @@ function WinAppsTab() {
       : keyPrefix === "cap"
         ? isCapInstalled(pkg)
         : isFeatInstalled(pkg);
+    const isSel = selected.has(key);
     return (
       <div
         key={key}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/20 transition-colors cursor-pointer"
         onClick={() => toggle(key)}
+        className="relative flex items-center gap-2 px-3 py-[7px] cursor-pointer group transition-all duration-100"
+        style={{
+          borderLeft: `3px solid ${isSel ? "hsl(var(--primary))" : installed ? "hsl(142 70% 38% / 0.55)" : "hsl(var(--border) / 0.15)"}`,
+          background: isSel ? "hsl(var(--primary) / 0.07)" : "transparent",
+          borderRadius: "0 6px 6px 0",
+        }}
       >
-        <ItemCB checked={selected.has(key)} onChange={() => toggle(key)} />
-        <StatusDot installed={installed} />
+        <ItemCB checked={isSel} onChange={() => toggle(key)} />
         <span
-          className="text-[12px] font-medium flex-1 truncate select-none"
-          style={{ color: installed ? "hsl(var(--foreground) / 0.85)" : "hsl(var(--muted-foreground) / 0.5)" }}
+          className="text-[11.5px] font-medium flex-1 truncate select-none"
+          style={{ color: installed ? "hsl(var(--foreground) / 0.87)" : "hsl(var(--muted-foreground) / 0.38)" }}
         >
           {name}
+        </span>
+        <span
+          className="text-[9px] font-black tracking-widest shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ color: installed ? "hsl(142 70% 42%)" : "hsl(var(--muted-foreground) / 0.25)" }}
+        >
+          {installed === null ? "···" : installed ? "ON" : "—"}
         </span>
       </div>
     );
@@ -500,30 +497,23 @@ function WinAppsTab() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Controls bar */}
       <BulkBar
         totalSelected={selected.size}
-        totalInstalled={0}
-        totalNotInstalled={0}
         onSelectAll={selectAll}
         onSelectInstalled={selectInstalled}
         onSelectNotInstalled={selectNotInstalled}
         onDeselectAll={deselectAll}
-        onInstallSelected={() => handleBulkAction("install")}
-        onUninstallSelected={() => handleBulkAction("uninstall")}
-        isActing={acting}
-        loading={scanLoading}
       />
 
       {/* Search */}
-      <div className="px-5 py-2 border-b border-border/30" style={{ background: "hsl(var(--card) / 0.3)" }}>
+      <div className="px-5 py-2 border-b border-border/20" style={{ background: "hsl(var(--card) / 0.25)" }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/30 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/25 pointer-events-none" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search apps, capabilities, features..."
-            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/15 border border-border/30 focus:border-primary/40 focus:outline-none placeholder:text-muted-foreground/25 text-foreground/80"
+            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/10 border border-border/20 focus:border-primary/35 focus:outline-none placeholder:text-muted-foreground/20 text-foreground/80"
             data-testid="input-winapps-search"
           />
           {search && (
@@ -539,17 +529,25 @@ function WinAppsTab() {
         {/* Windows Apps */}
         {filteredApps.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Store className="h-4 w-4 shrink-0" style={{ color: "hsl(var(--primary) / 0.7)" }} />
-              <h3 className="font-black text-sm text-foreground/90">Windows Apps</h3>
-              <div className="flex-1 h-[1px] bg-border/30 ml-1" />
+            <div className="flex items-center gap-2.5 mb-2">
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: "hsl(var(--primary) / 0.1)", border: "1px solid hsl(var(--primary) / 0.2)" }}
+              >
+                <Store className="h-3 w-3" style={{ color: "hsl(var(--primary))" }} />
+              </div>
+              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/70">Windows Apps</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-border/30 to-transparent" />
               {!scanLoading && (
-                <span className="text-[10px] font-mono text-muted-foreground/30">
-                  {WINDOWS_APPS.filter(a => isAppInstalled(a.pkg)).length}/{WINDOWS_APPS.length} installed
+                <span
+                  className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "hsl(var(--primary) / 0.08)", color: "hsl(var(--primary) / 0.7)", border: "1px solid hsl(var(--primary) / 0.15)" }}
+                >
+                  {WINDOWS_APPS.filter(a => isAppInstalled(a.pkg)).length} / {WINDOWS_APPS.length}
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-3 xl:grid-cols-4 gap-0.5">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-0.5">
               {filteredApps.map(app => renderRow(app.name, app.pkg, "app"))}
             </div>
           </div>
@@ -558,12 +556,25 @@ function WinAppsTab() {
         {/* Windows Capabilities */}
         {filteredCaps.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Wrench className="h-4 w-4 shrink-0" style={{ color: "hsl(var(--primary) / 0.7)" }} />
-              <h3 className="font-black text-sm text-foreground/90">Windows Capabilities</h3>
-              <div className="flex-1 h-[1px] bg-border/30 ml-1" />
+            <div className="flex items-center gap-2.5 mb-2">
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: "hsl(var(--primary) / 0.1)", border: "1px solid hsl(var(--primary) / 0.2)" }}
+              >
+                <Wrench className="h-3 w-3" style={{ color: "hsl(var(--primary))" }} />
+              </div>
+              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/70">Capabilities</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-border/30 to-transparent" />
+              {!scanLoading && (
+                <span
+                  className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "hsl(var(--primary) / 0.08)", color: "hsl(var(--primary) / 0.7)", border: "1px solid hsl(var(--primary) / 0.15)" }}
+                >
+                  {WIN_CAPABILITIES.filter(c => isCapInstalled(c.cap)).length} / {WIN_CAPABILITIES.length}
+                </span>
+              )}
             </div>
-            <div className="grid grid-cols-3 xl:grid-cols-4 gap-0.5">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-0.5">
               {filteredCaps.map(cap => renderRow(cap.name, cap.cap, "cap"))}
             </div>
           </div>
@@ -572,12 +583,25 @@ function WinAppsTab() {
         {/* Windows Optional Features */}
         {filteredFeats.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Box className="h-4 w-4 shrink-0" style={{ color: "hsl(var(--primary) / 0.7)" }} />
-              <h3 className="font-black text-sm text-foreground/90">Windows Optional Features</h3>
-              <div className="flex-1 h-[1px] bg-border/30 ml-1" />
+            <div className="flex items-center gap-2.5 mb-2">
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: "hsl(var(--primary) / 0.1)", border: "1px solid hsl(var(--primary) / 0.2)" }}
+              >
+                <Box className="h-3 w-3" style={{ color: "hsl(var(--primary))" }} />
+              </div>
+              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/70">Optional Features</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-border/30 to-transparent" />
+              {!scanLoading && (
+                <span
+                  className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "hsl(var(--primary) / 0.08)", color: "hsl(var(--primary) / 0.7)", border: "1px solid hsl(var(--primary) / 0.15)" }}
+                >
+                  {WIN_FEATURES.filter(f => isFeatInstalled(f.feature)).length} / {WIN_FEATURES.length}
+                </span>
+              )}
             </div>
-            <div className="grid grid-cols-3 xl:grid-cols-4 gap-0.5">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-0.5">
               {filteredFeats.map(feat => renderRow(feat.name, feat.feature, "feat"))}
             </div>
           </div>
@@ -590,6 +614,46 @@ function WinAppsTab() {
           </div>
         )}
       </div>
+
+      {/* Floating action buttons */}
+      <AnimatePresence>
+        {selected.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.94 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2"
+          >
+            <button
+              onClick={() => handleBulkAction("uninstall")}
+              disabled={acting}
+              data-testid="button-float-uninstall"
+              style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.5)" }}
+              className="flex items-center gap-1.5 pl-3.5 pr-3 py-2.5 rounded-xl bg-red-950/90 text-red-300 font-bold text-[12px] border border-red-800/40 transition-all duration-150 cursor-pointer hover:brightness-110 active:scale-[0.97] disabled:opacity-50"
+            >
+              {acting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              Remove
+              <span className="flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-black/30 text-[10px] font-extrabold">
+                {selected.size}
+              </span>
+            </button>
+            <button
+              onClick={() => handleBulkAction("install")}
+              disabled={acting}
+              data-testid="button-float-install"
+              style={{ boxShadow: "0 8px 28px rgba(0,0,0,0.55), 0 0 22px hsl(var(--primary) / 0.38)" }}
+              className="flex items-center gap-2 pl-4 pr-3.5 py-2.5 rounded-xl bg-primary text-white font-bold text-[13px] tracking-wide border border-white/10 transition-all duration-150 cursor-pointer hover:brightness-110 active:scale-[0.97] disabled:opacity-50"
+            >
+              {acting ? <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /> : <Download className="h-3.5 w-3.5 shrink-0" />}
+              Install
+              <span className="ml-0.5 flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-black/25 text-[10px] font-extrabold tabular-nums leading-none">
+                {selected.size}
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -691,26 +755,21 @@ function ExternalTab() {
     <div className="flex flex-col h-full min-h-0">
       <BulkBar
         totalSelected={selected.size}
-        totalInstalled={0}
-        totalNotInstalled={0}
         onSelectAll={selectAll}
         onSelectInstalled={selectInstalled}
         onSelectNotInstalled={selectNotInstalled}
         onDeselectAll={deselectAll}
-        onInstallSelected={() => handleBulkAction("install")}
-        onUninstallSelected={() => handleBulkAction("uninstall")}
-        isActing={bulkActing}
-        loading={extLoading}
       />
 
-      <div className="px-5 py-2 border-b border-border/30" style={{ background: "hsl(var(--card) / 0.3)" }}>
+      {/* Search */}
+      <div className="px-5 py-2 border-b border-border/20" style={{ background: "hsl(var(--card) / 0.25)" }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/30 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/25 pointer-events-none" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search software..."
-            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/15 border border-border/30 focus:border-primary/40 focus:outline-none placeholder:text-muted-foreground/25 text-foreground/80"
+            placeholder="Search software by name or category..."
+            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/10 border border-border/20 focus:border-primary/35 focus:outline-none placeholder:text-muted-foreground/20 text-foreground/80"
             data-testid="input-ext-search"
           />
           {search && (
@@ -721,34 +780,51 @@ function ExternalTab() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2.5">
         {extLoading && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-border/30 bg-secondary/10">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary/60" />
-            <span className="text-[12px] text-muted-foreground/50">Scanning installed software via winget...</span>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-primary/15 bg-primary/5">
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" style={{ color: "hsl(var(--primary) / 0.7)" }} />
+            <span className="text-[11.5px] text-muted-foreground/50">Scanning installed software via winget...</span>
           </div>
         )}
 
         {filteredCats.map(cat => {
           const Icon = cat.icon;
           const isExpanded = expandedCats.has(cat.category);
-          const installedCount = cat.apps.filter(a => isInstalled(a.id)).length;
+          const installedCount = cat.apps.filter(a => isInstalled(a.id) === true).length;
 
           return (
             <div
               key={cat.category}
-              className="rounded-xl overflow-hidden border border-border/40"
-              style={{ background: "hsl(var(--card) / 0.4)" }}
+              className="rounded-xl overflow-hidden"
+              style={{ border: "1px solid hsl(var(--border) / 0.35)", background: "hsl(var(--card) / 0.35)" }}
             >
               {/* Category header */}
               <button
                 onClick={() => toggleCat(cat.category)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/20 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-secondary/15"
               >
-                <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
-                <span className="font-bold text-[12px] text-foreground/80 flex-1 text-left">{cat.category}</span>
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all duration-150"
+                  style={{
+                    background: isExpanded ? "hsl(var(--primary) / 0.15)" : "hsl(var(--primary) / 0.07)",
+                    border: "1px solid hsl(var(--primary) / 0.2)",
+                  }}
+                >
+                  <Icon className="h-3 w-3 shrink-0" style={{ color: "hsl(var(--primary) / 0.85)" }} />
+                </div>
+                <span className="font-black text-[11px] tracking-widest uppercase text-foreground/75 flex-1 text-left">
+                  {cat.category}
+                </span>
                 {!extLoading && (
-                  <span className="text-[10px] font-mono text-muted-foreground/30 mr-2">
+                  <span
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full mr-2"
+                    style={{
+                      background: installedCount > 0 ? "hsl(142 70% 36% / 0.12)" : "hsl(var(--secondary) / 0.2)",
+                      color: installedCount > 0 ? "hsl(142 70% 45%)" : "hsl(var(--muted-foreground) / 0.3)",
+                      border: installedCount > 0 ? "1px solid hsl(142 70% 36% / 0.2)" : "1px solid hsl(var(--border) / 0.2)",
+                    }}
+                  >
                     {installedCount}/{cat.apps.length}
                   </span>
                 )}
@@ -769,46 +845,55 @@ function ExternalTab() {
                     transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
                     style={{ overflow: "hidden" }}
                   >
-                    <div className="border-t border-border/30 grid grid-cols-3 xl:grid-cols-4 gap-0 px-2 py-2">
+                    <div className="grid grid-cols-2 xl:grid-cols-3 px-3 py-2 gap-x-3 gap-y-0.5 border-t border-border/20">
                       {cat.apps.map(app => {
                         const installed = isInstalled(app.id);
+                        const isSel = selected.has(app.id);
                         const isThisActing = acting === app.id;
                         return (
                           <div
                             key={app.id}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/20 transition-colors cursor-pointer group"
                             onClick={() => toggle(app.id)}
+                            className="relative flex items-center gap-2 px-2.5 py-[6px] cursor-pointer group transition-all duration-100"
+                            style={{
+                              borderLeft: `2.5px solid ${isSel ? "hsl(var(--primary))" : installed ? "hsl(142 70% 38% / 0.5)" : "hsl(var(--border) / 0.12)"}`,
+                              background: isSel ? "hsl(var(--primary) / 0.06)" : "transparent",
+                              borderRadius: "0 6px 6px 0",
+                            }}
                           >
-                            <ItemCB checked={selected.has(app.id)} onChange={() => toggle(app.id)} />
-                            <StatusDot installed={installed} />
+                            <ItemCB checked={isSel} onChange={() => toggle(app.id)} />
                             <span
-                              className="text-[11.5px] font-medium flex-1 truncate select-none"
-                              style={{ color: installed ? "hsl(var(--foreground) / 0.85)" : "hsl(var(--muted-foreground) / 0.45)" }}
+                              className="text-[11.5px] font-medium flex-1 truncate select-none min-w-0"
+                              style={{ color: installed ? "hsl(var(--foreground) / 0.87)" : "hsl(var(--muted-foreground) / 0.38)" }}
                             >
                               {app.name}
                             </span>
-                            {/* Quick action buttons on hover */}
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                              {installed ? (
+                            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {/* External link */}
+                              {app.url && (
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); handleSingleAction(app.id, app.name, "uninstall"); }}
-                                  disabled={isThisActing || bulkActing}
-                                  className="p-0.5 rounded text-red-400/50 hover:text-red-400 hover:bg-red-900/20 transition-colors"
-                                  title={`Uninstall ${app.name}`}
+                                  onClick={(e) => { e.stopPropagation(); openUrl(app.url!); }}
+                                  className="p-0.5 rounded transition-colors text-muted-foreground/40 hover:text-primary"
+                                  title={`Open ${app.name} website`}
                                 >
-                                  {isThisActing ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleSingleAction(app.id, app.name, "install"); }}
-                                  disabled={isThisActing || bulkActing}
-                                  className="p-0.5 rounded transition-colors"
-                                  style={{ color: "hsl(var(--primary) / 0.5)" }}
-                                  title={`Install ${app.name}`}
-                                >
-                                  {isThisActing ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Download className="h-2.5 w-2.5" />}
+                                  <ExternalLink className="h-2.5 w-2.5" />
                                 </button>
                               )}
+                              {/* Quick action */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleSingleAction(app.id, app.name, installed ? "uninstall" : "install"); }}
+                                disabled={isThisActing || bulkActing}
+                                className="p-0.5 rounded transition-colors"
+                                style={{ color: installed ? "hsl(var(--destructive) / 0.7)" : "hsl(var(--primary) / 0.7)" }}
+                                title={installed ? `Uninstall ${app.name}` : `Install ${app.name}`}
+                              >
+                                {isThisActing
+                                  ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                  : installed
+                                    ? <Trash2 className="h-2.5 w-2.5" />
+                                    : <Download className="h-2.5 w-2.5" />
+                                }
+                              </button>
                             </div>
                           </div>
                         );
@@ -828,6 +913,46 @@ function ExternalTab() {
           </div>
         )}
       </div>
+
+      {/* Floating Install button — bottom-right, like tweaks page */}
+      <AnimatePresence>
+        {selected.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.94 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2"
+          >
+            <button
+              onClick={() => handleBulkAction("uninstall")}
+              disabled={bulkActing}
+              data-testid="button-float-uninstall"
+              style={{ boxShadow: "0 6px 20px rgba(0,0,0,0.5)" }}
+              className="flex items-center gap-1.5 pl-3.5 pr-3 py-2.5 rounded-xl bg-red-950/90 text-red-300 font-bold text-[12px] border border-red-800/40 transition-all duration-150 cursor-pointer hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {bulkActing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              Remove
+              <span className="flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-black/30 text-[10px] font-extrabold tabular-nums">
+                {selected.size}
+              </span>
+            </button>
+            <button
+              onClick={() => handleBulkAction("install")}
+              disabled={bulkActing}
+              data-testid="button-float-install"
+              style={{ boxShadow: "0 8px 28px rgba(0,0,0,0.55), 0 0 22px hsl(var(--primary) / 0.38)" }}
+              className="flex items-center gap-2 pl-4 pr-3.5 py-2.5 rounded-xl bg-primary text-white font-bold text-[13px] tracking-wide border border-white/10 transition-all duration-150 cursor-pointer hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {bulkActing ? <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /> : <Download className="h-3.5 w-3.5 shrink-0" />}
+              Install
+              <span className="ml-0.5 flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-black/25 text-[10px] font-extrabold tabular-nums leading-none">
+                {selected.size}
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1001,11 +1126,12 @@ function AllProgramsTab() {
                     <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="flex items-start gap-3 px-4 pt-4 pb-2">
                       <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-base select-none"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-[15px] select-none"
                         style={{
-                          background: "hsl(var(--primary) / 0.12)",
-                          border: "1px solid hsl(var(--primary) / 0.22)",
+                          background: "linear-gradient(135deg, hsl(var(--primary) / 0.28) 0%, hsl(var(--primary) / 0.06) 100%)",
+                          border: "1px solid hsl(var(--primary) / 0.3)",
                           color: "hsl(var(--primary))",
+                          boxShadow: "0 0 12px hsl(var(--primary) / 0.18), inset 0 1px 0 hsl(var(--primary) / 0.15)",
                         }}
                       >
                         {letter}
