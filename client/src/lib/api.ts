@@ -20,12 +20,14 @@ import type { Tweak } from "@shared/schema";
 
 export type ScanCategory = {
   id: string;
+  group: "system" | "apps" | "games" | "browser" | "privacy" | "recycle";
   name: string;
   description: string;
   size: number;
   sizeHuman: string;
   fileCount: number;
   found: boolean;
+  installed: boolean;
   autoSelect: boolean;
   warnNote: string | null;
 };

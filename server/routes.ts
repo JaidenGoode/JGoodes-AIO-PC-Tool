@@ -197,18 +197,21 @@ async function deleteContents(dirPath: string): Promise<number> {
 
 interface CleanCategory {
   id: string;
+  group: "system" | "apps" | "games" | "browser" | "privacy" | "recycle";
   name: string;
   description: string;
   paths: string[];
   globDir?: string;
   globPattern?: string;
-  // Scans/cleans a named subdir inside every profile-like child of each parent dir.
-  // e.g. Chrome: parent=User Data, subdir="Cache\Cache_Data" → catches Default + Profile N automatically.
   subDirScan?: { parent: string; subdir: string }[];
-  // false = do NOT auto-check after scan (user must opt in). Default: true.
   autoSelect?: boolean;
-  // Optional caution note shown in the UI row for this category.
   warnNote?: string;
+  // Paths checked to determine if the app is installed — any one existing = installed
+  installCheck?: string[];
+  // PowerShell script for scanning — must output "BYTES COUNT" on one line
+  psScan?: string;
+  // PowerShell script for cleaning — must output freed BYTES on one line
+  psClean?: string;
 }
 
 // Expands subDirScan entries into actual on-disk cache paths
@@ -233,147 +236,402 @@ function getCleanCategories(): CleanCategory[] {
   const local = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
   const roaming = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
 
-  if (isWin) {
-    return [
-      {
-        id: "temp",
-        name: "Temporary Files",
-        description: "User and system temp files (%TEMP%, C:\\Windows\\Temp)",
-        paths: [tmp, "C:\\Windows\\Temp"],
-      },
-      {
-        id: "prefetch",
-        name: "Prefetch Cache",
-        description: "Windows app prefetch files that accumulate over time",
-        paths: ["C:\\Windows\\Prefetch"],
-      },
-      {
-        id: "wupdate",
-        name: "Windows Update Cache",
-        description: "Downloaded Windows Update files (safe to clear after updates)",
-        paths: ["C:\\Windows\\SoftwareDistribution\\Download"],
-      },
-      {
-        id: "errorreports",
-        name: "Error Reports",
-        description: "Windows crash and error report archives",
-        paths: [
-          path.join(local, "Microsoft", "Windows", "WER", "ReportArchive"),
-          path.join(local, "Microsoft", "Windows", "WER", "ReportQueue"),
-          "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive",
-        ],
-      },
-      {
-        id: "browser",
-        name: "Browser Cache",
-        description: "Chrome, Edge, and Opera GX browser cache — all profiles auto-detected",
-        warnNote: "Close your browser before cleaning for best results — open browsers may hold cache files in use.",
-        // subDirScan detects every Chrome/Edge profile (Default, Profile 1, Profile 2, …) automatically
-        subDirScan: [
-          { parent: path.join(local, "Google", "Chrome", "User Data"),    subdir: path.join("Cache", "Cache_Data") },
-          { parent: path.join(local, "Google", "Chrome", "User Data"),    subdir: "Code Cache" },
-          { parent: path.join(local, "Google", "Chrome", "User Data"),    subdir: "GPUCache" },
-          { parent: path.join(local, "Microsoft", "Edge", "User Data"),   subdir: path.join("Cache", "Cache_Data") },
-          { parent: path.join(local, "Microsoft", "Edge", "User Data"),   subdir: "Code Cache" },
-          { parent: path.join(local, "Microsoft", "Edge", "User Data"),   subdir: "GPUCache" },
-        ],
-        // Opera GX uses a single stable profile — keep as explicit paths
-        paths: [
-          path.join(roaming, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
-          path.join(roaming, "Opera Software", "Opera GX Stable", "Code Cache"),
-          path.join(roaming, "Opera Software", "Opera GX Stable", "GPUCache"),
-          path.join(local,   "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
-          path.join(local,   "Opera Software", "Opera GX Stable", "Code Cache"),
-          path.join(local,   "Opera Software", "Opera GX Stable", "GPUCache"),
-        ],
-      },
-      {
-        id: "thumbnails",
-        name: "Thumbnail Cache",
-        description: "Windows Explorer thumbnail cache files (thumbcache_*.db)",
-        paths: [],
-        globDir: path.join(local, "Microsoft", "Windows", "Explorer"),
-        globPattern: "thumbcache_*.db",
-      },
-      {
-        id: "dumpfiles",
-        name: "Memory Dump Files",
-        description: "Windows crash dump files (minidumps)",
-        paths: [
-          "C:\\Windows\\Minidump",
-          path.join(local, "CrashDumps"),
-        ],
-      },
-      {
-        id: "logs",
-        name: "Log Files",
-        description: "Windows system CBS, DISM, MoSetup, and Windows Update log files",
-        paths: [
-          "C:\\Windows\\Logs\\CBS",
-          "C:\\Windows\\Logs\\DISM",
-          "C:\\Windows\\Logs\\MoSetup",
-          "C:\\Windows\\Panther",
-        ],
-      },
-      {
-        id: "shadercache",
-        name: "DirectX Shader Cache",
-        description: "DirectX 12, NVIDIA, AMD, and Intel GPU shader caches — rebuilt automatically on next game launch",
-        autoSelect: false,
-        warnNote: "GPU rebuilds these on first game launch after cleaning — may cause brief stutter on first run. Use to fix persistent game crashes or black screens.",
-        paths: [
-          path.join(local, "D3DSCache"),
-          path.join(local, "Microsoft", "DirectX Shader Cache"),
-          path.join(local, "NVIDIA", "DXCache"),
-          path.join(local, "NVIDIA Corporation", "NV_Cache"),
-          path.join(local, "AMD", "DXCache"),
-          path.join(local, "Intel", "ShaderCache"),
-        ],
-      },
-      {
-        id: "discord",
-        name: "Discord Cache",
-        description: "Discord app cache, GPU cache, and code cache files",
-        warnNote: "Close Discord fully (right-click tray icon → Quit) before cleaning for best results.",
-        paths: [
-          path.join(roaming, "discord", "Cache", "Cache_Data"),
-          path.join(roaming, "discord", "Code Cache"),
-          path.join(roaming, "discord", "GPUCache"),
-          path.join(roaming, "discord", "DawnCache"),
-          path.join(local, "Discord", "Cache", "Cache_Data"),
-          path.join(local, "Discord", "Code Cache"),
-          path.join(local, "Discord", "GPUCache"),
-        ],
-      },
-      {
-        id: "gamelaunchers",
-        name: "Game Launcher Cache",
-        description: "Steam store page cache and Epic Games Launcher web cache files",
-        paths: [
-          path.join(local, "Steam", "htmlcache", "Cache", "Cache_Data"),
-          path.join(local, "Steam", "htmlcache", "Code Cache"),
-          path.join(local, "Steam", "htmlcache", "GPUCache"),
-          path.join(local, "EpicGamesLauncher", "Saved", "webcache_4430"),
-          path.join(local, "EpicGamesLauncher", "Saved", "Logs"),
-          path.join(local, "EpicGamesLauncher", "Saved", "webcache"),
-        ],
-      },
-      {
-        id: "deliveryopt",
-        name: "Delivery Optimization Files",
-        description: "Windows P2P update distribution cache used to share updates with other PCs",
-        paths: [],
-      },
-      {
-        id: "recycle",
-        name: "Recycle Bin",
-        description: "Files sitting in the Windows Recycle Bin across all drives",
-        paths: [],
-      },
-    ];
-  }
+  if (!isWin) return [];
 
-  return [];
+  return [
+    // ── SYSTEM JUNK ────────────────────────────────────────────────────────────
+    {
+      id: "temp",
+      group: "system",
+      name: "Temporary Files",
+      description: "User & system temp files — %TEMP% and C:\\Windows\\Temp",
+      paths: [tmp, "C:\\Windows\\Temp"],
+    },
+    {
+      id: "prefetch",
+      group: "system",
+      name: "Prefetch Cache",
+      description: "Windows app launch prefetch files that accumulate over time",
+      paths: ["C:\\Windows\\Prefetch"],
+    },
+    {
+      id: "wupdate",
+      group: "system",
+      name: "Windows Update Cache",
+      description: "Downloaded Windows Update packages — safe to clear after updates finish",
+      paths: ["C:\\Windows\\SoftwareDistribution\\Download"],
+    },
+    {
+      id: "deliveryopt",
+      group: "system",
+      name: "Delivery Optimization",
+      description: "Windows P2P update distribution cache used to share updates with other PCs",
+      paths: [],
+    },
+    {
+      id: "errorreports",
+      group: "system",
+      name: "Error Reports",
+      description: "Windows crash and error report archives (WER)",
+      paths: [
+        path.join(local, "Microsoft", "Windows", "WER", "ReportArchive"),
+        path.join(local, "Microsoft", "Windows", "WER", "ReportQueue"),
+        "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive",
+      ],
+    },
+    {
+      id: "logs",
+      group: "system",
+      name: "System Logs",
+      description: "Windows CBS, DISM, MoSetup, and Panther log files",
+      paths: [
+        "C:\\Windows\\Logs\\CBS",
+        "C:\\Windows\\Logs\\DISM",
+        "C:\\Windows\\Logs\\MoSetup",
+        "C:\\Windows\\Panther",
+      ],
+    },
+    {
+      id: "dumpfiles",
+      group: "system",
+      name: "Memory Dump Files",
+      description: "Windows crash minidump files and local crash dumps",
+      paths: [
+        "C:\\Windows\\Minidump",
+        path.join(local, "CrashDumps"),
+      ],
+    },
+    {
+      id: "thumbnails",
+      group: "system",
+      name: "Thumbnail Cache",
+      description: "Windows Explorer thumbnail cache (thumbcache_*.db files)",
+      paths: [],
+      globDir: path.join(local, "Microsoft", "Windows", "Explorer"),
+      globPattern: "thumbcache_*.db",
+    },
+    {
+      id: "shadercache",
+      group: "system",
+      name: "DirectX Shader Cache",
+      description: "D3D, NVIDIA, AMD, and Intel GPU shader caches — rebuilt automatically on next game launch",
+      autoSelect: false,
+      warnNote: "GPU rebuilds shaders on first game launch — may cause brief stutter. Use to fix crashes or black screens.",
+      paths: [
+        path.join(local, "D3DSCache"),
+        path.join(local, "Microsoft", "DirectX Shader Cache"),
+        path.join(local, "NVIDIA", "DXCache"),
+        path.join(local, "NVIDIA Corporation", "NV_Cache"),
+        path.join(local, "AMD", "DXCache"),
+        path.join(local, "Intel", "ShaderCache"),
+      ],
+    },
+
+    // ── APP JUNK ───────────────────────────────────────────────────────────────
+    {
+      id: "discord",
+      group: "apps",
+      name: "Discord",
+      description: "Discord app cache, GPU cache, code cache, and dawn cache",
+      warnNote: "Right-click the Discord tray icon → Quit before cleaning.",
+      installCheck: [
+        path.join(roaming, "discord"),
+        path.join(local, "Discord"),
+      ],
+      paths: [
+        path.join(roaming, "discord", "Cache", "Cache_Data"),
+        path.join(roaming, "discord", "Code Cache"),
+        path.join(roaming, "discord", "GPUCache"),
+        path.join(roaming, "discord", "DawnCache"),
+        path.join(local, "Discord", "Cache", "Cache_Data"),
+        path.join(local, "Discord", "Code Cache"),
+        path.join(local, "Discord", "GPUCache"),
+      ],
+    },
+    {
+      id: "spotify",
+      group: "apps",
+      name: "Spotify",
+      description: "Spotify offline storage cache and data cache",
+      installCheck: [path.join(roaming, "Spotify"), path.join(local, "Spotify")],
+      paths: [
+        path.join(roaming, "Spotify", "Storage"),
+        path.join(local, "Spotify", "Storage"),
+        path.join(local, "Spotify", "Data"),
+      ],
+    },
+    {
+      id: "teams",
+      group: "apps",
+      name: "Microsoft Teams",
+      description: "Teams browser cache, GPU cache, and code cache",
+      warnNote: "Close Teams before cleaning.",
+      installCheck: [path.join(roaming, "Microsoft", "Teams"), path.join(local, "Microsoft", "Teams")],
+      paths: [
+        path.join(roaming, "Microsoft", "Teams", "Cache"),
+        path.join(roaming, "Microsoft", "Teams", "Code Cache"),
+        path.join(roaming, "Microsoft", "Teams", "GPUCache"),
+        path.join(roaming, "Microsoft", "Teams", "Application Cache"),
+        path.join(local, "Microsoft", "Teams", "Cache"),
+        path.join(local, "Microsoft", "Teams", "Code Cache"),
+        path.join(local, "Microsoft", "Teams", "GPUCache"),
+      ],
+    },
+    {
+      id: "zoom",
+      group: "apps",
+      name: "Zoom",
+      description: "Zoom meeting logs and local data cache",
+      installCheck: [path.join(roaming, "Zoom"), path.join(local, "Zoom")],
+      paths: [
+        path.join(roaming, "Zoom", "logs"),
+        path.join(local, "Zoom", "logs"),
+        path.join(local, "Zoom", "data"),
+      ],
+    },
+    {
+      id: "slack",
+      group: "apps",
+      name: "Slack",
+      description: "Slack app cache, GPU cache, and code cache",
+      warnNote: "Close Slack before cleaning.",
+      installCheck: [path.join(roaming, "Slack")],
+      paths: [
+        path.join(roaming, "Slack", "Cache", "Cache_Data"),
+        path.join(roaming, "Slack", "Code Cache"),
+        path.join(roaming, "Slack", "GPUCache"),
+        path.join(roaming, "Slack", "DawnCache"),
+      ],
+    },
+    {
+      id: "obs",
+      group: "apps",
+      name: "OBS Studio",
+      description: "OBS Studio log files",
+      installCheck: [path.join(roaming, "obs-studio")],
+      paths: [
+        path.join(roaming, "obs-studio", "logs"),
+        path.join(roaming, "obs-studio", "crashes"),
+      ],
+    },
+    {
+      id: "roblox",
+      group: "apps",
+      name: "Roblox",
+      description: "Roblox player log files and local cache",
+      installCheck: [path.join(local, "Roblox"), path.join(local, "Roblox Player")],
+      paths: [
+        path.join(local, "Roblox", "logs"),
+        path.join(local, "Roblox Player", "logs"),
+        path.join(tmp, "RobloxLogs"),
+      ],
+    },
+
+    // ── GAME JUNK ──────────────────────────────────────────────────────────────
+    {
+      id: "steam",
+      group: "games",
+      name: "Steam",
+      description: "Steam store page HTML cache and GPU shader cache",
+      installCheck: [path.join(local, "Steam")],
+      paths: [
+        path.join(local, "Steam", "htmlcache", "Cache", "Cache_Data"),
+        path.join(local, "Steam", "htmlcache", "Code Cache"),
+        path.join(local, "Steam", "htmlcache", "GPUCache"),
+        path.join(local, "Steam", "logs"),
+        path.join(local, "Steam", "dumps"),
+      ],
+    },
+    {
+      id: "epic",
+      group: "games",
+      name: "Epic Games",
+      description: "Epic Games Launcher web cache and log files",
+      installCheck: [path.join(local, "EpicGamesLauncher")],
+      paths: [
+        path.join(local, "EpicGamesLauncher", "Saved", "webcache_4430"),
+        path.join(local, "EpicGamesLauncher", "Saved", "webcache"),
+        path.join(local, "EpicGamesLauncher", "Saved", "Logs"),
+      ],
+    },
+    {
+      id: "gog",
+      group: "games",
+      name: "GOG Galaxy",
+      description: "GOG Galaxy launcher cache and log files",
+      installCheck: [path.join(local, "GOG.com")],
+      paths: [
+        path.join(local, "GOG.com", "Galaxy", "Cache"),
+        path.join(local, "GOG.com", "Galaxy", "logs"),
+      ],
+    },
+    {
+      id: "ea",
+      group: "games",
+      name: "EA App",
+      description: "EA Desktop / EA App log files and CEF browser cache",
+      installCheck: [path.join(local, "Electronic Arts")],
+      paths: [
+        path.join(local, "Electronic Arts", "EA Desktop", "Logs"),
+        path.join(local, "Electronic Arts", "EA Desktop", "CEF", "Cache"),
+      ],
+    },
+    {
+      id: "ubisoft",
+      group: "games",
+      name: "Ubisoft Connect",
+      description: "Ubisoft Connect launcher cache and log files",
+      installCheck: [path.join(local, "Ubisoft Game Launcher")],
+      paths: [
+        path.join(local, "Ubisoft Game Launcher", "logs"),
+        path.join(local, "Ubisoft Game Launcher", "cache"),
+      ],
+    },
+    {
+      id: "battlenet",
+      group: "games",
+      name: "Battle.net",
+      description: "Battle.net launcher cache and log files",
+      installCheck: [path.join(local, "Battle.net")],
+      paths: [
+        path.join(local, "Battle.net", "Cache"),
+        path.join(local, "Battle.net", "Logs"),
+      ],
+    },
+
+    // ── BROWSER JUNK (cache only) ───────────────────────────────────────────────
+    {
+      id: "chrome",
+      group: "browser",
+      name: "Google Chrome",
+      description: "Chrome browser cache — all profiles auto-detected",
+      warnNote: "Close Chrome before cleaning for best results.",
+      installCheck: [path.join(local, "Google", "Chrome", "User Data")],
+      subDirScan: [
+        { parent: path.join(local, "Google", "Chrome", "User Data"), subdir: path.join("Cache", "Cache_Data") },
+        { parent: path.join(local, "Google", "Chrome", "User Data"), subdir: "Code Cache" },
+        { parent: path.join(local, "Google", "Chrome", "User Data"), subdir: "GPUCache" },
+      ],
+      paths: [],
+    },
+    {
+      id: "edge",
+      group: "browser",
+      name: "Microsoft Edge",
+      description: "Edge browser cache — all profiles auto-detected",
+      warnNote: "Close Edge before cleaning for best results.",
+      installCheck: [path.join(local, "Microsoft", "Edge", "User Data")],
+      subDirScan: [
+        { parent: path.join(local, "Microsoft", "Edge", "User Data"), subdir: path.join("Cache", "Cache_Data") },
+        { parent: path.join(local, "Microsoft", "Edge", "User Data"), subdir: "Code Cache" },
+        { parent: path.join(local, "Microsoft", "Edge", "User Data"), subdir: "GPUCache" },
+      ],
+      paths: [],
+    },
+    {
+      id: "firefox",
+      group: "browser",
+      name: "Firefox",
+      description: "Firefox browser cache — all profiles auto-detected",
+      warnNote: "Close Firefox before cleaning for best results.",
+      installCheck: [path.join(local, "Mozilla", "Firefox", "Profiles"), path.join(roaming, "Mozilla", "Firefox", "Profiles")],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($base in @("$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles","$env:APPDATA\\Mozilla\\Firefox\\Profiles")){if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{$cache=Join-Path $_.FullName "cache2";if(Test-Path $cache){$items=Get-ChildItem $cache -Recurse -File -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=$items.Count}}}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($base in @("$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles","$env:APPDATA\\Mozilla\\Firefox\\Profiles")){if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{$cache=Join-Path $_.FullName "cache2";if(Test-Path $cache){$s=(Get-ChildItem $cache -Recurse -File -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $cache -Recurse -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}}}};Write-Output $t`,
+    },
+    {
+      id: "operagx",
+      group: "browser",
+      name: "Opera GX",
+      description: "Opera GX browser cache files",
+      warnNote: "Close Opera GX before cleaning for best results.",
+      installCheck: [
+        path.join(roaming, "Opera Software", "Opera GX Stable"),
+        path.join(local, "Opera Software", "Opera GX Stable"),
+      ],
+      paths: [
+        path.join(roaming, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
+        path.join(roaming, "Opera Software", "Opera GX Stable", "Code Cache"),
+        path.join(roaming, "Opera Software", "Opera GX Stable", "GPUCache"),
+        path.join(local, "Opera Software", "Opera GX Stable", "Cache", "Cache_Data"),
+        path.join(local, "Opera Software", "Opera GX Stable", "Code Cache"),
+        path.join(local, "Opera Software", "Opera GX Stable", "GPUCache"),
+      ],
+    },
+    {
+      id: "brave",
+      group: "browser",
+      name: "Brave",
+      description: "Brave browser cache — all profiles auto-detected",
+      warnNote: "Close Brave before cleaning for best results.",
+      installCheck: [path.join(local, "BraveSoftware", "Brave-Browser", "User Data")],
+      subDirScan: [
+        { parent: path.join(local, "BraveSoftware", "Brave-Browser", "User Data"), subdir: path.join("Cache", "Cache_Data") },
+        { parent: path.join(local, "BraveSoftware", "Brave-Browser", "User Data"), subdir: "Code Cache" },
+        { parent: path.join(local, "BraveSoftware", "Brave-Browser", "User Data"), subdir: "GPUCache" },
+      ],
+      paths: [],
+    },
+
+    // ── BROWSER PRIVACY (history, cookies, login data) ─────────────────────────
+    {
+      id: "chromeprivacy",
+      group: "privacy",
+      name: "Chrome History & Cookies",
+      description: "Chrome browsing history, cookies, and saved form/login data — all profiles",
+      autoSelect: false,
+      warnNote: "Close Chrome completely before cleaning. This removes browsing history and cookies — you will be logged out of websites.",
+      installCheck: [path.join(local, "Google", "Chrome", "User Data")],
+      paths: [],
+      psScan: `$d="$env:LOCALAPPDATA\\Google\\Chrome\\User Data";$t=0L;$c=0;if(Test-Path $d){Get-ChildItem $d -Directory -EA SilentlyContinue|ForEach-Object{$pf=$_.FullName;foreach($f in @('History','Cookies','Login Data','Visited Links','Top Sites')){$fp=Join-Path $pf $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}};Write-Output "$t $c"`,
+      psClean: `$d="$env:LOCALAPPDATA\\Google\\Chrome\\User Data";$t=0L;if(Test-Path $d){Get-ChildItem $d -Directory -EA SilentlyContinue|ForEach-Object{$pf=$_.FullName;foreach($f in @('History','Cookies','Login Data','Visited Links','Top Sites')){$fp=Join-Path $pf $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}};Write-Output $t`,
+    },
+    {
+      id: "edgeprivacy",
+      group: "privacy",
+      name: "Edge History & Cookies",
+      description: "Edge browsing history, cookies, and saved form/login data — all profiles",
+      autoSelect: false,
+      warnNote: "Close Edge completely before cleaning. This removes browsing history and cookies — you will be logged out of websites.",
+      installCheck: [path.join(local, "Microsoft", "Edge", "User Data")],
+      paths: [],
+      psScan: `$d="$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data";$t=0L;$c=0;if(Test-Path $d){Get-ChildItem $d -Directory -EA SilentlyContinue|ForEach-Object{$pf=$_.FullName;foreach($f in @('History','Cookies','Login Data','Visited Links','Top Sites')){$fp=Join-Path $pf $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}};Write-Output "$t $c"`,
+      psClean: `$d="$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data";$t=0L;if(Test-Path $d){Get-ChildItem $d -Directory -EA SilentlyContinue|ForEach-Object{$pf=$_.FullName;foreach($f in @('History','Cookies','Login Data','Visited Links','Top Sites')){$fp=Join-Path $pf $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}};Write-Output $t`,
+    },
+    {
+      id: "firefoxprivacy",
+      group: "privacy",
+      name: "Firefox History & Cookies",
+      description: "Firefox browsing history, cookies, and form history — all profiles",
+      autoSelect: false,
+      warnNote: "Close Firefox completely before cleaning. This removes browsing history and cookies — you will be logged out of websites.",
+      installCheck: [path.join(roaming, "Mozilla", "Firefox", "Profiles"), path.join(local, "Mozilla", "Firefox", "Profiles")],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($base in @("$env:APPDATA\\Mozilla\\Firefox\\Profiles","$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles")){if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{$pf=$_.FullName;foreach($f in @('places.sqlite','cookies.sqlite','formhistory.sqlite')){$fp=Join-Path $pf $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($base in @("$env:APPDATA\\Mozilla\\Firefox\\Profiles","$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles")){if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{$pf=$_.FullName;foreach($f in @('places.sqlite','cookies.sqlite','formhistory.sqlite')){$fp=Join-Path $pf $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}}};Write-Output $t`,
+    },
+    {
+      id: "operagxprivacy",
+      group: "privacy",
+      name: "Opera GX History & Cookies",
+      description: "Opera GX browsing history, cookies, and login data",
+      autoSelect: false,
+      warnNote: "Close Opera GX completely before cleaning. This removes browsing history and cookies — you will be logged out of websites.",
+      installCheck: [path.join(roaming, "Opera Software", "Opera GX Stable")],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($d in @("$env:APPDATA\\Opera Software\\Opera GX Stable","$env:LOCALAPPDATA\\Opera Software\\Opera GX Stable")){if(Test-Path $d){foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $d $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($d in @("$env:APPDATA\\Opera Software\\Opera GX Stable","$env:LOCALAPPDATA\\Opera Software\\Opera GX Stable")){if(Test-Path $d){foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $d $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}};Write-Output $t`,
+    },
+
+    // ── RECYCLE BIN ────────────────────────────────────────────────────────────
+    {
+      id: "recycle",
+      group: "recycle",
+      name: "Recycle Bin",
+      description: "Files sitting in the Windows Recycle Bin across all drives — any size",
+      paths: [],
+    },
+  ];
 }
 
 const CLEAN_CATEGORIES: CleanCategory[] = getCleanCategories();
@@ -908,10 +1166,16 @@ $d | ConvertTo-Json -Depth 3 -Compress`;
           let totalSize = 0;
           let totalCount = 0;
 
+          // Smart detection: check if app/game/browser is actually installed
+          let installed = true;
+          if (cat.installCheck && cat.installCheck.length > 0) {
+            installed = false;
+            for (const checkPath of cat.installCheck) {
+              try { await fs.promises.access(checkPath); installed = true; break; } catch {}
+            }
+          }
+
           if (cat.id === "recycle" && process.platform === "win32") {
-            // Read $I* metadata files inside every $RECYCLE.BIN\{SID} folder across all drives.
-            // Each $I* file stores the original file size as Int64 at byte offset 8 — works without
-            // needing access to the actual $R* content files, reliable on all Windows versions.
             const psRecycleScan = `
 try {
   $tot=0L; $cnt=0
@@ -940,7 +1204,6 @@ try {
             totalSize += Math.max(0, parseInt(parts[0]) || 0);
             totalCount += Math.max(0, parseInt(parts[1]) || 0);
           } else if (cat.id === "deliveryopt" && process.platform === "win32") {
-            // Scan entire DeliveryOptimization folder — subfolder structure varies by Windows version
             const psDoScan = `
 try {
   $root = Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization'
@@ -957,8 +1220,13 @@ try {
             const parts = raw.trim().split(/\s+/);
             totalSize += Math.max(0, parseInt(parts[0]) || 0);
             totalCount += Math.max(0, parseInt(parts[1]) || 0);
+          } else if (cat.psScan) {
+            // Custom PowerShell scan script — outputs "BYTES COUNT"
+            const raw = await runPowerShell(cat.psScan, 15000).catch(() => "0 0");
+            const parts = raw.trim().split(/\s+/);
+            totalSize = Math.max(0, parseInt(parts[0]) || 0);
+            totalCount = Math.max(0, parseInt(parts[1]) || 0);
           } else if (cat.globDir && cat.globPattern) {
-            // Glob pattern scan (e.g. thumbcache_*.db)
             try {
               await fs.promises.access(cat.globDir);
               const entries = await fs.promises.readdir(cat.globDir);
@@ -973,7 +1241,6 @@ try {
               }
             } catch {}
           } else {
-            // subDirScan: expand each {parent, subdir} into per-profile paths
             if (cat.subDirScan && cat.subDirScan.length > 0) {
               const expanded = await expandSubDirScan(cat.subDirScan);
               for (const p of expanded) {
@@ -984,7 +1251,6 @@ try {
                 } catch {}
               }
             }
-            // Regular explicit paths
             for (const p of cat.paths) {
               const expanded = expandPath(p);
               try {
@@ -997,12 +1263,14 @@ try {
 
           return {
             id: cat.id,
+            group: cat.group,
             name: cat.name,
             description: cat.description,
             size: totalSize,
             sizeHuman: fmtSize(totalSize),
             fileCount: totalCount,
             found: totalSize > 0 || totalCount > 0,
+            installed,
             autoSelect: cat.autoSelect !== false,
             warnNote: cat.warnNote ?? null,
           };
@@ -1055,7 +1323,11 @@ try {
           await runCmd("net stop SysMain 2>nul", 8000).catch(() => {});
         }
 
-        if (isRecycle) {
+        if (cat.psClean) {
+          // Custom PowerShell clean script — outputs freed BYTES
+          const result = await runPowerShell(cat.psClean, 20000).catch(() => "0");
+          freed += Math.max(0, parseInt(result.trim().split(/\s+/)[0]) || 0);
+        } else if (isRecycle) {
           // Measure size using $I* metadata files (same method as scan), then clear
           const psRecycleClean = `
 try {
