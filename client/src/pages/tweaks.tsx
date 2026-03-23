@@ -56,10 +56,10 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  performance: "text-yellow-400",
-  system: "text-purple-400",
-  gaming: "text-green-400",
-  network: "text-teal-400",
+  performance: "text-primary",
+  system: "text-primary",
+  gaming: "text-primary",
+  network: "text-primary",
   all: "text-primary",
 };
 

@@ -30,14 +30,14 @@ const GROUP_CONFIG: Record<GroupId, {
   activeBg: string;
   activeBorder: string;
 }> = {
-  system:    { label: "System Junk Files",   icon: Monitor,    color: "text-blue-400",   bgColor: "bg-blue-400/10",   borderColor: "border-blue-400/25",   activeBg: "bg-blue-400/8",   activeBorder: "border-l-blue-400" },
-  apps:      { label: "App Junk Files",       icon: Package,    color: "text-purple-400", bgColor: "bg-purple-400/10", borderColor: "border-purple-400/25", activeBg: "bg-purple-400/8", activeBorder: "border-l-purple-400" },
-  games:     { label: "Game Junk Files",      icon: Gamepad2,   color: "text-green-400",  bgColor: "bg-green-400/10",  borderColor: "border-green-400/25",  activeBg: "bg-green-400/8",  activeBorder: "border-l-green-400" },
-  browser:   { label: "Browser Junk Files",   icon: Globe,      color: "text-cyan-400",   bgColor: "bg-cyan-400/10",   borderColor: "border-cyan-400/25",   activeBg: "bg-cyan-400/8",   activeBorder: "border-l-cyan-400" },
-  privacy:   { label: "Browser Privacy",      icon: Shield,     color: "text-amber-400",  bgColor: "bg-amber-400/10",  borderColor: "border-amber-400/25",  activeBg: "bg-amber-400/8",  activeBorder: "border-l-amber-400" },
-  recycle:   { label: "Recycle Bin",          icon: Archive,    color: "text-red-400",    bgColor: "bg-red-400/10",    borderColor: "border-red-400/25",    activeBg: "bg-red-400/8",    activeBorder: "border-l-red-400" },
-  downloads: { label: "Downloaded Files",     icon: Download,   color: "text-orange-400", bgColor: "bg-orange-400/10", borderColor: "border-orange-400/25", activeBg: "bg-orange-400/8", activeBorder: "border-l-orange-400" },
-  backup:    { label: "Backup Files",         icon: HardDrive,  color: "text-rose-400",   bgColor: "bg-rose-400/10",   borderColor: "border-rose-400/25",   activeBg: "bg-rose-400/8",   activeBorder: "border-l-rose-400" },
+  system:    { label: "System Junk Files",   icon: Monitor,    color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
+  apps:      { label: "App Junk Files",       icon: Package,    color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
+  games:     { label: "Game Junk Files",      icon: Gamepad2,   color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
+  browser:   { label: "Browser Junk Files",   icon: Globe,      color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
+  privacy:   { label: "Browser Privacy",      icon: Shield,     color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
+  recycle:   { label: "Recycle Bin",          icon: Archive,    color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
+  downloads: { label: "Downloaded Files",     icon: Download,   color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
+  backup:    { label: "Backup Files",         icon: HardDrive,  color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20", activeBg: "bg-primary/6",  activeBorder: "border-l-primary" },
 };
 
 const GROUP_ORDER: GroupId[] = ["system", "apps", "games", "browser", "privacy", "recycle", "downloads", "backup"];
@@ -656,8 +656,7 @@ export default function CleanerPage() {
                   {selected.size > 0 ? (
                     <>
                       <span className="text-primary font-bold">{selected.size}</span>{" "}
-                      {selected.size === 1 ? "category" : "categories"} selected —{" "}
-                      <span className="text-foreground font-semibold">{fmtSizeLocal(selectedSize)}</span> will be freed
+                      {selected.size === 1 ? "category" : "categories"} selected
                     </>
                   ) : (
                     "Select at least one category to clean"

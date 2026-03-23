@@ -24,23 +24,18 @@ function UtilCard({
   children: React.ReactNode; delay?: number;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="h-full"
-    >
-      <div className="h-full flex flex-col p-4 rounded-xl border border-border bg-card hover:border-primary/25 transition-all duration-150">
-        <div className="flex items-center gap-2.5 mb-4 shrink-0">
-          <div className="p-1.5 rounded-lg bg-primary/10 shrink-0">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="h-full">
+      <div className="h-full flex flex-col rounded-xl border border-border bg-card hover:border-primary/30 transition-colors duration-200 overflow-hidden">
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50 bg-secondary/8 shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-primary/12 border border-primary/15 flex items-center justify-center shrink-0">
             <Icon className="h-3.5 w-3.5 text-primary" />
           </div>
-          <div>
-            <h3 className="font-semibold text-[13px] text-foreground">{title}</h3>
-            <p className="text-[11px] text-muted-foreground">{description}</p>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-[12.5px] text-foreground tracking-tight leading-tight">{title}</h3>
+            <p className="text-[9.5px] text-muted-foreground/55 mt-0.5 leading-none truncate">{description}</p>
           </div>
         </div>
-        <div className="flex-1 flex flex-col space-y-2">{children}</div>
+        <div className="flex-1 flex flex-col space-y-1.5 p-3">{children}</div>
       </div>
     </motion.div>
   );
@@ -54,11 +49,47 @@ function RunButton({ action, label, pending, onRun }: {
       onClick={() => onRun(action)}
       disabled={pending}
       size="sm"
-      className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
+      className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150"
       data-testid={`button-utility-${action}`}
     >
-      {pending ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : null}
+      {pending
+        ? <Loader2 className="h-2.5 w-2.5 animate-spin text-primary shrink-0" />
+        : <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />}
       {pending ? "Running..." : label}
+    </Button>
+  );
+}
+
+function SectionLabel({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-1">
+      <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/35 shrink-0 whitespace-nowrap">{title}</span>
+      <div className="flex-1 h-px bg-border/40" />
+    </div>
+  );
+}
+
+type LaunchStatus = "idle" | "running" | "launching" | "downloading" | "loading" | "installing" | "done" | "error";
+function LaunchBtn({
+  onClick, disabled, status, label, icon: Icon, testId,
+}: {
+  onClick: () => void; disabled: boolean; status: LaunchStatus;
+  label: string; icon?: React.ElementType; testId: string;
+}) {
+  const busy = disabled && status !== "done" && status !== "error";
+  return (
+    <Button size="sm" onClick={onClick} disabled={disabled}
+      className={cn(
+        "w-full h-8 text-xs font-bold transition-all duration-150 gap-1.5",
+        status === "done" ? "bg-green-500/12 border border-green-500/35 text-green-400 hover:bg-green-500/18"
+          : status === "error" ? "bg-destructive/12 border border-destructive/35 text-destructive hover:bg-destructive/18"
+          : "bg-primary text-primary-foreground hover:bg-primary/90"
+      )}
+      data-testid={testId}>
+      {busy ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Working...</>
+        : status === "done" ? <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
+        : status === "error" ? <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
+        : <>{Icon && <Icon className="h-3.5 w-3.5" />}{label}</>}
     </Button>
   );
 }
@@ -938,8 +969,10 @@ export default function Utilities() {
     run(action);
   };
 
+
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-4 pb-8">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div>
         <h1 className="text-2xl font-black text-foreground tracking-tight">
           System <span className="text-primary">Utilities</span>
@@ -947,20 +980,17 @@ export default function Utilities() {
         <p className="text-xs text-muted-foreground mt-0.5">Run as Administrator for full effect</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-
-        {/* ── ROW 1: Maintenance ──────────────────────────────────────── */}
+      {/* ── SYSTEM MAINTENANCE ─────────────────────────────────────────────── */}
+      <SectionLabel title="System Maintenance" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
         <UtilCard icon={HardDrive} title="Disk & Storage" description="Cleanup, check, and optimize your drives" delay={0.04}>
           <RunButton action="disk-cleanup" label="Run Disk Cleanup" pending={isPending("disk-cleanup")} onRun={run} />
           <RunButton action="defrag" label="Open Optimize Drives" pending={isPending("defrag")} onRun={run} />
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button
-                size="sm"
-                className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
-                data-testid="button-utility-checkdisk"
-              >
+              <Button size="sm" className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150" data-testid="button-utility-checkdisk">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
                 Schedule Check Disk (C:)
               </Button>
             </AlertDialogTrigger>
@@ -973,26 +1003,21 @@ export default function Utilities() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => run("checkdisk")} className="bg-primary text-white text-sm">
-                  Schedule
-                </AlertDialogAction>
+                <AlertDialogAction onClick={() => run("checkdisk")} className="bg-primary text-white text-sm">Schedule</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </UtilCard>
 
         <UtilCard icon={ShieldCheck} title="System File Repair" description="Scan and repair Windows system files" delay={0.06}>
-          <p className="text-[10px] text-muted-foreground mb-1">Scans all protected Windows files and replaces corrupt ones with Microsoft-cached copies. Run first when experiencing crashes, missing DLLs, or BSOD errors.</p>
+          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">Replaces corrupt protected files with cached Microsoft copies. Run first for crashes, missing DLLs, or BSODs.</p>
           <RunButton action="sfc" label="Run SFC Scan" pending={isPending("sfc")} onRun={run} />
-          <div className="pt-1 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Repairs the Windows system image and component store. Use when SFC cannot fix issues. Requires internet — takes 10–30 minutes.</p>
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
+            <p className="text-[10px] text-muted-foreground/60 leading-relaxed mb-1.5">Repairs the Windows image & component store. Use when SFC can't fix issues. Requires internet — 10–30 min.</p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button
-                  size="sm"
-                  className="w-full h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold"
-                  data-testid="button-utility-dism"
-                >
+                <Button size="sm" className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150" data-testid="button-utility-dism">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
                   Run DISM Repair
                 </Button>
               </AlertDialogTrigger>
@@ -1005,77 +1030,18 @@ export default function Utilities() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => run("dism")} className="bg-primary text-white text-sm">
-                    Run DISM
-                  </AlertDialogAction>
+                  <AlertDialogAction onClick={() => run("dism")} className="bg-primary text-white text-sm">Run DISM</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </div>
         </UtilCard>
 
-        <UtilCard icon={Network} title="Network Tools" description="Reset and repair network settings" delay={0.08}>
-          <RunButton action="flush-dns" label="Flush DNS Cache" pending={isPending("flush-dns")} onRun={run} />
-          <RunButton action="release-ip" label="Release IP Address" pending={isPending("release-ip")} onRun={run} />
-          <RunButton action="renew-ip" label="Renew IP Address" pending={isPending("renew-ip")} onRun={run} />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full h-7 text-xs border-border/60 hover:border-destructive/30 text-muted-foreground hover:text-destructive"
-              >
-                <AlertTriangle className="h-3 w-3 mr-1.5 text-amber-400" />
-                Full Network Reset
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="font-bold">Full Network Reset?</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm text-muted-foreground">
-                  This resets ALL network settings including Winsock and IP stack. A restart may be required.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => run("network-reset")} className="bg-destructive text-white text-sm">
-                  Reset Network
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </UtilCard>
-
-        {/* ── ROW 2: Performance & Hardware ──────────────────────────── */}
-
-        {/* NVIDIA Graphics */}
-        <UtilCard icon={MonitorPlay} title="NVIDIA Graphics" description="NVIDIA Control Panel, App & diagnostics" delay={0.10}>
-          <RunButton action="nvidia-cp" label="NVIDIA Control Panel" pending={isPending("nvidia-cp")} onRun={run} />
-          <RunButton action="nvidia-app" label="NVIDIA App" pending={isPending("nvidia-app")} onRun={run} />
-          <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
-          <div className="pt-1 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Fixes game stutters from corrupt shader caches. GPU rebuilds on next launch.</p>
-            <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
-          </div>
-        </UtilCard>
-
-        {/* AMD Radeon */}
-        <UtilCard icon={Cpu} title="AMD Radeon" description="AMD Software: Adrenalin Edition & GPU tools" delay={0.12}>
-          <p className="text-[10px] text-muted-foreground mb-1">AMD's all-in-one driver hub for performance tuning, overlay, and game optimization. Opens your installed version or the download page.</p>
-          <RunButton action="amd-software" label="AMD Software: Adrenalin" pending={isPending("amd-software")} onRun={run} />
-          <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
-          <div className="pt-1 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Clears AMD & DirectX shader caches. GPU rebuilds on next game launch.</p>
-            <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
-          </div>
-        </UtilCard>
-
-        {/* Memory & Explorer */}
-        <UtilCard icon={MemoryStick} title="Memory & Explorer" description="Free RAM and refresh the Windows shell" delay={0.14}>
-          <p className="text-[10px] text-muted-foreground mb-1">3-stage RAM clear (same as Mem Reduct): flushes process working sets → writes modified pages to disk → purges standby list. Run before gaming for a clean memory baseline.</p>
+        <UtilCard icon={MemoryStick} title="Memory & Explorer" description="Free RAM and refresh the Windows shell" delay={0.08}>
+          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">3-stage RAM flush: working sets → disk pages → standby list. Run before gaming for a clean memory baseline.</p>
           <RunButton action="empty-standby-memory" label="Empty Standby Memory" pending={isPending("empty-standby-memory")} onRun={run} />
-          <div className="pt-1 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Fixes frozen taskbar, blank icons, or stuck Explorer.</p>
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
+            <p className="text-[10px] text-muted-foreground/60 leading-relaxed mb-1.5">Fixes frozen taskbar, blank icons, or stuck Explorer.</p>
             <RunButton action="restart-explorer" label="Restart Explorer" pending={isPending("restart-explorer")} onRun={run} />
             <div className="mt-1.5">
               <RunButton action="rebuild-icon-cache" label="Rebuild Icon Cache" pending={isPending("rebuild-icon-cache")} onRun={run} />
@@ -1083,35 +1049,23 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* ── ROW 3: Settings ─────────────────────────────────────────── */}
+      </div>
 
-        {/* Quick Toggles */}
-        <UtilCard icon={Zap} title="Quick Toggles" description="Flip common Windows settings on or off" delay={0.16}>
+      {/* ── POWER & WINDOWS ─────────────────────────────────────────────────── */}
+      <SectionLabel title="Power & Windows" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+        <UtilCard icon={Zap} title="Quick Toggles" description="Flip common Windows settings on or off" delay={0.10}>
           <div className="space-y-3">
             {[
-              {
-                key: "util_storage_sense", label: "Storage Sense",
-                desc: "Auto-cleanup old temp files",
-                value: storageSense, setter: setStorageSense,
-                onAction: "storage-sense-on", offAction: "storage-sense-off",
-              },
-              {
-                key: "util_fast_startup", label: "Fast Startup",
-                desc: "Hybrid boot for quicker starts",
-                value: fastStartup, setter: setFastStartup,
-                onAction: "fast-startup-on", offAction: "fast-startup-off",
-              },
-              {
-                key: "util_location", label: "Location Services",
-                desc: "Allow apps to use your location",
-                value: locationServices, setter: setLocationServices,
-                onAction: "location-on", offAction: "location-off",
-              },
+              { key: "util_storage_sense", label: "Storage Sense", desc: "Auto-cleanup old temp files", value: storageSense, setter: setStorageSense, onAction: "storage-sense-on", offAction: "storage-sense-off" },
+              { key: "util_fast_startup", label: "Fast Startup", desc: "Hybrid boot for quicker starts", value: fastStartup, setter: setFastStartup, onAction: "fast-startup-on", offAction: "fast-startup-off" },
+              { key: "util_location", label: "Location Services", desc: "Allow apps to use your location", value: locationServices, setter: setLocationServices, onAction: "location-on", offAction: "location-off" },
             ].map(({ key, label, desc, value, setter, onAction, offAction }) => (
-              <div key={key} className="flex items-center justify-between">
-                <div>
-                  <p className="text-[12px] font-semibold text-foreground">{label}</p>
-                  <p className="text-[10px] text-muted-foreground">{desc}</p>
+              <div key={key} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-semibold text-foreground leading-tight">{label}</p>
+                  <p className="text-[10px] text-muted-foreground/60">{desc}</p>
                 </div>
                 <Switch
                   checked={value}
@@ -1124,8 +1078,7 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* Power Plans */}
-        <UtilCard icon={Power} title="Power Plans" description="Switch your active power plan" delay={0.18}>
+        <UtilCard icon={Power} title="Power Plans" description="Switch your active Windows power plan" delay={0.12}>
           <div className="space-y-1.5">
             {PLANS.map((plan) => {
               const isActive = activePlan === plan.id;
@@ -1139,41 +1092,31 @@ export default function Utilities() {
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-all duration-150",
                     isActive
-                      ? "bg-primary/10 border-primary/40 text-primary"
-                      : "bg-secondary/40 border-border/50 text-foreground hover:border-primary/30 hover:bg-primary/5"
+                      ? "bg-primary/10 border-primary/35 text-primary"
+                      : "bg-secondary/30 border-border/50 text-foreground hover:border-primary/25 hover:bg-primary/5"
                   )}
                 >
-                  <div>
-                    <p className={cn("text-[12px] font-semibold", isActive ? "text-primary" : "text-foreground")}>{plan.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{plan.desc}</p>
+                  <div className="min-w-0">
+                    <p className={cn("text-[12px] font-semibold leading-tight", isActive ? "text-primary" : "text-foreground")}>{plan.label}</p>
+                    <p className="text-[10px] text-muted-foreground/60">{plan.desc}</p>
                   </div>
-                  {pending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
-                  ) : isActive ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                  ) : null}
+                  {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+                    : isActive ? <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                    : null}
                 </button>
               );
             })}
           </div>
-          <div className="pt-1 border-t border-border/30 mt-1">
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
             <RunButton action="power-options" label="Open Power Options" pending={isPending("power-options")} onRun={run} />
           </div>
         </UtilCard>
 
-        {/* Windows Update */}
-        <UtilCard icon={Globe} title="Windows Update" description="Open and configure Windows Update" delay={0.20}>
+        <UtilCard icon={Globe} title="Windows Update" description="Open and configure Windows Update" delay={0.14}>
           <RunButton action="windows-update" label="Open Windows Update" pending={isPending("windows-update")} onRun={run} />
-          <div className="pt-1 border-t border-border/30">
-            <p className="text-[10px] text-muted-foreground mb-1.5">Update policy (Windows Pro only for Security mode)</p>
-            <Select
-              value={windowsUpdateMode}
-              onValueChange={(val) => {
-                setWindowsUpdateMode(val);
-                localStorage.setItem("util_win_update", val);
-                run(val);
-              }}
-            >
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
+            <p className="text-[10px] text-muted-foreground/60 mb-1.5">Update policy (Security Only requires Windows Pro)</p>
+            <Select value={windowsUpdateMode} onValueChange={(val) => { setWindowsUpdateMode(val); localStorage.setItem("util_win_update", val); run(val); }}>
               <SelectTrigger className="h-8 text-xs bg-secondary border-border/60" data-testid="select-windows-update">
                 <SelectValue />
               </SelectTrigger>
@@ -1185,464 +1128,68 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* ── ROW 4: Windows & Privacy Tools (full width) ──────────────── */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
+      </div>
 
-          <UtilCard icon={Zap} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.22}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Popular open-source utility by Chris Titus Tech. Offers one-click Windows debloat, program installation, system tweaks, and fixes — all in a clean GUI.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
-                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet access and will launch an elevated PowerShell window. Review changes before applying.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchTitusTool}
-                  disabled={titusStatus === "running"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    titusStatus === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : titusStatus === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-christitus"
-                >
-                  {titusStatus === "running" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching WinUtil...</>
-                  ) : titusStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                  ) : titusStatus === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Zap className="h-3.5 w-3.5" /> Launch WinUtil</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
+      {/* ── GRAPHICS & DISPLAY ──────────────────────────────────────────────── */}
+      <SectionLabel title="Graphics & Display" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-          <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening tool" delay={0.23}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Free third-party tool by O&O Software. Provides granular control over 200+ Windows privacy settings beyond what this app covers — telemetry, Microsoft accounts, app permissions, diagnostics, and more.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
-                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-400/90 leading-relaxed">First launch downloads ~77 MB from O&O's servers (one-time). Cached permanently in AppData — never re-downloaded, survives PC restarts and temp cleaners. Subsequent launches are instant.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchShutUp10}
-                  disabled={shutup10Status === "downloading"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    shutup10Status === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : shutup10Status === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-shutup10"
-                >
-                  {shutup10Status === "downloading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Downloading...</>
-                  ) : shutup10Status === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                  ) : shutup10Status === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Download className="h-3.5 w-3.5" /> Launch ShutUp10++</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
-
-          <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.24}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Free tool by Winaero. Unlocks hidden Windows settings not available through Settings or Group Policy — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 flex-1">
-                <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Bundled installer — installs silently on first launch with no download. Every launch after that is instant.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchWinaerot}
-                  disabled={winaerotStatus === "launching"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    winaerotStatus === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : winaerotStatus === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-winaerot"
-                >
-                  {winaerotStatus === "launching" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
-                  ) : winaerotStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                  ) : winaerotStatus === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Download className="h-3.5 w-3.5" /> Launch Winaero Tweaker</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
-
-        </div>
-
-        {/* ── ROW 4b: Gaming Optimization Tools (full width) ──────────── */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
-
-          <UtilCard icon={Gamepad2} title="Razer Cortex" description="Game booster & FPS optimizer by Razer" delay={0.25}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Free game optimizer by Razer. Boosts FPS by suspending background processes while gaming, manages game launches, and includes system-level performance tools — no Razer hardware required.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
-                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-400/90 leading-relaxed">If not installed, opens the Razer Cortex download page in your browser. Install it, then click the button again to launch.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchRazerCortex}
-                  disabled={cortexStatus === "loading"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    cortexStatus === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : cortexStatus === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-razercortex"
-                >
-                  {cortexStatus === "loading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching...</>
-                  ) : cortexStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Done</>
-                  ) : cortexStatus === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Download className="h-3.5 w-3.5" /> Launch / Download Razer Cortex</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
-
-          <UtilCard icon={Zap} title="ExitLag" description="Gaming latency optimizer & connection tool" delay={0.26}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Paid tool that routes your game traffic through optimized servers worldwide to reduce latency, packet loss, and jitter. Works with 700+ games and provides real-time connection graphs.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 flex-1">
-                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-400/90 leading-relaxed">If not installed, opens the ExitLag download page in your browser. Install it, then click the button again to launch.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchExitLag}
-                  disabled={exitlagStatus === "loading"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    exitlagStatus === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : exitlagStatus === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-exitlag"
-                >
-                  {exitlagStatus === "loading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching...</>
-                  ) : exitlagStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Done</>
-                  ) : exitlagStatus === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Download className="h-3.5 w-3.5" /> Launch / Download ExitLag</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
-
-          <UtilCard icon={Cpu} title="MSI Utility v3" description="IRQ & interrupt affinity optimizer for gaming" delay={0.27}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Open-source tool by Sathango. Assigns CPU core affinity to device interrupts (GPU, NIC, audio) — reduces latency spikes and stabilizes frame times in competitive games.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 flex-1">
-                <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Bundled directly with the app — opens instantly with no download required.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchMsiUtility}
-                  disabled={msiStatus === "downloading"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    msiStatus === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : msiStatus === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-msiutility"
-                >
-                  {msiStatus === "downloading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
-                  ) : msiStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                  ) : msiStatus === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Zap className="h-3.5 w-3.5" /> Launch MSI Utility v3</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
-
-        </div>
-
-        {/* ── ROW 4c: Driver Tools + Game Profiles ────────────────────── */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
-
-          <UtilCard icon={HardDrive} title="Display Driver Uninstaller (DDU)" description="Fully remove GPU drivers for a clean reinstall" delay={0.28}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                The gold standard for GPU driver removal. Strips NVIDIA, AMD, and Intel GPU drivers completely — no leftovers, no conflicts. Use before reinstalling or switching driver versions.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-red-500/8 border border-red-500/20 flex-1">
-                <AlertTriangle className="h-3 w-3 text-red-400 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-red-400/90 leading-relaxed">For best results: boot into Safe Mode before running DDU. Do not use in normal Windows — drivers may reinstall mid-removal.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchDDU}
-                  disabled={dduStatus === "downloading"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    dduStatus === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : dduStatus === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-ddu"
-                >
-                  {dduStatus === "downloading" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
-                  ) : dduStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                  ) : dduStatus === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Zap className="h-3.5 w-3.5" /> Launch DDU</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
-
-          <UtilCard icon={Power} title="Power Settings Explorer" description="View and edit all hidden Windows power plan settings" delay={0.30}>
-            <div className="flex flex-col flex-1 space-y-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Exposes every hidden power setting not shown in the Control Panel — per-plan values, hidden subgroups, GUID references, and defaults. Essential for fine-tuning CPU, GPU, disk, and USB power behaviour.
-              </p>
-              <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40 flex-1">
-                <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Bundled — opens instantly with no download required. Works with all power plans including custom and hidden ones.</p>
-              </div>
-              <div className="mt-auto space-y-1">
-                <Button
-                  size="sm"
-                  onClick={launchPSE}
-                  disabled={pseStatus === "launching"}
-                  className={cn(
-                    "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                    pseStatus === "done"
-                      ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : pseStatus === "error"
-                      ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                  )}
-                  data-testid="button-launch-pse"
-                >
-                  {pseStatus === "launching" ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching...</>
-                  ) : pseStatus === "done" ? (
-                    <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>
-                  ) : pseStatus === "error" ? (
-                    <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                  ) : (
-                    <><Zap className="h-3.5 w-3.5" /> Launch Power Settings Explorer</>
-                  )}
-                </Button>
-                {!window.electronAPI && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-                )}
-              </div>
-            </div>
-          </UtilCard>
-
-          <UtilCard icon={Gamepad2} title="Game Profiles" description="Launch tools and download optimized config profiles" delay={0.29}>
-            <div className="flex flex-col flex-1 space-y-3">
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground">NVIDIA Profile Inspector</p>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Launch NPI then import your Fortnite profile: File → Import Profile(s) → select the .nip file.</p>
-                <div className="flex gap-1.5">
-                  <Button
-                    size="sm"
-                    onClick={launchNPI}
-                    disabled={npiStatus === "launching"}
-                    className={cn(
-                      "flex-1 h-7 text-xs font-bold transition-all gap-1",
-                      npiStatus === "done" ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : npiStatus === "error" ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary"
-                    )}
-                    data-testid="button-launch-npi"
-                  >
-                    {npiStatus === "launching" ? <Loader2 className="h-3 w-3 animate-spin" /> : npiStatus === "done" ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-                    {npiStatus === "launching" ? "Opening..." : npiStatus === "done" ? "Launched" : "Launch NPI"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => downloadProfile("JsFortniteNPI.nip")}
-                    className="flex-1 h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1"
-                    data-testid="button-download-fortnite-npi"
-                  >
-                    <Download className="h-3 w-3" />
-                    .nip Profile
-                  </Button>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-border/30 space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground">TCP Optimizer</p>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Launch TCP Optimizer then load your profile: File → Load Settings → select the .spg file, then Apply Changes.</p>
-                <div className="flex gap-1.5">
-                  <Button
-                    size="sm"
-                    onClick={launchTCPOptimizer}
-                    disabled={tcpStatus === "launching"}
-                    className={cn(
-                      "flex-1 h-7 text-xs font-bold transition-all gap-1",
-                      tcpStatus === "done" ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                      : tcpStatus === "error" ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                      : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary"
-                    )}
-                    data-testid="button-launch-tcp"
-                  >
-                    {tcpStatus === "launching" ? <Loader2 className="h-3 w-3 animate-spin" /> : tcpStatus === "done" ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-                    {tcpStatus === "launching" ? "Opening..." : tcpStatus === "done" ? "Launched" : "Launch TCP"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => downloadProfile("JsTCPOptimizer.spg")}
-                    className="flex-1 h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1"
-                    data-testid="button-download-tcp-profile"
-                  >
-                    <Download className="h-3 w-3" />
-                    .spg Profile
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </UtilCard>
-
-        </div>
-
-        {/* ── ROW 5: Info & Advanced ──────────────────────────────────── */}
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-3">
-
-        {/* System Info */}
-        <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.26}>
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full h-7 text-xs border-border/60 hover:border-primary/30"
-            onClick={async () => {
-              setShowSystemInfo(!showSystemInfo);
-              if (!showSystemInfo && !systemInfo) await fetchSystemInfo();
-            }}
-            data-testid="button-show-system-info"
-          >
-            {showSystemInfo ? "Hide Info" : "Show System Info"}
-            <ChevronDown className={cn("ml-1.5 h-3 w-3 transition-transform", showSystemInfo && "rotate-180")} />
-          </Button>
-          {showSystemInfo && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2 p-3 rounded-lg bg-secondary/60 border border-border/40 space-y-1.5">
-              {loadingSystemInfo ? (
-                <p className="text-[11px] text-muted-foreground">Loading...</p>
-              ) : systemInfo ? (
-                Object.entries({
-                  CPU: systemInfo.cpu?.model,
-                  Cores: systemInfo.cpu?.cores,
-                  GPU: systemInfo.gpu?.model,
-                  VRAM: systemInfo.gpu?.vram,
-                  RAM: systemInfo.memory?.total,
-                  "RAM Type": systemInfo.memory?.type,
-                  OS: systemInfo.system?.os,
-                  Disk: systemInfo.storage?.totalSpace,
-                }).map(([k, v]) => v && (
-                  <div key={k} className="flex justify-between text-[11px]">
-                    <span className="text-muted-foreground">{k}</span>
-                    <span className="text-foreground font-medium font-mono text-right max-w-[60%] truncate">{String(v)}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-[11px] text-muted-foreground">Failed to load system info</p>
-              )}
-            </motion.div>
-          )}
+        <UtilCard icon={MonitorPlay} title="NVIDIA Graphics" description="Control Panel, NVIDIA App, diagnostics & cache" delay={0.16}>
+          <RunButton action="nvidia-cp" label="NVIDIA Control Panel" pending={isPending("nvidia-cp")} onRun={run} />
+          <RunButton action="nvidia-app" label="NVIDIA App" pending={isPending("nvidia-app")} onRun={run} />
+          <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
+            <p className="text-[10px] text-muted-foreground/60 mb-1.5">Fixes game stutters from corrupt shader caches. GPU rebuilds on next launch.</p>
+            <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
+          </div>
         </UtilCard>
 
-        {/* Windows Admin Tools */}
-        <UtilCard icon={Settings2} title="Windows Admin Tools" description="Quick access to system management" delay={0.30}>
+        <UtilCard icon={Cpu} title="AMD Radeon" description="AMD Software: Adrenalin Edition & GPU tools" delay={0.18}>
+          <p className="text-[10px] text-muted-foreground/60 mb-1.5">AMD's all-in-one driver hub. Opens your installed version or the download page if not installed.</p>
+          <RunButton action="amd-software" label="AMD Software: Adrenalin" pending={isPending("amd-software")} onRun={run} />
+          <RunButton action="dxdiag" label="DirectX Diagnostic (dxdiag)" pending={isPending("dxdiag")} onRun={run} />
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
+            <p className="text-[10px] text-muted-foreground/60 mb-1.5">Clears AMD & DirectX shader caches. GPU rebuilds on next game launch.</p>
+            <RunButton action="clear-shader-cache" label="Clear Shader Cache" pending={isPending("clear-shader-cache")} onRun={run} />
+          </div>
+        </UtilCard>
+
+      </div>
+
+      {/* ── NETWORK & ADMIN ─────────────────────────────────────────────────── */}
+      <SectionLabel title="Network & Admin" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        <UtilCard icon={Network} title="Network Tools" description="Reset and repair network settings" delay={0.20}>
+          <RunButton action="flush-dns" label="Flush DNS Cache" pending={isPending("flush-dns")} onRun={run} />
+          <RunButton action="release-ip" label="Release IP Address" pending={isPending("release-ip")} onRun={run} />
+          <RunButton action="renew-ip" label="Renew IP Address" pending={isPending("renew-ip")} onRun={run} />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" className="w-full h-7 text-xs justify-start gap-2 border-border/50 hover:border-destructive/40 text-muted-foreground/60 hover:text-destructive transition-all">
+                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
+                Full Network Reset
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-card border-border">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-bold">Full Network Reset?</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-muted-foreground">
+                  This resets ALL network settings including Winsock and IP stack. A restart may be required.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => run("network-reset")} className="bg-destructive text-white text-sm">Reset Network</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </UtilCard>
+
+        <UtilCard icon={Settings2} title="Windows Admin Tools" description="Quick access to system management panels" delay={0.22}>
           <RunButton action="msconfig" label="System Configuration (msconfig)" pending={isPending("msconfig")} onRun={run} />
           <RunButton action="eventvwr" label="Event Viewer" pending={isPending("eventvwr")} onRun={run} />
-          <div className="pt-1 border-t border-border/30">
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
             <RunButton action="services" label="Services Manager" pending={isPending("services")} onRun={run} />
             <div className="mt-1.5">
               <RunButton action="devmgmt" label="Device Manager" pending={isPending("devmgmt")} onRun={run} />
@@ -1653,69 +1200,277 @@ export default function Utilities() {
           </div>
         </UtilCard>
 
-        {/* Gaming Runtime Installer */}
-        <UtilCard icon={Download} title="Gaming Runtime Installer" description="Install .NET and Visual C++ runtimes for gaming" delay={0.31}>
-          <div className="flex flex-col flex-1 space-y-2.5">
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              One-click install of every runtime required to run modern and legacy PC games.
+      </div>
+
+      {/* ── WINDOWS TOOLS ───────────────────────────────────────────────────── */}
+      <SectionLabel title="Windows Tools" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+        <UtilCard icon={Sparkles} title="Chris Titus Tech WinUtil" description="All-in-one Windows tweaks & debloat tool" delay={0.24}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Open-source Windows utility by Chris Titus Tech. One-click debloat, program install, tweaks, and fixes in a clean GUI — no Regedit required.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400/80 leading-relaxed">Requires internet. Opens an elevated PowerShell window. Review changes before applying.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchTitusTool} disabled={titusStatus === "running"} status={titusStatus} label="Launch WinUtil" icon={Zap} testId="button-launch-christitus" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+        <UtilCard icon={Shield} title="O&O ShutUp10++" description="Advanced Windows privacy hardening — 200+ settings" delay={0.25}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Free tool by O&O Software. Granular control over telemetry, Microsoft accounts, app permissions, diagnostics, and much more.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400/80 leading-relaxed">First launch downloads ~77 MB from O&O (one-time). Cached in AppData permanently — never re-downloaded.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchShutUp10} disabled={shutup10Status === "downloading"} status={shutup10Status} label="Launch ShutUp10++" icon={Download} testId="button-launch-shutup10" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+        <UtilCard icon={Sparkles} title="Winaero Tweaker" description="Deep Windows UI & behavior customization" delay={0.26}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Free tool by Winaero. Unlocks hidden Windows settings — context menus, boot screen, taskbar behavior, visual tweaks, and much more.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40">
+              <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">Bundled — installs silently on first launch, no download. Every subsequent launch is instant.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchWinaerot} disabled={winaerotStatus === "launching"} status={winaerotStatus} label="Launch Winaero Tweaker" icon={Download} testId="button-launch-winaerot" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+      </div>
+
+      {/* ── GAMING PERFORMANCE ──────────────────────────────────────────────── */}
+      <SectionLabel title="Gaming Performance" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+        <UtilCard icon={Gamepad2} title="Razer Cortex" description="Game booster & FPS optimizer by Razer" delay={0.27}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Free game optimizer. Boosts FPS by suspending background processes while gaming. No Razer hardware required.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400/80 leading-relaxed">If not installed, opens the Razer Cortex download page. Install it, then click the button again.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchRazerCortex} disabled={cortexStatus === "loading"} status={cortexStatus} label="Launch / Download Razer Cortex" icon={Download} testId="button-launch-razercortex" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+        <UtilCard icon={Zap} title="ExitLag" description="Gaming latency optimizer & connection tool" delay={0.28}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Routes game traffic through optimized servers worldwide to reduce latency, packet loss, and jitter. Works with 700+ games.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
+              <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-400/80 leading-relaxed">If not installed, opens the ExitLag download page. Install it, then click the button again.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchExitLag} disabled={exitlagStatus === "loading"} status={exitlagStatus} label="Launch / Download ExitLag" icon={Download} testId="button-launch-exitlag" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+        <UtilCard icon={Cpu} title="MSI Utility v3" description="IRQ & interrupt affinity optimizer for gaming" delay={0.29}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Assigns CPU core affinity to device interrupts (GPU, NIC, audio) — reduces latency spikes and stabilizes frame times in competitive games.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40">
+              <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">Bundled — opens instantly with no download required.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchMsiUtility} disabled={msiStatus === "downloading"} status={msiStatus} label="Launch MSI Utility v3" icon={Zap} testId="button-launch-msiutility" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+      </div>
+
+      {/* ── PRO TOOLS ───────────────────────────────────────────────────────── */}
+      <SectionLabel title="Pro Tools" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+        <UtilCard icon={HardDrive} title="Display Driver Uninstaller" description="Fully remove GPU drivers for a clean reinstall" delay={0.30}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Gold standard for GPU driver removal. Strips NVIDIA, AMD, and Intel drivers completely — no leftovers or conflicts. Use before switching driver versions.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-destructive/8 border border-destructive/20">
+              <AlertTriangle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
+              <p className="text-[10px] text-destructive/80 leading-relaxed">Boot into Safe Mode before running DDU. Drivers may reinstall mid-removal in normal Windows.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchDDU} disabled={dduStatus === "downloading"} status={dduStatus} label="Launch DDU" icon={Zap} testId="button-launch-ddu" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+        <UtilCard icon={Power} title="Power Settings Explorer" description="View and edit all hidden Windows power plan settings" delay={0.31}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              Exposes every hidden power setting not shown in Control Panel — per-plan values, hidden subgroups, GUID references. Essential for fine-tuning CPU, GPU, disk, and USB power.
+            </p>
+            <div className="flex items-start gap-1.5 p-2 rounded-lg bg-secondary/60 border border-border/40">
+              <Zap className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">Bundled — opens instantly, no download required. Works with all power plans including custom ones.</p>
+            </div>
+            <div className="mt-auto">
+              <LaunchBtn onClick={launchPSE} disabled={pseStatus === "launching"} status={pseStatus} label="Launch Power Settings Explorer" icon={Zap} testId="button-launch-pse" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
+            </div>
+          </div>
+        </UtilCard>
+
+        <UtilCard icon={Gamepad2} title="Game Profiles" description="Launch tools and download optimized config profiles" delay={0.32}>
+          <div className="flex flex-col flex-1 space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <div className="h-1 w-1 rounded-full bg-primary/60" />
+                <p className="text-[11px] font-semibold text-foreground">NVIDIA Profile Inspector</p>
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 leading-relaxed">Launch NPI then import: File → Import Profile(s) → select the .nip file.</p>
+              <div className="flex gap-1.5">
+                <Button size="sm" onClick={launchNPI} disabled={npiStatus === "launching"}
+                  className={cn("flex-1 h-7 text-xs font-bold transition-all gap-1",
+                    npiStatus === "done" ? "bg-green-500/12 border border-green-500/35 text-green-400"
+                    : npiStatus === "error" ? "bg-destructive/12 border border-destructive/35 text-destructive"
+                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20")}
+                  data-testid="button-launch-npi">
+                  {npiStatus === "launching" ? <Loader2 className="h-3 w-3 animate-spin" /> : npiStatus === "done" ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                  {npiStatus === "launching" ? "Opening..." : npiStatus === "done" ? "Launched" : "Launch NPI"}
+                </Button>
+                <Button size="sm" onClick={() => downloadProfile("JsFortniteNPI.nip")}
+                  className="flex-1 h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1"
+                  data-testid="button-download-fortnite-npi">
+                  <Download className="h-3 w-3" />
+                  .nip Profile
+                </Button>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-border/30 space-y-1.5">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <div className="h-1 w-1 rounded-full bg-primary/60" />
+                <p className="text-[11px] font-semibold text-foreground">TCP Optimizer</p>
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 leading-relaxed">Launch TCP Optimizer then: File → Load Settings → select the .spg file, then Apply Changes.</p>
+              <div className="flex gap-1.5">
+                <Button size="sm" onClick={launchTCPOptimizer} disabled={tcpStatus === "launching"}
+                  className={cn("flex-1 h-7 text-xs font-bold transition-all gap-1",
+                    tcpStatus === "done" ? "bg-green-500/12 border border-green-500/35 text-green-400"
+                    : tcpStatus === "error" ? "bg-destructive/12 border border-destructive/35 text-destructive"
+                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20")}
+                  data-testid="button-launch-tcp">
+                  {tcpStatus === "launching" ? <Loader2 className="h-3 w-3 animate-spin" /> : tcpStatus === "done" ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                  {tcpStatus === "launching" ? "Opening..." : tcpStatus === "done" ? "Launched" : "Launch TCP"}
+                </Button>
+                <Button size="sm" onClick={() => downloadProfile("JsTCPOptimizer.spg")}
+                  className="flex-1 h-7 text-xs bg-primary/8 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary transition-all font-semibold gap-1"
+                  data-testid="button-download-tcp-profile">
+                  <Download className="h-3 w-3" />
+                  .spg Profile
+                </Button>
+              </div>
+            </div>
+          </div>
+        </UtilCard>
+
+      </div>
+
+      {/* ── DIAGNOSTICS ─────────────────────────────────────────────────────── */}
+      <SectionLabel title="Diagnostics" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        <UtilCard icon={MapPin} title="System Information" description="Detailed hardware and OS info" delay={0.33}>
+          <Button size="sm" variant="outline"
+            className="w-full h-7 text-xs border-border/60 hover:border-primary/30 text-foreground/70 hover:text-primary transition-all"
+            onClick={async () => { setShowSystemInfo(!showSystemInfo); if (!showSystemInfo && !systemInfo) await fetchSystemInfo(); }}
+            data-testid="button-show-system-info">
+            {showSystemInfo ? "Hide System Info" : "Show System Info"}
+            <ChevronDown className={cn("ml-auto h-3 w-3 transition-transform duration-200", showSystemInfo && "rotate-180")} />
+          </Button>
+          {showSystemInfo && (
+            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-1 p-3 rounded-lg bg-secondary/40 border border-border/40 space-y-1.5">
+              {loadingSystemInfo ? (
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Loading...</div>
+              ) : systemInfo ? (
+                Object.entries({
+                  CPU: systemInfo.cpu?.model, Cores: systemInfo.cpu?.cores,
+                  GPU: systemInfo.gpu?.model, VRAM: systemInfo.gpu?.vram,
+                  RAM: systemInfo.memory?.total, "RAM Type": systemInfo.memory?.type,
+                  OS: systemInfo.system?.os, Disk: systemInfo.storage?.totalSpace,
+                }).map(([k, v]) => v && (
+                  <div key={k} className="flex justify-between text-[11px] gap-2">
+                    <span className="text-muted-foreground/60 shrink-0">{k}</span>
+                    <span className="text-foreground font-medium font-mono text-right truncate">{String(v)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[11px] text-muted-foreground/60">Failed to load system info</p>
+              )}
+            </motion.div>
+          )}
+        </UtilCard>
+
+        <UtilCard icon={Download} title="Gaming Runtime Installer" description="Install .NET and Visual C++ runtimes for gaming" delay={0.34}>
+          <div className="flex flex-col flex-1 space-y-2">
+            <p className="text-[10.5px] text-muted-foreground/75 leading-relaxed">
+              One-click install of every runtime required to run modern and legacy PC games — DirectX, Visual C++ (2005–2022), and .NET Runtimes (6, 7, 8, 9, 10).
             </p>
             <div className="grid grid-cols-2 gap-1.5">
-              <div className="rounded-md border border-border/40 bg-muted/20 p-2 space-y-0.5">
-                <p className="text-[10px] font-semibold text-foreground/80 uppercase tracking-wide mb-1">Visual C++</p>
-                {["2005 · 2008 · 2010","2012 · 2013","2015 – 2022 (x86 + x64)"].map(v => (
+              <div className="rounded-md border border-border/40 bg-secondary/20 p-2 space-y-0.5">
+                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-wide mb-1">Visual C++</p>
+                {["2005 · 2008 · 2010", "2012 · 2013", "2015 – 2022 (x86+x64)"].map(v => (
                   <div key={v} className="flex items-center gap-1">
-                    <span className="h-1 w-1 rounded-full bg-primary/60 shrink-0" />
-                    <span className="text-[10px] text-muted-foreground">{v}</span>
+                    <div className="h-1 w-1 rounded-full bg-primary/50 shrink-0" />
+                    <span className="text-[10px] text-muted-foreground/70">{v}</span>
                   </div>
                 ))}
               </div>
-              <div className="rounded-md border border-border/40 bg-muted/20 p-2 space-y-0.5">
-                <p className="text-[10px] font-semibold text-foreground/80 uppercase tracking-wide mb-1">.NET Desktop (x64)</p>
-                {[".NET 6.0",".NET 7.0",".NET 8.0 (LTS)",".NET 9.0",".NET 10.0"].map(v => (
+              <div className="rounded-md border border-border/40 bg-secondary/20 p-2 space-y-0.5">
+                <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-wide mb-1">.NET Desktop</p>
+                {["6.0", "7.0", "8.0 (LTS)", "9.0", "10.0"].map(v => (
                   <div key={v} className="flex items-center gap-1">
-                    <span className="h-1 w-1 rounded-full bg-primary/60 shrink-0" />
-                    <span className="text-[10px] text-muted-foreground">{v}</span>
+                    <div className="h-1 w-1 rounded-full bg-primary/50 shrink-0" />
+                    <span className="text-[10px] text-muted-foreground/70">{v}</span>
                   </div>
                 ))}
               </div>
             </div>
             <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20">
               <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-400/90 leading-relaxed">Requires internet and an admin (UAC) prompt. A progress window tracks each step — allow 10–20 min. Restart may be needed when complete.</p>
+              <p className="text-[10px] text-amber-400/80 leading-relaxed">Opens an elevated installer window. Requires internet. Approve the UAC prompt when asked.</p>
             </div>
-            <div className="mt-auto space-y-1">
-              <Button
-                size="sm"
-                onClick={installGamingRuntimes}
-                disabled={runtimeStatus === "installing"}
-                className={cn(
-                  "w-full h-8 text-xs font-bold transition-all gap-1.5",
-                  runtimeStatus === "done"
-                    ? "bg-green-500/15 border border-green-500/40 text-green-400 hover:bg-green-500/20"
-                    : runtimeStatus === "error"
-                    ? "bg-red-500/15 border border-red-500/40 text-red-400 hover:bg-red-500/20"
-                    : "bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 hover:border-primary"
-                )}
-                data-testid="button-install-gaming-runtimes"
-              >
-                {runtimeStatus === "installing" ? (
-                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Launching Installer...</>
-                ) : runtimeStatus === "done" ? (
-                  <><CheckCircle2 className="h-3.5 w-3.5" /> Installer Launched</>
-                ) : runtimeStatus === "error" ? (
-                  <><AlertTriangle className="h-3.5 w-3.5" /> Launch Failed — Retry</>
-                ) : (
-                  <><Download className="h-3.5 w-3.5" /> Install Gaming Runtimes</>
-                )}
-              </Button>
-              {!window.electronAPI && (
-                <p className="text-[10px] text-muted-foreground/50 text-center">Requires the desktop .exe app</p>
-              )}
+            <div className="mt-auto">
+              <LaunchBtn onClick={installGamingRuntimes} disabled={runtimeStatus === "installing"} status={runtimeStatus} label="Install All Runtimes" icon={Download} testId="button-install-runtimes" />
+              {!window.electronAPI && <p className="text-[10px] text-muted-foreground/40 text-center mt-1">Requires the desktop .exe app</p>}
             </div>
           </div>
         </UtilCard>
-
-        </div>
 
       </div>
     </div>
