@@ -397,52 +397,6 @@ export default function Tweaks() {
     await runRevertScript([tweak], `Reverting "${tweak.title}"`);
   };
 
-  const handleApplyOne = async (tweak: { id: number; title: string; isActive: boolean }) => {
-    if (isRunning) return;
-    const titles = [tweak.title];
-    setApplyingAll(true);
-    setIsRunning(true);
-    setDialogMode("apply");
-    if (window.electronAPI?.runScript) {
-      const script = generatePowerShellScript([{ ...tweak, isActive: true }]);
-      if (!script) { setApplyingAll(false); setIsRunning(false); return; }
-      setScriptOutput([{ type: "info", text: `# JGoode's A.I.O PC Tool — Applying "${tweak.title}"\n# Running as Administrator...\n` }]);
-      setShowRunDialog(true);
-      const safetyTimeout = setTimeout(() => {
-        setIsRunning(false); setApplyingAll(false); cleanupRef.current?.(); cleanupRef.current = null;
-        queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
-          old ? old.map(t => t.title === tweak.title ? { ...t, isActive: true } : t) : old
-        );
-        bulkMutation.mutate({ titles, isActive: true }); triggerDetect(800);
-      }, 120000);
-      cleanupRef.current = window.electronAPI.onScriptOutput((data) => {
-        if (data.type === "done") {
-          clearTimeout(safetyTimeout); setIsRunning(false); setApplyingAll(false);
-          setScriptOutput((prev) => [...prev, { type: data.code === 0 ? "success" : "stderr", text: data.code === 0 ? `\n✓ "${tweak.title}" optimized.` : `\n✗ Script exited with code ${data.code}.` }]);
-          cleanupRef.current?.(); cleanupRef.current = null;
-          queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
-            old ? old.map(t => t.title === tweak.title ? { ...t, isActive: true } : t) : old
-          );
-          bulkMutation.mutate({ titles, isActive: true }); triggerDetect(800); triggerDetect(9000);
-          if (data.code === 0) setTimeout(() => { setShowRunDialog(false); setScriptOutput([]); }, 2000);
-        } else if (data.text) setScriptOutput((prev) => [...prev, { type: data.type, text: data.text! }]);
-      });
-      try { await window.electronAPI.runScript(script); }
-      catch (err) {
-        clearTimeout(safetyTimeout); setIsRunning(false); setApplyingAll(false);
-        setScriptOutput((prev) => [...prev, { type: "stderr", text: String(err) }]);
-        cleanupRef.current?.(); cleanupRef.current = null;
-      }
-    } else {
-      queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
-        old ? old.map(t => t.title === tweak.title ? { ...t, isActive: true } : t) : old
-      );
-      await bulkMutation.mutateAsync({ titles, isActive: true });
-      toast({ title: "Tweak applied", description: `"${tweak.title}" marked as optimized.` });
-      setApplyingAll(false); setIsRunning(false);
-    }
-  };
-
   const parseAndConfirmImport = (content: string) => {
     try {
       const parsed = JSON.parse(content);
@@ -1036,81 +990,60 @@ export default function Tweaks() {
                     onClick={() => !isOptimized && toggleSelect(tweak.id)}
                     data-testid={`card-tweak-${tweak.id}`}
                   >
-                    {/* Top accent strip — always visible when optimized, on hover otherwise */}
-                    <div
-                      className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent transition-opacity duration-300"
-                      style={{ opacity: isOptimized ? 0.7 : isSelected ? 0.4 : 0 }}
-                    />
-
-                    {/* Selection indicator — left edge stripe */}
-                    {isSelected && !isOptimized && (
-                      <div className="absolute left-0 inset-y-0 w-[3px] rounded-l-xl"
-                        style={{ background: "hsl(var(--primary) / 0.5)" }} />
+                    {/* Top accent glow bar for optimized/selected */}
+                    {(isOptimized || isSelected) && (
+                      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
                     )}
 
-                    {/* ── Card header: icon + title + toggle ── */}
-                    <div className="flex items-start gap-3 mb-3">
-                      {/* Category icon badge */}
-                      <div
-                        className="p-1.5 rounded-lg border shrink-0 mt-0.5"
-                        style={{
-                          background: isOptimized ? "hsl(var(--primary) / 0.12)" : "hsl(var(--secondary) / 0.6)",
-                          borderColor: isOptimized ? "hsl(var(--primary) / 0.25)" : "hsl(var(--border) / 0.4)",
-                        }}
-                      >
-                        <Icon className={cn("h-3.5 w-3.5", isOptimized ? "text-primary" : colorClass + " opacity-60")} />
-                      </div>
-
-                      {/* Title */}
+                    <div className="flex justify-between items-start gap-3 mb-2.5">
                       <h3 className={cn(
-                        "font-bold text-[12.5px] leading-snug flex-1 tracking-tight pt-0.5",
-                        isOptimized ? "text-foreground" : "text-foreground/80"
+                        "font-bold text-[13px] leading-snug flex-1 tracking-tight",
+                        isOptimized ? "text-foreground" : "text-foreground/85"
                       )}>
                         {tweak.title}
                       </h3>
-
-                      {/* Toggle pill */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isRunning) return;
-                          isOptimized ? handleRevertOne(tweak) : handleApplyOne(tweak);
-                        }}
-                        disabled={isRunning || isBulkPending}
-                        title={isOptimized ? "Click to revert this tweak" : "Click to apply this tweak"}
-                        data-testid={`toggle-tweak-${tweak.id}`}
-                        className="relative shrink-0 inline-flex h-5 w-9 items-center rounded-full border-2 transition-all duration-250 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={isOptimized ? {
-                          background: "hsl(var(--primary))",
-                          borderColor: "hsl(var(--primary))",
-                          boxShadow: "0 0 10px hsl(var(--primary) / 0.5), 0 0 4px hsl(var(--primary) / 0.3)",
-                        } : {
-                          background: "hsl(var(--secondary) / 0.8)",
-                          borderColor: "hsl(var(--border) / 0.6)",
-                        }}
-                      >
-                        <span
-                          className="inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-250"
-                          style={{ transform: isOptimized ? "translateX(16px)" : "translateX(2px)" }}
-                        />
-                      </button>
+                      {isOptimized ? (
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-full shrink-0"
+                          style={{ background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.3)", boxShadow: "0 0 8px hsl(var(--primary) / 0.2)" }}
+                          data-testid={`badge-optimized-${tweak.id}`}>
+                          <CheckCircle2 className="h-3 w-3 text-primary" />
+                          <span className="text-[10px] font-black text-primary tracking-wide">Optimized</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleSelect(tweak.id); }}
+                          className={cn(
+                            "flex items-center justify-center h-5 w-5 rounded-md border-[1.5px] transition-all duration-150 shrink-0",
+                            isSelected
+                              ? "border-primary text-white"
+                              : "border-border/50 hover:border-primary/50 hover:bg-primary/5"
+                          )}
+                          style={isSelected ? {
+                            background: "hsl(var(--primary))",
+                            boxShadow: "0 0 8px hsl(var(--primary) / 0.45)"
+                          } : undefined}
+                          data-testid={`checkbox-tweak-${tweak.id}`}
+                        >
+                          {isSelected && <Check className="h-3 w-3" />}
+                        </button>
+                      )}
                     </div>
 
-                    <p className="text-[11px] text-muted-foreground/70 leading-relaxed flex-1">
+                    <p className="text-[11.5px] text-muted-foreground/80 leading-relaxed flex-1">
                       {tweak.description}
                     </p>
 
                     {tweak.warning && (
                       <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-amber-500/6 border border-amber-500/18">
                         <AlertTriangle className="w-3 h-3 mt-0.5 text-amber-400 shrink-0" />
-                        <p className="text-[10.5px] text-amber-400/85 leading-snug">{tweak.warning}</p>
+                        <p className="text-[11px] text-amber-400/85 leading-snug">{tweak.warning}</p>
                       </div>
                     )}
 
                     {tweak.featureBreaks && (
-                      <div className="mt-2 p-2 rounded-lg bg-secondary/40 border border-border/30">
-                        <p className="text-[10px] text-muted-foreground/60 leading-snug">
-                          <span className="text-foreground/50 font-semibold">Breaks: </span>
+                      <div className="mt-2 p-2 rounded-lg bg-secondary/50 border border-border/35">
+                        <p className="text-[10.5px] text-muted-foreground/75 leading-snug">
+                          <span className="text-foreground/55 font-semibold">Breaks: </span>
                           {tweak.featureBreaks}
                         </p>
                       </div>
@@ -1125,51 +1058,66 @@ export default function Tweaks() {
                       </div>
                     )}
 
-                    <div className="mt-3 pt-2 border-t border-border/25 flex items-center gap-1.5 flex-wrap">
-                      <div className="flex items-center gap-1 mr-0.5">
-                        <Icon className={cn("h-3 w-3", isOptimized ? "text-primary" : colorClass + " opacity-55")} />
-                        <span className={cn("text-[9px] font-bold capitalize", isOptimized ? "text-primary/80" : colorClass + " opacity-55")}>
-                          {tweak.category}
-                        </span>
-                      </div>
-                      {impact && (
-                        <span className={cn(
-                          "text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border",
-                          impactStyle[impact]
+                    <div className="mt-3 pt-2 border-t border-border/30 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1">
+                          <Icon className={cn("h-3 w-3", colorClass)} />
+                          <span className={cn("text-[9.5px] font-bold capitalize", colorClass)}>
+                            {tweak.category}
+                          </span>
+                        </div>
+                        {impact && (
+                          <span className={cn(
+                            "text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border",
+                            impactStyle[impact]
+                          )}
+                            data-testid={`badge-impact-${tweak.id}`}
+                          >
+                            {impact}
+                          </span>
                         )}
-                          data-testid={`badge-impact-${tweak.id}`}
+                        {cmd?.requiresRestart && (
+                          <span
+                            className="text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-orange-400 bg-orange-500/8 border-orange-500/20"
+                            data-testid={`badge-restart-${tweak.id}`}
+                            title="Requires a system restart"
+                          >
+                            Restart
+                          </span>
+                        )}
+                        {cmd?.requiresAdmin && (
+                          <span
+                            className="text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-sky-400/70 bg-sky-500/6 border-sky-500/15"
+                            data-testid={`badge-admin-${tweak.id}`}
+                            title="Requires Administrator"
+                          >
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isSelected && !isOptimized && (
+                          <div className="flex items-center gap-1 text-primary/80">
+                            <CheckSquare className="h-2.5 w-2.5" />
+                            <span className="text-[9.5px] font-black">Selected</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRevertOne(tweak); }}
+                          disabled={isRunning}
+                          className={cn(
+                            "flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md border transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed",
+                            isOptimized
+                              ? "border-red-500/40 bg-red-500/8 text-red-400 hover:bg-red-500/15 hover:border-red-500/60"
+                              : "border-border/25 bg-transparent text-muted-foreground/40 hover:border-red-500/30 hover:bg-red-500/6 hover:text-red-400/70"
+                          )}
+                          data-testid={`button-revert-one-${tweak.id}`}
+                          title={`Revert "${tweak.title}" to Windows default`}
                         >
-                          {impact}
-                        </span>
-                      )}
-                      {cmd?.requiresRestart && (
-                        <span
-                          className="text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-orange-400 bg-orange-500/8 border-orange-500/20"
-                          data-testid={`badge-restart-${tweak.id}`}
-                          title="Requires a system restart"
-                        >
-                          Restart
-                        </span>
-                      )}
-                      {cmd?.requiresAdmin && (
-                        <span
-                          className="text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-sky-400/70 bg-sky-500/6 border-sky-500/15"
-                          data-testid={`badge-admin-${tweak.id}`}
-                          title="Requires Administrator"
-                        >
-                          Admin
-                        </span>
-                      )}
-                      {isSelected && !isOptimized && (
-                        <span className="ml-auto text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-primary bg-primary/8 border-primary/20">
-                          Selected
-                        </span>
-                      )}
-                      {isOptimized && (
-                        <span className="ml-auto text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-primary bg-primary/8 border-primary/20">
-                          Optimized
-                        </span>
-                      )}
+                          <RotateCcw className="h-2.5 w-2.5" />
+                          Revert
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
