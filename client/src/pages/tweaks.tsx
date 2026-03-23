@@ -361,9 +361,12 @@ export default function Tweaks() {
         setIsRunning(false);
       }
     } else {
-      // Non-Electron fallback: just update the DB and download script
-      exportUndoScript();
+      // Non-Electron fallback: update the DB only (no auto-download)
+      queryClient.setQueryData<Array<{ id: number; title: string; isActive: boolean }>>(["/api/tweaks"], (old) =>
+        old ? old.map(t => titles.includes(t.title) ? { ...t, isActive: false } : t) : old
+      );
       bulkMutation.mutate({ titles, isActive: false });
+      toast({ title: "Tweaks reverted", description: `${tweaksToRevert.length} tweak${tweaksToRevert.length !== 1 ? "s" : ""} marked as inactive. Run on Windows to apply.` });
       setIsRunning(false);
     }
   };
