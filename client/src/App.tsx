@@ -16,6 +16,7 @@ import DNSManager from "@/pages/dns-manager";
 import Cleaner from "@/pages/cleaner";
 import RestorePoints from "@/pages/restore-points";
 import Utilities from "@/pages/utilities";
+import Programs from "@/pages/programs";
 import Settings from "@/pages/settings";
 import Startup from "@/pages/startup";
 
@@ -43,6 +44,7 @@ function AnimatedRoutes() {
           <Route path="/dns" component={DNSManager}/>
           <Route path="/cleaner" component={Cleaner}/>
           <Route path="/utilities" component={Utilities}/>
+          <Route path="/programs" component={Programs}/>
           <Route path="/startup" component={Startup} />
           <Route path="/restore" component={RestorePoints} />
           <Route path="/settings" component={Settings} />

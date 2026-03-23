@@ -2347,6 +2347,70 @@ Write-Output 'OK'
     }
   });
 
+  // ── Programs ─────────────────────────────────────────────────────────────
+  app.get("/api/programs", async (_req, res) => {
+    const isWin = process.platform === "win32";
+    if (!isWin) return res.json({ programs: [], total: 0, totalSizeMB: 0 });
+    const ps = `$paths=@('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*');$all=Get-ItemProperty $paths -EA SilentlyContinue|Where-Object{$_.DisplayName -and -not $_.SystemComponent -and $_.UninstallString -and $_.DisplayName -notmatch '^(KB\\d|Security Update for|Hotfix for|Update for Windows)'};$progs=$all|Select-Object @{n='name';e={$_.DisplayName}},@{n='version';e={$_.DisplayVersion}},@{n='publisher';e={if($_.Publisher){$_.Publisher}else{''}}},@{n='installDate';e={if($_.InstallDate){$_.InstallDate}else{''}}},@{n='sizeMB';e={if($_.EstimatedSize){[Math]::Round($_.EstimatedSize/1024,1)}else{0}}},@{n='uninstallString';e={$_.UninstallString}},@{n='quietUninstall';e={if($_.QuietUninstallString){$_.QuietUninstallString}else{''}}},@{n='isMsi';e={if($_.UninstallString -match '(?i)msiexec'){$true}else{$false}}},@{n='msiGuid';e={if($_.UninstallString -match '(\\{[0-9A-Fa-f\\-]{36}\\})'){$Matches[1]}else{''}}}|Where-Object{$_.name}|Sort-Object name;ConvertTo-Json @($progs) -Compress -Depth 2`;
+    try {
+      const raw = await runPowerShell(ps, 25000);
+      let programs: any[] = [];
+      try { programs = JSON.parse(raw.trim()); } catch { programs = []; }
+      if (!Array.isArray(programs)) programs = [];
+      const totalSizeMB = programs.reduce((s: number, p: any) => s + (p.sizeMB || 0), 0);
+      res.json({ programs, total: programs.length, totalSizeMB: Math.round(totalSizeMB) });
+    } catch (err: any) {
+      res.json({ programs: [], total: 0, totalSizeMB: 0 });
+    }
+  });
+
+  app.post("/api/programs/uninstall", async (req, res) => {
+    const isWin = process.platform === "win32";
+    if (!isWin) return res.json({ success: false, error: "Windows only" });
+    const { uninstallString, quietUninstall, isMsi, msiGuid, programName } = req.body as {
+      uninstallString: string; quietUninstall: string; isMsi: boolean;
+      msiGuid: string; programName: string;
+    };
+    if (!uninstallString) return res.status(400).json({ error: "Missing uninstall string" });
+    let cmd: string;
+    if (quietUninstall) {
+      cmd = quietUninstall;
+    } else if (isMsi && msiGuid) {
+      cmd = `msiexec /x ${msiGuid} /qn /norestart`;
+    } else {
+      cmd = uninstallString;
+    }
+    try {
+      const safeCmd = cmd.replace(/'/g, "''");
+      const ps = `Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','${safeCmd}' -Verb RunAs -Wait -EA Stop; Write-Output 'OK'`;
+      await runPowerShell(ps, 60000);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || "Uninstall failed" });
+    }
+  });
+
+  app.post("/api/programs/reinstall", async (req, res) => {
+    const isWin = process.platform === "win32";
+    if (!isWin) return res.json({ success: false, error: "Windows only" });
+    const { isMsi, msiGuid, programName } = req.body as {
+      isMsi: boolean; msiGuid: string; programName: string;
+    };
+    if (isMsi && msiGuid) {
+      try {
+        const safeGuid = msiGuid.replace(/'/g, "''");
+        const ps = `Start-Process -FilePath 'msiexec.exe' -ArgumentList '/i','${safeGuid}','REINSTALL=ALL','REINSTALLMODE=vomus' -Verb RunAs -Wait -EA Stop; Write-Output 'OK'`;
+        await runPowerShell(ps, 90000);
+        res.json({ success: true, method: "msi" });
+      } catch (err: any) {
+        res.status(500).json({ error: err?.message || "Reinstall failed" });
+      }
+    } else {
+      const query = encodeURIComponent(`download ${programName}`);
+      res.json({ success: true, method: "browser", searchUrl: `https://www.google.com/search?q=${query}` });
+    }
+  });
+
   // ── Downloadable profiles ──────────────────────────────────────────
   // In Electron production, files are in process.resourcesPath/profiles (extraResources)
   // In development, they live at server/profiles/ relative to CWD
