@@ -33,26 +33,40 @@ export function StatCard({
     >
       <div
         className={cn(
-          "card-premium h-full flex flex-col p-4 rounded-xl border transition-all duration-200 group cursor-default",
+          "h-full flex flex-col p-4 rounded-xl border transition-all duration-200 group cursor-default relative overflow-hidden",
           accent
-            ? "bg-primary/6 border-primary/20 hover:border-primary/40 glow-primary-sm"
-            : "bg-card border-border hover:border-primary/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+            ? "bg-primary/6 border-primary/25"
+            : "bg-card border-border/70 hover:border-primary/30"
         )}
+        style={accent ? {
+          boxShadow: "0 0 20px hsl(var(--primary) / 0.1), 0 2px 12px rgba(0,0,0,0.3)"
+        } : {
+          boxShadow: "0 2px 8px rgba(0,0,0,0.25)"
+        }}
+        onMouseEnter={(e) => {
+          if (!accent) (e.currentTarget as HTMLElement).style.boxShadow = "0 0 18px hsl(var(--primary) / 0.08), 0 4px 16px rgba(0,0,0,0.4)";
+        }}
+        onMouseLeave={(e) => {
+          if (!accent) (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.25)";
+        }}
       >
-        {/* Icon + label row */}
+        <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
         <div className="flex items-center gap-2 mb-3">
           <div className={cn(
-            "p-1.5 rounded-lg transition-colors",
-            accent ? "bg-primary/15" : "bg-secondary/60 group-hover:bg-primary/10"
+            "p-1.5 rounded-lg border transition-all duration-200",
+            accent
+              ? "bg-primary/15 border-primary/20"
+              : "bg-secondary/50 border-border/30 group-hover:bg-primary/10 group-hover:border-primary/20"
           )}>
             <div className={cn(
               "w-4 h-4 transition-colors",
-              accent ? "text-primary" : "text-muted-foreground/50 group-hover:text-primary"
+              accent ? "text-primary" : "text-muted-foreground/40 group-hover:text-primary"
             )}>
               {icon}
             </div>
           </div>
-          <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.14em]">
+          <span className="text-[9.5px] font-black text-muted-foreground/40 uppercase tracking-[0.18em] group-hover:text-muted-foreground/60 transition-colors">
             {title}
           </span>
         </div>
@@ -65,21 +79,21 @@ export function StatCard({
         ) : (
           <div className="flex flex-col flex-1">
             <div
-              className="text-[13px] font-bold text-foreground leading-snug truncate"
+              className="text-[13px] font-bold text-foreground leading-snug truncate group-hover:text-white transition-colors"
               title={typeof primaryValue === "string" ? primaryValue : undefined}
             >
               {primaryValue}
             </div>
             {secondaryValue && (
               <div
-                className="text-[11px] text-muted-foreground/55 mt-0.5 truncate"
+                className="text-[11px] text-muted-foreground/50 mt-0.5 truncate group-hover:text-muted-foreground/65 transition-colors"
                 title={typeof secondaryValue === "string" ? secondaryValue : undefined}
               >
                 {secondaryValue}
               </div>
             )}
             {extra && (
-              <div className="mt-3 pt-3 border-t border-border/50">{extra}</div>
+              <div className="mt-3 pt-3 border-t border-border/40">{extra}</div>
             )}
           </div>
         )}

@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Cpu, MemoryStick, Monitor, HardDrive, Wrench,
-  ArrowRight, Thermometer, Zap, ShieldCheck, Activity, Sparkles, Info,
-  Globe, Settings as SettingsIcon,
+  ArrowRight, Thermometer, Zap, ShieldCheck, Activity, Sparkles,
+  Globe, Settings as SettingsIcon, TrendingUp, MonitorCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/stat-card";
@@ -26,189 +26,162 @@ type TempData = {
   gpu: { current: number | null; hotspot?: number | null };
 };
 
-function DetailRow({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-[11px] text-muted-foreground/70 shrink-0">{label}</span>
-      <span className={cn("text-[11px] font-bold font-mono tabular-nums", color ?? "text-foreground")}>{value}</span>
-    </div>
-  );
-}
-
-function TipDivider() {
-  return <div className="border-t border-border/30 my-1.5" />;
-}
-
-function LiveBar({
+function UsageBar({
   label,
   value,
-  unit = "%",
   sublabel,
+  icon: Icon,
 }: {
   label: string;
   value: number | null;
-  unit?: string;
   sublabel?: string;
+  icon: React.ElementType;
 }) {
   const pct = value ?? 0;
+  const color =
+    value == null ? "text-muted-foreground/30"
+    : pct < 50 ? "text-green-400"
+    : pct < 80 ? "text-amber-400"
+    : "text-primary";
+
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2.5">
-        <span className="text-[11px] font-bold text-foreground/70 w-9 shrink-0 uppercase tracking-wide">
-          {label}
-        </span>
-        <div className="flex-1 h-2.5 rounded-full bg-secondary/60 overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700 progress-gradient-fill"
-            style={{ width: `${Math.min(100, pct)}%` }}
+    <div className="flex items-center gap-3">
+      <div className="p-1.5 rounded-lg bg-secondary/40 shrink-0 border border-border/30">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground/50" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-wide">
+            {label}
+          </span>
+          <span className={cn("text-[13px] font-black font-mono tabular-nums leading-none", color)}>
+            {value == null ? "N/A" : `${value}%`}
+          </span>
+        </div>
+        <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full progress-gradient-fill"
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(100, pct)}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </div>
-        <span className={cn(
-          "text-[12px] font-black font-mono tabular-nums w-11 text-right shrink-0",
-          value === null ? "text-muted-foreground/30" : "text-foreground"
-        )}>
-          {value === null ? "N/A" : `${value}${unit}`}
-        </span>
+        {sublabel && (
+          <p className="text-[9.5px] text-muted-foreground/30 leading-none">{sublabel}</p>
+        )}
       </div>
-      {sublabel && (
-        <p className="text-[9.5px] text-muted-foreground/35 pl-11 leading-none">{sublabel}</p>
-      )}
     </div>
   );
 }
 
-function TempDot({ temp }: { temp: number | null }) {
-  if (!temp) return <span className="text-muted-foreground/30 font-mono text-xs">N/A</span>;
-  const color = temp < 55 ? "text-green-400" : temp < 75 ? "text-amber-400" : "text-primary";
-  return <span className={cn("font-bold font-mono text-xs tabular-nums", color)}>{temp}°C</span>;
-}
+function TempGauge({ label, temp, icon: Icon }: { label: string; temp: number | null; icon: React.ElementType }) {
+  const color =
+    temp == null ? "text-muted-foreground/25"
+    : temp < 55 ? "text-green-400"
+    : temp < 75 ? "text-amber-400"
+    : "text-primary";
+  const bgColor =
+    temp == null ? "bg-secondary/30"
+    : temp < 55 ? "bg-green-400/10"
+    : temp < 75 ? "bg-amber-400/10"
+    : "bg-primary/10";
+  const borderColor =
+    temp == null ? "border-border/30"
+    : temp < 55 ? "border-green-400/20"
+    : temp < 75 ? "border-amber-400/20"
+    : "border-primary/25";
+  const status =
+    temp == null ? "No sensor"
+    : temp < 55 ? "Cool"
+    : temp < 75 ? "Warm"
+    : "Hot";
 
-const RING_R = 42;
-const RING_C = 2 * Math.PI * RING_R;
+  const pct = temp ? Math.min((temp / 110) * 100, 100) : 0;
 
-function HealthRing({ score, grade, gradeColor }: { score: number; grade: string; gradeColor: string }) {
-  const offset = RING_C * (1 - Math.min(score, 100) / 100);
   return (
-    <div className="relative w-28 h-28 shrink-0">
-      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-        <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--secondary))" strokeWidth="7" />
-        <circle
-          cx="50" cy="50" r={RING_R} fill="none"
-          stroke={gradeColor}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray={RING_C}
-          strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)", filter: `drop-shadow(0 0 6px ${gradeColor}55)` }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-black tabular-nums leading-none" style={{ color: gradeColor }}>
-          {score}
-        </span>
-        <span className="text-[10px] font-bold text-muted-foreground/50 mt-0.5">/ 100</span>
+    <div className={cn("flex items-center gap-3.5 p-3 rounded-xl border transition-all", bgColor, borderColor)}>
+      <div className={cn("p-2 rounded-lg border", bgColor, borderColor)}>
+        <Icon className={cn("h-4 w-4", color)} />
+      </div>
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-wide">{label}</span>
+          <div className="flex items-center gap-1.5">
+            <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full border", color, bgColor, borderColor)}>{status}</span>
+            <span className={cn("text-[18px] font-black font-mono tabular-nums leading-none", color)}>
+              {temp != null ? `${temp}°` : "—"}
+            </span>
+          </div>
+        </div>
+        <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full progress-gradient-fill"
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function HealthScoreCard({
-  activeTweaks, totalTweaks, usage,
+function QuickCard({
+  href, Icon, label, desc, iconColor, glowColor, borderHover,
 }: {
-  activeTweaks: number;
-  totalTweaks: number;
-  usage: any;
+  href: string;
+  Icon: React.ElementType;
+  label: string;
+  desc: string;
+  iconColor: string;
+  glowColor: string;
+  borderHover: string;
 }) {
-  const { score, grade, gradeColor, factors } = useMemo(() => {
-    const tweakPct   = totalTweaks > 0 ? (activeTweaks / totalTweaks) * 100 : 0;
-    const ramFree    = usage ? 100 - (usage.ram?.usage ?? 50) : 50;
-    const diskFree   = usage ? 100 - (usage.disk?.usage ?? 50) : 50;
-    const cpuFree    = usage ? 100 - (usage.cpu?.usage ?? 50) : 50;
-
-    const sc = Math.round(tweakPct * 0.50 + ramFree * 0.20 + diskFree * 0.15 + cpuFree * 0.15);
-
-    const g  = sc >= 85 ? "A" : sc >= 70 ? "B" : sc >= 55 ? "C" : sc >= 40 ? "D" : "F";
-    const gc =
-      sc >= 85 ? "#4ade80"
-      : sc >= 70 ? "#60a5fa"
-      : sc >= 55 ? "#fbbf24"
-      : sc >= 40 ? "#fb923c"
-      : "hsl(var(--primary))";
-
-    return {
-      score: Math.min(sc, 100),
-      grade: g,
-      gradeColor: gc,
-      factors: [
-        { label: "Tweaks",    pct: tweakPct, weight: "50%", barOpacity: 1.00 },
-        { label: "RAM free",  pct: ramFree,  weight: "20%", barOpacity: 0.72 },
-        { label: "Disk free", pct: diskFree, weight: "15%", barOpacity: 0.52 },
-        { label: "CPU idle",  pct: cpuFree,  weight: "15%", barOpacity: 0.38 },
-      ],
-    };
-  }, [activeTweaks, totalTweaks, usage]);
-
-  const gradeDesc: Record<string, string> = {
-    A: "Excellent — fully optimized",
-    B: "Good — minor improvements possible",
-    C: "Fair — several tweaks available",
-    D: "Below average — optimize recommended",
-    F: "Poor — many improvements possible",
-  };
-
+  const [hovered, setHovered] = useState(false);
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.08 }}
-      className="p-4 rounded-xl border border-border bg-card card-premium"
+    <div
+      data-testid={`card-quick-${label.toLowerCase().replace(/\s+/g, "-")}`}
+      className="flex flex-col items-center gap-2 p-3.5 rounded-xl border cursor-pointer text-center transition-all duration-200"
+      style={{
+        background: hovered ? glowColor : "hsl(var(--secondary) / 0.12)",
+        borderColor: hovered ? borderHover : "hsl(var(--border) / 0.35)",
+        boxShadow: hovered ? `0 0 16px ${glowColor}` : "none",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <div className="p-1.5 rounded-lg bg-primary/10">
-          <Activity className="h-3.5 w-3.5 text-primary" />
-        </div>
-        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-          System Health Score
-        </span>
+      <div
+        className="p-2.5 rounded-xl border transition-all duration-200"
+        style={{
+          background: hovered ? glowColor : "hsl(var(--secondary) / 0.35)",
+          borderColor: hovered ? borderHover : "hsl(var(--border) / 0.25)",
+        }}
+      >
+        <Icon
+          style={{ width: "18px", height: "18px", color: hovered ? iconColor : "hsl(var(--muted-foreground) / 0.4)", transition: "color 0.2s" }}
+        />
+      </div>
+      <div>
         <span
-          className="ml-auto text-[11px] font-black px-2 py-0.5 rounded-md"
-          style={{ color: gradeColor, background: `${gradeColor}18`, border: `1px solid ${gradeColor}35` }}
+          className="text-[11px] font-bold leading-none block transition-colors duration-200"
+          style={{ color: hovered ? "hsl(var(--foreground) / 0.9)" : "hsl(var(--foreground) / 0.55)" }}
         >
-          Grade {grade}
+          {label}
         </span>
+        <span className="text-[9px] text-muted-foreground/30 mt-0.5 block leading-tight">{desc}</span>
       </div>
-
-      <div className="flex items-center gap-5">
-        <HealthRing score={score} grade={grade} gradeColor={gradeColor} />
-
-        <div className="flex-1 min-w-0 space-y-2">
-          <p className="text-[11px] text-muted-foreground/60 leading-snug mb-3">
-            {gradeDesc[grade]}
-          </p>
-          {factors.map((f) => (
-            <div key={f.label} className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground/60">{f.label}</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-muted-foreground/30 font-mono">{f.weight}</span>
-                  <span className="text-[10px] font-bold font-mono tabular-nums text-primary">
-                    {Math.round(f.pct)}%
-                  </span>
-                </div>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-secondary/60 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700 progress-gradient-fill"
-                  style={{ width: `${Math.min(100, f.pct)}%`, opacity: f.barOpacity }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
+    </div>
   );
 }
+
+const QUICK_LINKS = [
+  { href: "/cleaner",   icon: Sparkles,    label: "PC Cleaner",   desc: "Remove junk files",    iconColor: "#60a5fa", glowColor: "rgba(96,165,250,0.1)",  borderHover: "rgba(96,165,250,0.2)"  },
+  { href: "/tweaks",    icon: Wrench,      label: "Tweaks",       desc: "Optimize Windows",     iconColor: "hsl(var(--primary))", glowColor: "hsl(var(--primary) / 0.1)", borderHover: "hsl(var(--primary) / 0.25)" },
+  { href: "/utilities", icon: Activity,   label: "Utilities",    desc: "System tools",         iconColor: "#a78bfa", glowColor: "rgba(167,139,250,0.1)", borderHover: "rgba(167,139,250,0.2)" },
+  { href: "/dns",       icon: Globe,       label: "DNS Manager",  desc: "Network DNS",          iconColor: "#22d3ee", glowColor: "rgba(34,211,238,0.1)",  borderHover: "rgba(34,211,238,0.2)"  },
+  { href: "/startup",   icon: MonitorCheck,label: "Startup Mgr",  desc: "Startup apps",         iconColor: "#fbbf24", glowColor: "rgba(251,191,36,0.1)",  borderHover: "rgba(251,191,36,0.2)"  },
+  { href: "/restore",   icon: ShieldCheck, label: "Restore",      desc: "System protection",    iconColor: "#4ade80", glowColor: "rgba(74,222,128,0.1)",  borderHover: "rgba(74,222,128,0.2)"  },
+];
 
 export default function Dashboard() {
   const { data: sysInfo, isLoading: sysLoading } = useSystemInfo();
@@ -239,79 +212,155 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5 pb-8">
-      {/* Header */}
+
+      {/* ── HERO BANNER ─────────────────────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: -6 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        transition={{ duration: 0.35 }}
+        className="relative overflow-hidden rounded-2xl border border-border/60"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)) 60%, hsl(var(--primary) / 0.04) 100%)",
+          boxShadow: "0 4px 32px rgba(0,0,0,0.4), 0 0 0 1px hsl(var(--border) / 0.5)"
+        }}
       >
-        <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">
-            System <span className="text-primary">Dashboard</span>
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Real-time overview and controls</p>
+        {/* radial glow top-right */}
+        <div
+          className="absolute -top-20 -right-20 w-72 h-72 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.12) 0%, transparent 70%)" }}
+        />
+        {/* gradient accent line top */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
+
+        <div className="px-6 py-5 relative z-10">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1 flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-primary/25 bg-primary/8">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.18em] text-primary/80 font-mono">
+                    System Online
+                  </span>
+                </div>
+              </div>
+              <h1 className="text-[26px] font-black text-foreground tracking-tight leading-none">
+                System <span className="text-primary">Dashboard</span>
+              </h1>
+              <p className="text-[12px] text-muted-foreground/60 mt-1">
+                Real-time monitoring, optimization & control
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsRestoreOpen(true)}
+                data-testid="button-create-restore"
+                className="border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40 text-xs h-8 gap-1.5"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                Restore Point
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="mt-5 pt-4 border-t border-border/30 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              {
+                label: "Active Tweaks",
+                value: activeTweaks > 0 ? `${activeTweaks}` : "None",
+                sub: `of ${totalTweaks} available`,
+                icon: Zap,
+                highlight: activeTweaks > 0,
+              },
+              {
+                label: "CPU Usage",
+                value: usage?.cpu?.usage != null ? `${usage.cpu.usage}%` : "—",
+                sub: usage?.cpu?.cores ? `${usage.cpu.cores} threads` : "Processor",
+                icon: Cpu,
+                highlight: false,
+              },
+              {
+                label: "RAM Used",
+                value: usage?.ram?.usedGb != null ? `${usage.ram.usedGb} GB` : "—",
+                sub: usage?.ram?.totalGb ? `of ${usage.ram.totalGb} GB total` : "Memory",
+                icon: MemoryStick,
+                highlight: false,
+              },
+              {
+                label: "CPU Temp",
+                value: temps?.cpu?.current != null ? `${temps.cpu.current}°C` : "—",
+                sub: temps?.cpu?.current != null
+                  ? (temps.cpu.current < 55 ? "Running cool" : temps.cpu.current < 75 ? "Under load" : "Running hot")
+                  : "Sensor N/A",
+                icon: Thermometer,
+                highlight: false,
+              },
+            ].map(({ label, value, sub, icon: Icon, highlight }) => (
+              <div
+                key={label}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-xl border transition-colors",
+                  highlight
+                    ? "bg-primary/8 border-primary/20"
+                    : "bg-secondary/20 border-border/30 hover:border-border/50"
+                )}
+              >
+                <div className={cn(
+                  "p-1.5 rounded-lg border shrink-0",
+                  highlight ? "bg-primary/15 border-primary/20" : "bg-secondary/40 border-border/30"
+                )}>
+                  <Icon className={cn("h-3.5 w-3.5", highlight ? "text-primary" : "text-muted-foreground/50")} />
+                </div>
+                <div className="min-w-0">
+                  <div className={cn("text-[14px] font-black font-mono tabular-nums leading-none", highlight ? "text-primary" : "text-foreground")}>
+                    {value}
+                  </div>
+                  <div className="text-[9.5px] text-muted-foreground/45 mt-0.5 leading-none truncate">{sub}</div>
+                  <div className="text-[9px] text-muted-foreground/30 mt-0.5 leading-none uppercase tracking-wide">{label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setIsRestoreOpen(true)}
-          data-testid="button-create-restore"
-          className="border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/30 text-xs h-8"
-        >
-          <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-primary" />
-          Restore Point
-        </Button>
       </motion.div>
 
-      {/* Active tweaks banner */}
+      {/* ── ACTIVE TWEAKS BANNER ─────────────────────────────────── */}
       {activeTweaks > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/6"
+          className="flex items-center justify-between px-4 py-3 rounded-xl border border-primary/20 bg-primary/5"
+          style={{ boxShadow: "0 0 24px hsl(var(--primary) / 0.06)" }}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-primary/15">
-              <Zap className="h-3.5 w-3.5 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 rounded-lg bg-primary/15 border border-primary/20">
+              <TrendingUp className="h-3.5 w-3.5 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-bold text-foreground">
-                <span className="text-primary">{activeTweaks}</span>
-                <span className="text-muted-foreground font-normal"> / {totalTweaks} tweaks active</span>
+              <p className="text-[12px] font-bold text-foreground">
+                <span className="text-primary font-black">{activeTweaks}</span>
+                <span className="text-muted-foreground font-normal"> performance tweaks currently active</span>
               </p>
-              <p className="text-[11px] text-muted-foreground">Optimizations applied to your system</p>
+              <p className="text-[10px] text-muted-foreground/50">Your system is running with applied optimizations</p>
             </div>
           </div>
           <Link href="/tweaks">
-            <Button
-              size="sm"
-              className="bg-primary/15 hover:bg-primary/25 text-primary border border-primary/25 text-xs h-7"
-            >
-              Manage <ArrowRight className="ml-1 h-3 w-3" />
+            <Button size="sm" className="bg-primary/15 hover:bg-primary/25 text-primary border border-primary/25 text-xs h-7 gap-1">
+              Manage <ArrowRight className="h-3 w-3" />
             </Button>
           </Link>
         </motion.div>
       )}
 
-      {/* System Health Score */}
-      <HealthScoreCard
-        activeTweaks={activeTweaks}
-        totalTweaks={totalTweaks}
-        usage={usage}
-      />
-
-      {/* System Info */}
+      {/* ── HARDWARE STATS ───────────────────────────────────────── */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.15em]">
-            Hardware
-          </p>
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/8 border border-amber-500/15">
-            <Info className="h-2.5 w-2.5 text-amber-400/70 shrink-0" />
-            <span className="text-[9.5px] text-amber-400/70 leading-none">
-              Showing host server stats · Run locally on Windows for your hardware
-            </span>
-          </div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-[1px] w-4 bg-primary/40 rounded-full" />
+          <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.18em]">Hardware</p>
+          <div className="flex-1 h-[1px] bg-border/30 rounded-full" />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
@@ -361,301 +410,162 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Live Usage + Temps */}
+      {/* ── LIVE MONITORING ─────────────────────────────────────── */}
       <TooltipProvider delayDuration={200}>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* Live Usage */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="p-4 rounded-xl border border-border bg-card card-premium"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-default select-none group">
-                  <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <Activity className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground/70 uppercase tracking-wider transition-colors">
-                    Live Usage
-                  </span>
-                  <Info className="h-3 w-3 text-muted-foreground/25 group-hover:text-muted-foreground/50 transition-colors" />
+          {/* Live Usage */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-xl border border-border/70 bg-card overflow-hidden"
+            style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}
+          >
+            <div className="px-4 pt-4 pb-3 border-b border-border/30 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/15">
+                  <Activity className="h-3.5 w-3.5 text-primary" />
                 </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="start" className="p-0 border-border/60 bg-card shadow-2xl w-64">
-                <div className="px-3 py-2.5 border-b border-border/40 flex items-center gap-2">
-                  <Activity className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">System Usage</span>
-                </div>
-                <div className="p-3 space-y-2.5">
-                  {/* CPU */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Cpu className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                        <span className="text-[11px] text-muted-foreground">Processor</span>
-                      </div>
-                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.cpu?.usage == null ? "text-muted-foreground/30" : usage.cpu.usage < 50 ? "text-green-400" : usage.cpu.usage < 80 ? "text-amber-400" : "text-primary")}>
-                        {usage?.cpu?.usage != null ? `${usage.cpu.usage}%` : "N/A"}
-                      </span>
-                    </div>
-                    {sys?.cpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{sys.cpu.model}</p>}
-                    {usage?.cpu?.cores != null && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">{usage.cpu.cores} logical processors · {usage?.cpu?.usage != null ? `${100 - usage.cpu.usage}% idle` : ""}</p>}
-                  </div>
-                  <TipDivider />
-                  {/* RAM */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <MemoryStick className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                        <span className="text-[11px] text-muted-foreground">Memory</span>
-                      </div>
-                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.ram?.usage == null ? "text-muted-foreground/30" : usage.ram.usage < 60 ? "text-green-400" : usage.ram.usage < 85 ? "text-amber-400" : "text-primary")}>
-                        {usage?.ram?.usage != null ? `${usage.ram.usage}%` : "N/A"}
-                      </span>
-                    </div>
-                    {usage?.ram && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">{usage.ram.usedGb} GB used · {Math.max(0, parseFloat((usage.ram.totalGb - usage.ram.usedGb).toFixed(1)))} GB free · {usage.ram.totalGb} GB total</p>}
-                  </div>
-                  <TipDivider />
-                  {/* GPU */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Monitor className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                        <span className="text-[11px] text-muted-foreground">Graphics</span>
-                      </div>
-                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.gpu?.usage == null ? "text-muted-foreground/30" : usage.gpu.usage < 50 ? "text-green-400" : usage.gpu.usage < 85 ? "text-amber-400" : "text-primary")}>
-                        {usage?.gpu?.usage != null ? `${usage.gpu.usage}%` : "N/A"}
-                      </span>
-                    </div>
-                    {usage?.gpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{usage.gpu.model}</p>}
-                    {sys?.gpu?.vram && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">{sys.gpu.vram} VRAM</p>}
-                  </div>
-                  <TipDivider />
-                  {/* Disk */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <HardDrive className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                        <span className="text-[11px] text-muted-foreground">Primary Drive</span>
-                      </div>
-                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", usage?.disk?.usage == null ? "text-muted-foreground/30" : usage.disk.usage < 70 ? "text-green-400" : usage.disk.usage < 90 ? "text-amber-400" : "text-primary")}>
-                        {usage?.disk?.usage != null ? `${usage.disk.usage}%` : "N/A"}
-                      </span>
-                    </div>
-                    <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-none">
-                      R: {usage?.disk?.readMb ?? 0} MB/s · W: {usage?.disk?.writeMb ?? 0} MB/s
-                    </p>
-                  </div>
-                </div>
-                <div className="px-3 py-2 border-t border-border/40 flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse shrink-0" />
-                  <span className="text-[9.5px] text-muted-foreground/40">Refreshes every 5 seconds</span>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="space-y-3.5">
-            <LiveBar label="CPU" value={usage?.cpu?.usage ?? null} sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} threads` : undefined} />
-            <LiveBar label="RAM" value={usage?.ram?.usage ?? null} sublabel={usage?.ram ? `${usage.ram.usedGb} / ${usage.ram.totalGb} GB` : undefined} />
-            <LiveBar label="GPU" value={usage?.gpu?.usage ?? null} sublabel={usage?.gpu?.model ?? undefined} />
-            <LiveBar label="Disk" value={usage?.disk?.usage ?? null} />
-          </div>
-        </motion.div>
+                <span className="text-[11px] font-black text-muted-foreground/60 uppercase tracking-[0.15em]">
+                  Live Usage
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
+                <span className="text-[9px] text-muted-foreground/30 font-mono">LIVE</span>
+              </div>
+            </div>
+            <div className="p-4 space-y-3.5">
+              <UsageBar
+                label="CPU"
+                value={usage?.cpu?.usage ?? null}
+                sublabel={usage?.cpu?.cores ? `${usage.cpu.cores} logical processors` : undefined}
+                icon={Cpu}
+              />
+              <UsageBar
+                label="RAM"
+                value={usage?.ram?.usage ?? null}
+                sublabel={usage?.ram ? `${usage.ram.usedGb} GB / ${usage.ram.totalGb} GB` : undefined}
+                icon={MemoryStick}
+              />
+              <UsageBar
+                label="GPU"
+                value={usage?.gpu?.usage ?? null}
+                sublabel={usage?.gpu?.model ?? undefined}
+                icon={Monitor}
+              />
+              <UsageBar
+                label="Disk"
+                value={usage?.disk?.usage ?? null}
+                sublabel={usage?.disk ? `R: ${usage.disk.readMb ?? 0} MB/s · W: ${usage.disk.writeMb ?? 0} MB/s` : undefined}
+                icon={HardDrive}
+              />
+            </div>
+          </motion.div>
 
-        {/* Temperatures */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.24 }}
-          className="p-4 rounded-xl border border-border bg-card card-premium"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-default select-none group">
-                  <div className="p-1.5 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <Thermometer className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground/70 uppercase tracking-wider transition-colors">
-                    Temperatures
-                  </span>
-                  <Info className="h-3 w-3 text-muted-foreground/25 group-hover:text-muted-foreground/50 transition-colors" />
+          {/* Temperatures */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.24 }}
+            className="rounded-xl border border-border/70 bg-card overflow-hidden"
+            style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}
+          >
+            <div className="px-4 pt-4 pb-3 border-b border-border/30 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/15">
+                  <Thermometer className="h-3.5 w-3.5 text-primary" />
                 </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="start" className="p-0 border-border/60 bg-card shadow-2xl w-64">
-                <div className="px-3 py-2.5 border-b border-border/40 flex items-center gap-2">
-                  <Thermometer className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">Thermal Readings</span>
+                <span className="text-[11px] font-black text-muted-foreground/60 uppercase tracking-[0.15em]">
+                  Temperatures
+                </span>
+              </div>
+              <span className="text-[9.5px] text-muted-foreground/30 font-mono">
+                Via LibreHardwareMonitor
+              </span>
+            </div>
+            <div className="p-4 space-y-3">
+              <TempGauge label="CPU — Processor" temp={temps?.cpu?.current ?? null} icon={Cpu} />
+              <TempGauge label="GPU — Graphics" temp={temps?.gpu?.current ?? null} icon={Monitor} />
+              {temps?.gpu?.hotspot != null && (
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/20 border border-border/25">
+                  <span className="text-[10px] text-muted-foreground/50">GPU Hot Spot Junction</span>
+                  <span className={cn(
+                    "text-[12px] font-black font-mono tabular-nums",
+                    temps.gpu.hotspot < 85 ? "text-amber-400" : "text-primary"
+                  )}>{temps.gpu.hotspot}°C</span>
                 </div>
-                <div className="p-3 space-y-2.5">
-                  {/* CPU temp */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Cpu className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                        <span className="text-[11px] text-muted-foreground">CPU Temperature</span>
-                      </div>
-                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", temps?.cpu?.current == null ? "text-muted-foreground/30" : temps.cpu.current < 55 ? "text-green-400" : temps.cpu.current < 75 ? "text-amber-400" : "text-primary")}>
-                        {temps?.cpu?.current != null ? `${temps.cpu.current}°C` : "N/A"}
-                      </span>
-                    </div>
-                    {sys?.cpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{sys.cpu.model}</p>}
-                    <p className="text-[9.5px] text-muted-foreground/35 pl-4.5 leading-none">
-                      {temps?.cpu?.current == null ? "Sensor not detected" : temps.cpu.current < 55 ? "Cool — normal idle" : temps.cpu.current < 75 ? "Warm — under load" : "Hot — check cooling"}
-                    </p>
-                  </div>
-                  <TipDivider />
-                  {/* GPU temp */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Monitor className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                        <span className="text-[11px] text-muted-foreground">GPU Core</span>
-                      </div>
-                      <span className={cn("text-[11px] font-bold font-mono tabular-nums", temps?.gpu?.current == null ? "text-muted-foreground/30" : temps.gpu.current < 55 ? "text-green-400" : temps.gpu.current < 80 ? "text-amber-400" : "text-primary")}>
-                        {temps?.gpu?.current != null ? `${temps.gpu.current}°C` : "N/A"}
-                      </span>
-                    </div>
-                    {temps?.gpu?.hotspot != null && (
-                      <div className="flex items-center justify-between pl-4.5">
-                        <span className="text-[9.5px] text-muted-foreground/50">Hot spot junction</span>
-                        <span className={cn("text-[9.5px] font-bold font-mono tabular-nums", temps.gpu.hotspot < 85 ? "text-amber-400/70" : "text-primary/70")}>{temps.gpu.hotspot}°C</span>
-                      </div>
-                    )}
-                    {sys?.gpu?.model && <p className="text-[9.5px] text-muted-foreground/40 pl-4.5 leading-tight truncate">{sys.gpu.model}</p>}
-                  </div>
-                </div>
-                <div className="px-3 py-2 border-t border-border/40">
-                  <p className="text-[9.5px] text-muted-foreground/40">Via LibreHardwareMonitor · Admin required</p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="space-y-4">
-            {[
-              { label: "CPU", sublabel: "Processor", temp: temps?.cpu?.current ?? null, icon: Cpu, maxTemp: 110 },
-              { label: "GPU", sublabel: "Graphics", temp: temps?.gpu?.current ?? null, icon: Monitor, maxTemp: 110 },
-            ].map(({ label, sublabel, temp, icon: Icon, maxTemp }) => {
-              const pct = temp ? Math.min((temp / maxTemp) * 100, 100) : 0;
-              const valueColor = temp == null
-                ? "text-muted-foreground/30"
-                : temp < 55
-                  ? "text-green-400"
-                  : temp < 75
-                    ? "text-amber-400"
-                    : "text-primary";
-              return (
-                <div key={label} className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
-                      <Icon className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between mb-1.5">
-                        <div>
-                          <span className="text-[12px] font-bold text-foreground/80 uppercase tracking-wide">{label}</span>
-                          <span className="text-[10px] text-muted-foreground/40 ml-1.5">{sublabel}</span>
-                        </div>
-                        <span className={cn("text-[18px] font-black font-mono tabular-nums leading-none", valueColor)}>
-                          {temp != null ? `${temp}°C` : "N/A"}
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-secondary/60 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700 progress-gradient-fill"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <p className="text-[9.5px] text-muted-foreground/35 mt-1 leading-none">
-                        {temp == null ? "Sensor not detected" : temp < 55 ? "Cool — normal idle" : temp < 75 ? "Warm — under load" : "Hot — check cooling"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 pt-3 border-t border-border/40">
-            {(temps?.cpu?.current || temps?.gpu?.current) ? (
-              <p className="text-[10px] text-green-400/60 text-center">Hardware sensors active</p>
-            ) : (
-              <p className="text-[10px] text-muted-foreground/30 text-center leading-relaxed">
-                Sensor data via LibreHardwareMonitor · Run on Windows as Admin
-              </p>
-            )}
-          </div>
-        </motion.div>
-      </div>
+              )}
+              <div className="pt-1">
+                {(temps?.cpu?.current || temps?.gpu?.current) ? (
+                  <p className="text-[10px] text-green-400/50 text-center font-mono">● Hardware sensors active</p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground/25 text-center leading-relaxed">
+                    Run on Windows as Administrator to enable sensor data
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </TooltipProvider>
 
-      {/* Quick Access */}
+      {/* ── QUICK ACCESS ────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.28 }}
-        className="p-4 rounded-xl border border-border bg-card card-premium"
+        className="rounded-xl border border-border/70 bg-card overflow-hidden"
+        style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg bg-primary/10">
+        <div className="px-4 pt-4 pb-3 border-b border-border/30 flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/15">
             <Zap className="h-3.5 w-3.5 text-primary" />
           </div>
-          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+          <span className="text-[11px] font-black text-muted-foreground/60 uppercase tracking-[0.15em]">
             Quick Access
           </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-          {[
-            { href: "/cleaner",   icon: Sparkles,    label: "Cleaner",      desc: "Remove junk" },
-            { href: "/tweaks",    icon: Wrench,      label: "Tweaks",       desc: "Optimize Windows" },
-            { href: "/utilities", icon: Activity,    label: "Utilities",    desc: "System tools" },
-            { href: "/dns",       icon: Globe,         label: "DNS",          desc: "DNS settings" },
-            { href: "/restore",   icon: ShieldCheck,  label: "Restore",      desc: "System protection" },
-            { href: "/settings",  icon: SettingsIcon, label: "Settings",     desc: "App preferences" },
-          ].map(({ href, icon: Icon, label, desc }) => (
+        <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+          {QUICK_LINKS.map(({ href, icon: Icon, label, desc, iconColor, glowColor, borderHover }) => (
             <Link key={href} href={href}>
-              <div
-                data-testid={`card-quick-${label.toLowerCase()}`}
-                className="flex flex-col items-center p-3 rounded-xl border border-border/50 bg-secondary/20 hover:border-primary/30 hover:bg-primary/5 transition-all duration-150 cursor-pointer group text-center"
-              >
-                <div className="p-2 rounded-lg bg-secondary/50 group-hover:bg-primary/10 transition-colors mb-2">
-                  <Icon className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
-                </div>
-                <span className="text-[11px] font-semibold text-foreground/70 group-hover:text-foreground leading-none">
-                  {label}
-                </span>
-                <span className="text-[9px] text-muted-foreground/40 mt-0.5">{desc}</span>
-              </div>
+              <QuickCard
+                href={href}
+                Icon={Icon}
+                label={label}
+                desc={desc}
+                iconColor={iconColor}
+                glowColor={glowColor}
+                borderHover={borderHover}
+              />
             </Link>
           ))}
         </div>
       </motion.div>
 
-      {/* OS Info */}
+      {/* ── OS INFO BAR ─────────────────────────────────────────── */}
       {(sys?.system?.os || sysLoading) && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.35 }}
-          className="flex items-center gap-3 px-4 py-2 rounded-lg border border-border/30 bg-secondary/10"
+          className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/25 bg-secondary/8"
         >
-          <div className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0 animate-pulse" />
           {sysLoading ? (
-            <span className="text-[11px] text-muted-foreground/40">Loading system info...</span>
+            <span className="text-[10px] text-muted-foreground/30">Loading system information...</span>
           ) : (
-            <span className="text-[11px] text-muted-foreground/50">
-              <span className="text-muted-foreground/70 font-medium">{sys?.system?.os || "Unknown OS"}</span>
-              {sys?.system?.version && <span className="ml-2">v{sys.system.version}</span>}
-              {sys?.cpu?.model && <span className="ml-2 text-muted-foreground/30">· {sys.cpu.model}</span>}
+            <span className="text-[10px] text-muted-foreground/40 font-mono">
+              <span className="text-muted-foreground/60 font-bold">{sys?.system?.os || "Unknown OS"}</span>
+              {sys?.system?.version && <span className="ml-2 text-muted-foreground/30">Build {sys.system.version}</span>}
+              {sys?.cpu?.model && <span className="ml-3 text-muted-foreground/20">· {sys.cpu.model}</span>}
             </span>
           )}
         </motion.div>
       )}
 
-      {/* Restore Dialog */}
+      {/* ── RESTORE POINT DIALOG ────────────────────────────────── */}
       <AlertDialog open={isRestoreOpen} onOpenChange={setIsRestoreOpen}>
         <AlertDialogContent className="bg-card border-border max-w-md">
           <AlertDialogHeader>
