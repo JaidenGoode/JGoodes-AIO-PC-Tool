@@ -1199,7 +1199,7 @@ export default function Utilities() {
             size="sm"
             data-testid="button-utility-sfc"
             disabled={termRunning}
-            onClick={() => launchInTerminal("SFC Scan", `$ErrorActionPreference = 'SilentlyContinue'\nsfc /scannow\nWrite-Output ""`)}
+            onClick={() => launchInTerminal("SFC Scan", `chcp 65001 | Out-Null\n[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n$OutputEncoding = [System.Text.Encoding]::UTF8\n$ErrorActionPreference = 'SilentlyContinue'\nsfc /scannow\nWrite-Output ""`)}
             className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150"
           >
             {termRunning && termTitle === "SFC Scan" ? <Loader2 className="h-3 w-3 animate-spin shrink-0" /> : <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />}
