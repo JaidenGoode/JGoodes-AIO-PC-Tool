@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Wrench, Zap, SlidersHorizontal,
@@ -517,27 +517,38 @@ export default function Tweaks() {
 
   const IMPACT_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
 
-  const filteredTweaks = tweaks
-    ?.filter((tweak) => {
-      const matchesSearch =
-        tweak.title.toLowerCase().includes(search.toLowerCase()) ||
-        tweak.description.toLowerCase().includes(search.toLowerCase());
-      const matchesFilter = filter === "all" || tweak.category.toLowerCase() === filter;
-      return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      const impA = getImpact(a.title);
-      const impB = getImpact(b.title);
-      const orderA = impA != null ? IMPACT_ORDER[impA] : 3;
-      const orderB = impB != null ? IMPACT_ORDER[impB] : 3;
-      return orderA - orderB;
-    });
+  const filteredTweaks = useMemo(() => {
+    if (!tweaks) return undefined;
+    const searchLower = search.toLowerCase();
+    return tweaks
+      .filter((tweak) => {
+        const matchesSearch =
+          tweak.title.toLowerCase().includes(searchLower) ||
+          tweak.description.toLowerCase().includes(searchLower);
+        const matchesFilter = filter === "all" || tweak.category.toLowerCase() === filter;
+        return matchesSearch && matchesFilter;
+      })
+      .sort((a, b) => {
+        const impA = getImpact(a.title);
+        const impB = getImpact(b.title);
+        const orderA = impA != null ? IMPACT_ORDER[impA] : 3;
+        const orderB = impB != null ? IMPACT_ORDER[impB] : 3;
+        return orderA - orderB;
+      });
+  }, [tweaks, search, filter]);
 
-  const optimizedCount = tweaks?.filter((t) => t.isActive).length || 0;
-  const totalCount = tweaks?.length || 0;
+  const { optimizedCount, totalCount, optimizedPercent } = useMemo(() => {
+    const optimizedCount = tweaks?.filter((t) => t.isActive).length || 0;
+    const totalCount = tweaks?.length || 0;
+    return {
+      optimizedCount,
+      totalCount,
+      optimizedPercent: totalCount > 0 ? Math.round((optimizedCount / totalCount) * 100) : 0,
+    };
+  }, [tweaks]);
+
   const selectedCount = selectedIds.size;
   const isBulkPending = bulkMutation.isPending;
-  const optimizedPercent = totalCount > 0 ? Math.round((optimizedCount / totalCount) * 100) : 0;
 
   return (
     <div className="space-y-5 pb-8">

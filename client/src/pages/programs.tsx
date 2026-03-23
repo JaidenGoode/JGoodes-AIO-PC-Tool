@@ -383,7 +383,11 @@ function WinAppsTab() {
 
   function isAppInstalled(pkg: string): boolean | null {
     if (!scanData) return null;
-    return Array.from(installedAppSet).some(n => n.toLowerCase().includes(pkg.toLowerCase()) || pkg.toLowerCase().includes(n));
+    const pkgLower = pkg.toLowerCase();
+    for (const n of installedAppSet) {
+      if (n.includes(pkgLower) || pkgLower.includes(n)) return true;
+    }
+    return false;
   }
   function isCapInstalled(cap: string): boolean | null {
     if (!scanData) return null;
@@ -396,15 +400,15 @@ function WinAppsTab() {
   }
 
   const q = search.toLowerCase();
-  const filteredApps = WINDOWS_APPS.filter(a => !q || a.name.toLowerCase().includes(q));
-  const filteredCaps = WIN_CAPABILITIES.filter(c => !q || c.name.toLowerCase().includes(q));
-  const filteredFeats = WIN_FEATURES.filter(f => !q || f.name.toLowerCase().includes(q));
+  const filteredApps = useMemo(() => WINDOWS_APPS.filter(a => !q || a.name.toLowerCase().includes(q)), [q]);
+  const filteredCaps = useMemo(() => WIN_CAPABILITIES.filter(c => !q || c.name.toLowerCase().includes(q)), [q]);
+  const filteredFeats = useMemo(() => WIN_FEATURES.filter(f => !q || f.name.toLowerCase().includes(q)), [q]);
 
-  const allKeys = [
+  const allKeys = useMemo(() => [
     ...WINDOWS_APPS.map(a => `app:${a.pkg}`),
     ...WIN_CAPABILITIES.map(c => `cap:${c.cap}`),
     ...WIN_FEATURES.map(f => `feat:${f.feature}`),
-  ];
+  ], []);
 
   function toggle(key: string) {
     setSelected(prev => {

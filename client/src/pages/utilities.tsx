@@ -44,7 +44,7 @@ function UtilCard({
   children: React.ReactNode; delay?: number;
 }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="h-full">
+    <div className="h-full">
       <div
         className="h-full flex flex-col rounded-xl border border-border/70 bg-card hover:border-primary/35 transition-all duration-200 overflow-hidden group relative"
         style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}
@@ -72,7 +72,7 @@ function UtilCard({
         </div>
         <div className="flex-1 flex flex-col space-y-1.5 p-3.5">{children}</div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

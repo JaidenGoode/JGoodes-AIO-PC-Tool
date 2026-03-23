@@ -36,7 +36,7 @@ function AnimatedRoutes() {
         initial="initial"
         animate="animate"
         exit="exit"
-        style={{ width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}
+        style={{ width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", willChange: "opacity" }}
       >
         <Switch location={location}>
           <Route path="/" component={Dashboard}/>

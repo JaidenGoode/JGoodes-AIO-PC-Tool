@@ -81,7 +81,7 @@ export function Layout({ children }: LayoutProps) {
     if (diff < 60) return `${diff}s ago`;
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     return lastDetectedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }, [lastDetectedAt, tweaks]);
+  }, [lastDetectedAt]);
 
   return (
     <SidebarProvider style={style}>
