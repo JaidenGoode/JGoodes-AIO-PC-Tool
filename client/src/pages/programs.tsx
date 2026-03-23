@@ -296,7 +296,7 @@ function StatusDot({ installed }: { installed: boolean | null }) {
 function ItemCB({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <button
-      onClick={onChange}
+      onClick={(e) => { e.stopPropagation(); onChange(); }}
       disabled={disabled}
       className="w-[15px] h-[15px] rounded-sm shrink-0 flex items-center justify-center transition-all duration-150"
       style={{
