@@ -20,7 +20,7 @@ import type { Tweak } from "@shared/schema";
 
 export type ScanCategory = {
   id: string;
-  group: "system" | "apps" | "games" | "browser" | "privacy" | "recycle";
+  group: "system" | "apps" | "games" | "browser" | "privacy" | "recycle" | "downloads" | "backup";
   name: string;
   description: string;
   size: number;

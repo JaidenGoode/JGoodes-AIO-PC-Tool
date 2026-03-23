@@ -197,7 +197,7 @@ async function deleteContents(dirPath: string): Promise<number> {
 
 interface CleanCategory {
   id: string;
-  group: "system" | "apps" | "games" | "browser" | "privacy" | "recycle";
+  group: "system" | "apps" | "games" | "browser" | "privacy" | "recycle" | "downloads" | "backup";
   name: string;
   description: string;
   paths: string[];
@@ -630,6 +630,77 @@ function getCleanCategories(): CleanCategory[] {
       name: "Recycle Bin",
       description: "Files sitting in the Windows Recycle Bin across all drives — any size",
       paths: [],
+    },
+
+    // ── DOWNLOADED FILES ───────────────────────────────────────────────────────
+    {
+      id: "dl_installers",
+      group: "downloads",
+      name: "Old Installers",
+      description: "Installer & archive files in your Downloads folder (.exe, .msi, .iso, .zip, .rar, .7z)",
+      autoSelect: false,
+      warnNote: "Review before cleaning — these are files in your personal Downloads folder. Only installer and archive formats are counted.",
+      paths: [],
+      psScan: `$dl=[System.Environment]::GetFolderPath('MyDocuments');$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.exe','.msi','.iso','.zip','.rar','.7z','.tar','.gz','.cab','.pkg');$t=0L;$c=0;foreach($base in @($dl2)){if(Test-Path $base){Get-ChildItem $base -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{$t+=$_.Length;$c++}}};Write-Output "$t $c"`,
+      psClean: `$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.exe','.msi','.iso','.zip','.rar','.7z','.tar','.gz','.cab','.pkg');$t=0L;foreach($base in @($dl2)){if(Test-Path $base){Get-ChildItem $base -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{try{$s=$_.Length;Remove-Item $_.FullName -Force -EA Stop;$t+=$s}catch{}}}};Write-Output $t`,
+    },
+    {
+      id: "dl_partial",
+      group: "downloads",
+      name: "Partial Downloads",
+      description: "Incomplete or temporary download files (.crdownload, .part, .tmp download files)",
+      autoSelect: false,
+      warnNote: "These are unfinished downloads. If a download was interrupted, check before deleting.",
+      paths: [],
+      psScan: `$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.crdownload','.part','.partial','.download','.!ut','.!qb');$t=0L;$c=0;if(Test-Path $dl2){Get-ChildItem $dl2 -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{$t+=$_.Length;$c++}};Write-Output "$t $c"`,
+      psClean: `$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.crdownload','.part','.partial','.download','.!ut','.!qb');$t=0L;if(Test-Path $dl2){Get-ChildItem $dl2 -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{try{$s=$_.Length;Remove-Item $_.FullName -Force -EA Stop;$t+=$s}catch{}}};Write-Output $t`,
+    },
+    {
+      id: "dl_winodd",
+      group: "downloads",
+      name: "Windows Download Temp",
+      description: "Windows Store and Microsoft download temp files",
+      paths: [
+        path.join(local, "Microsoft", "Windows", "INetCache", "IE"),
+        path.join(roaming, "Microsoft", "Windows", "IECompatCache"),
+      ],
+    },
+
+    // ── BACKUP FILES ───────────────────────────────────────────────────────────
+    {
+      id: "winold",
+      group: "backup",
+      name: "Windows.old Folder",
+      description: "Previous Windows installation kept after an upgrade — safe to remove after confirming Windows is stable",
+      autoSelect: false,
+      warnNote: "Deleting Windows.old removes your ability to roll back to the previous Windows version. Only clean if your PC is running well on the new version.",
+      paths: [],
+      psScan: `$p='C:\\Windows.old';$t=0L;$c=0;if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Write-Output "$t $c"`,
+      psClean: `$p='C:\\Windows.old';$t=0L;if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};takeown /F $p /R /D Y 2>$null|Out-Null;icacls $p /grant Administrators:F /T /C /Q 2>$null|Out-Null;Remove-Item $p -Recurse -Force -EA SilentlyContinue};Write-Output $t`,
+    },
+    {
+      id: "backup_wbadmin",
+      group: "backup",
+      name: "Windows Backup Files",
+      description: "Windows Backup catalog files and WindowsImageBackup folder",
+      autoSelect: false,
+      warnNote: "Only clean if you have your own backup strategy and no longer need these Windows Backup files.",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @('C:\\WindowsImageBackup',"$env:SYSTEMDRIVE\\WindowsImageBackup")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @('C:\\WindowsImageBackup',"$env:SYSTEMDRIVE\\WindowsImageBackup")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Remove-Item $p -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+    },
+    {
+      id: "backup_wiebkup",
+      group: "backup",
+      name: "Old Restore Files",
+      description: "Windows error recovery info, old BCD backup files, and leftover setup rollback data",
+      paths: [
+        "C:\\$WINDOWS.~BT",
+        "C:\\$WinREAgent",
+        path.join(local, "Microsoft", "Windows", "WinX"),
+      ],
+      psScan: `$t=0L;$c=0;foreach($p in @('C:\\$WINDOWS.~BT','C:\\$WinREAgent','C:\\$WINDOWS.~WS')){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @('C:\\$WINDOWS.~BT','C:\\$WinREAgent','C:\\$WINDOWS.~WS')){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};takeown /F $p /R /D Y 2>$null|Out-Null;Remove-Item $p -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
   ];
 }
