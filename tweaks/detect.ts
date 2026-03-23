@@ -83,7 +83,7 @@ $d['Reduce Keyboard Input Delay']=creg 'HKCU:\Control Panel\Keyboard' 'KeyboardD
 $d['Unlock Reserved Network Bandwidth']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched' 'NonBestEffortLimit' 0
 
 # Network
-$d['Disable Delivery Optimization Service']=csvc 'DoSvc'
+$d['Disable Delivery Optimization Service']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization' 'DODownloadMode' 1
 try{$doh=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'EnableAutoDoh' -EA Stop).EnableAutoDoh;$d['Network Optimization']=if($doh -eq 2){1}else{0}}catch{$d['Network Optimization']=0}
 
 # Gaming (USB / Timing)

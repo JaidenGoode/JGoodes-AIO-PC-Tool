@@ -392,14 +392,11 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortL
 
   "Disable Delivery Optimization Service": {
     requiresAdmin: true,
-    enable: `sc.exe stop DoSvc 2>&1 | Out-Null
-sc.exe config DoSvc start= disabled 2>&1 | Out-Null
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DoSvc" /v Start /t REG_DWORD /d 4 /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 0 /f`,
-    disable: `sc.exe config DoSvc start= demand 2>&1 | Out-Null
+    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 1 /f`,
+    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 3 /f
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DoSvc" /v Start /t REG_DWORD /d 3 /f
-sc.exe start DoSvc 2>&1 | Out-Null
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 3 /f`,
+sc.exe config DoSvc start= demand 2>&1 | Out-Null
+sc.exe start DoSvc 2>&1 | Out-Null`,
   },
 
   "Disable Auto-Restart After Windows Updates": {

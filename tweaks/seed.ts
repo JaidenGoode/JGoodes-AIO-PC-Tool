@@ -364,11 +364,11 @@ export const TWEAKS_SEED: TweakSeed[] = [
   // ── NETWORK ───────────────────────────────────────────────────────────────
   {
     title: "Disable Delivery Optimization Service",
-    description: "Disables the Windows Update Delivery Optimization service which silently uses your upload bandwidth to distribute Windows updates to other people's PCs over the internet, acting as a P2P node. Microsoft enables this by default without prominently informing users. Disabling stops all P2P upload activity.",
+    description: "Stops your PC from uploading Windows update files to strangers on the internet. Microsoft's Delivery Optimization silently uses your upload bandwidth as a P2P node by default. This sets it to LAN-only mode — your own downloads from Windows Update and the Microsoft Store are completely unaffected.",
     category: "network",
     isActive: false,
     warning: null,
-    featureBreaks: "Your PC will no longer upload Windows update files to other PCs on the internet. Your own Windows updates download directly from Microsoft and are completely unaffected."
+    featureBreaks: "Your PC will no longer upload Windows update files to random PCs on the internet. Windows Update downloads and Microsoft Store downloads are fully unaffected — only internet P2P uploading is disabled."
   },
   {
     title: "Network Optimization",
