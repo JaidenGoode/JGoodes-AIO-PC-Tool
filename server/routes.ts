@@ -12,6 +12,23 @@ import os from "os";
 import { exec, spawn } from "child_process";
 
 // ── PowerShell / cmd helpers ──────────────────────────────────────────────────
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let idx = 0;
+  async function worker() {
+    while (idx < items.length) {
+      const i = idx++;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 function runPowerShell(script: string, timeoutMs = 20000): Promise<string> {
   return new Promise((resolve) => {
     const tmpFile = path.join(os.tmpdir(), `jgoode-ps-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ps1`);
@@ -273,8 +290,8 @@ function getCleanCategories(): CleanCategory[] {
       name: "Delivery Optimization",
       description: "Windows P2P update delivery cache used to share updates between devices on your network",
       paths: [],
-      psScan: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;$c=0;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Write-Output "$t $c"`,
-      psClean: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;Stop-Service DoSvc -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 500;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service DoSvc -EA SilentlyContinue;Write-Output $t`,
+      psScan: `$t=0L;$c=0;$roots=@('C:\\Windows\\SoftwareDistribution\\DeliveryOptimization','C:\\Windows\\ServiceProfiles\\NetworkService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization','C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization');foreach($root in $roots){try{if(Test-Path -LiteralPath $root -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}}catch{}};Write-Output "$t $c"`,
+      psClean: `$t=0L;Stop-Service DoSvc -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 800;$roots=@('C:\\Windows\\SoftwareDistribution\\DeliveryOptimization','C:\\Windows\\ServiceProfiles\\NetworkService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization','C:\\Windows\\ServiceProfiles\\LocalService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization');foreach($root in $roots){try{if(Test-Path -LiteralPath $root -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}}catch{}};Start-Service DoSvc -EA SilentlyContinue;Write-Output $t`,
     },
     {
       id: "errorreports",
@@ -525,12 +542,16 @@ function getCleanCategories(): CleanCategory[] {
     {
       id: "geforce",
       group: "apps",
-      name: "NVIDIA GeForce Experience",
-      description: "GeForce Experience CEF browser cache and NvContainer log files",
-      installCheck: [path.join(local, "NVIDIA", "NvBackend"), path.join(local, "NVIDIA Corporation")],
+      name: "NVIDIA App",
+      description: "NVIDIA App and GeForce Experience CEF cache, NvContainer logs, and downloaded driver files",
+      installCheck: [
+        path.join(local, "NVIDIA", "NvApp"),
+        path.join(local, "NVIDIA", "NvBackend"),
+        path.join(local, "NVIDIA Corporation"),
+      ],
       paths: [],
-      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log","$env:LOCALAPPDATA\\NVIDIA Corporation\\Drs")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
-      psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvApp","$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log","$env:LOCALAPPDATA\\NVIDIA Corporation\\Drs","$env:PROGRAMDATA\\NVIDIA Corporation\\Downloader","$env:LOCALAPPDATA\\NVIDIA\\NvApp\\WebCache")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvApp\\WebCache","$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log","$env:PROGRAMDATA\\NVIDIA Corporation\\Downloader")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
     {
       id: "adobecc",
@@ -548,15 +569,15 @@ function getCleanCategories(): CleanCategory[] {
       id: "steam",
       group: "games",
       name: "Steam",
-      description: "Steam store page HTML cache and GPU shader cache",
-      installCheck: [path.join(local, "Steam")],
-      paths: [
-        path.join(local, "Steam", "htmlcache", "Cache", "Cache_Data"),
-        path.join(local, "Steam", "htmlcache", "Code Cache"),
-        path.join(local, "Steam", "htmlcache", "GPUCache"),
-        path.join(local, "Steam", "logs"),
-        path.join(local, "Steam", "dumps"),
+      description: "Steam HTML cache, GPU shader cache, launcher logs, and crash dumps (all install locations)",
+      installCheck: [
+        path.join(local, "Steam"),
+        "C:\\Program Files (x86)\\Steam",
+        "C:\\Program Files\\Steam",
       ],
+      paths: [],
+      psScan: `$t=0L;$c=0;$sp=(Get-ItemProperty 'HKCU:\\Software\\Valve\\Steam' -EA SilentlyContinue).SteamPath;$la="$env:LOCALAPPDATA\\Steam";$paths=@("$la\\htmlcache\\Cache","$la\\htmlcache\\Cache_Data","$la\\htmlcache\\Code Cache","$la\\htmlcache\\GPUCache","$la\\dumps","$la\\logs");if($sp -and (Test-Path -LiteralPath $sp -EA SilentlyContinue)){$paths+="$sp\\logs";$paths+="$sp\\dumps";$paths+="$sp\\htmlcache\\Cache";$paths+="$sp\\htmlcache\\Code Cache";$paths+="$sp\\htmlcache\\GPUCache"};foreach($p in $paths){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;$sp=(Get-ItemProperty 'HKCU:\\Software\\Valve\\Steam' -EA SilentlyContinue).SteamPath;$la="$env:LOCALAPPDATA\\Steam";$paths=@("$la\\htmlcache\\Cache","$la\\htmlcache\\Cache_Data","$la\\htmlcache\\Code Cache","$la\\htmlcache\\GPUCache","$la\\dumps","$la\\logs");if($sp -and (Test-Path -LiteralPath $sp -EA SilentlyContinue)){$paths+="$sp\\logs";$paths+="$sp\\dumps";$paths+="$sp\\htmlcache\\Cache";$paths+="$sp\\htmlcache\\Code Cache";$paths+="$sp\\htmlcache\\GPUCache"};foreach($p in $paths){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
     {
       id: "epic",
@@ -1436,8 +1457,10 @@ $d | ConvertTo-Json -Depth 3 -Compress`;
   // ── Cleaner: Scan ──────────────────────────────────────────────────────────
   app.get("/api/cleaner/scan", async (_req, res) => {
     try {
-      const results = await Promise.all(
-        CLEAN_CATEGORIES.map(async (cat) => {
+      const results = await mapWithConcurrency(
+        CLEAN_CATEGORIES,
+        5,
+        async (cat) => {
           let totalSize = 0;
           let totalCount = 0;
 
@@ -1532,7 +1555,7 @@ try {
             autoSelect: cat.autoSelect !== false,
             warnNote: cat.warnNote ?? null,
           };
-        })
+        }
       );
 
       const totalSize = results.reduce((s, r) => s + r.size, 0);
