@@ -2515,6 +2515,108 @@ Write-Output 'OK'
     }
   });
 
+  // ── Software & Apps: Windows scan ─────────────────────────────────
+  app.get("/api/software/win-scan", async (_req, res) => {
+    if (process.platform !== "win32") {
+      return res.json({ installedApps: [], capabilities: {}, features: {} });
+    }
+    const script = `
+$ErrorActionPreference = 'SilentlyContinue'
+$appx = (Get-AppxPackage -AllUsers 2>$null) | Select-Object -ExpandProperty Name
+$caps = @{}
+try {
+  Get-WindowsCapability -Online 2>$null | ForEach-Object {
+    $caps[$_.Name] = ($_.State -eq 'Installed')
+  }
+} catch {}
+$feats = @{}
+try {
+  Get-WindowsOptionalFeature -Online 2>$null | ForEach-Object {
+    $feats[$_.FeatureName.ToLower()] = ($_.State -eq 'Enabled')
+  }
+} catch {}
+@{ installedApps = @($appx); capabilities = $caps; features = $feats } | ConvertTo-Json -Depth 4 -Compress
+`.trim();
+    try {
+      const out = await runPowerShell(script, 45000);
+      const parsed = JSON.parse(out);
+      res.json({
+        installedApps: Array.isArray(parsed.installedApps) ? parsed.installedApps : [],
+        capabilities: parsed.capabilities || {},
+        features: parsed.features || {},
+      });
+    } catch {
+      res.json({ installedApps: [], capabilities: {}, features: {} });
+    }
+  });
+
+  // ── Software & Apps: External scan (winget list) ───────────────────
+  app.get("/api/software/ext-scan", async (_req, res) => {
+    if (process.platform !== "win32") return res.json({ wingetOutput: "" });
+    try {
+      const out = await runCmd("winget list --accept-source-agreements 2>&1", 25000);
+      res.json({ wingetOutput: out });
+    } catch {
+      res.json({ wingetOutput: "" });
+    }
+  });
+
+  // ── Software & Apps: Windows action (AppX / Capability / Feature) ──
+  app.post("/api/software/win-action", async (req, res) => {
+    if (process.platform !== "win32") return res.status(400).json({ error: "Windows only" });
+    const { type, name, action } = req.body as { type: string; name: string; action: "install" | "uninstall" };
+    if (!type || !name || !action) return res.status(400).json({ error: "Missing params" });
+    const safeName = (name || "").replace(/'/g, "''");
+    let script = "";
+    if (type === "appx") {
+      if (action === "uninstall") {
+        script = `Get-AppxPackage -AllUsers | Where-Object { $_.Name -like '*${safeName}*' } | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue; Write-Output 'OK'`;
+      } else {
+        script = `try { Add-AppxPackage -RegisterByFamilyName -MainPackage '${safeName}' -EA Stop; Write-Output 'OK' } catch { Get-AppxPackage -AllUsers -Name '${safeName}' | Add-AppxPackage -DisableDevelopmentMode -EA SilentlyContinue; Write-Output 'OK' }`;
+      }
+    } else if (type === "cap") {
+      if (action === "uninstall") {
+        script = `Remove-WindowsCapability -Online -Name '${safeName}' -ErrorAction SilentlyContinue; Write-Output 'OK'`;
+      } else {
+        script = `Add-WindowsCapability -Online -Name '${safeName}' -ErrorAction SilentlyContinue; Write-Output 'OK'`;
+      }
+    } else if (type === "feat") {
+      if (action === "uninstall") {
+        script = `Disable-WindowsOptionalFeature -Online -FeatureName '${safeName}' -NoRestart -ErrorAction SilentlyContinue; Write-Output 'OK'`;
+      } else {
+        script = `Enable-WindowsOptionalFeature -Online -FeatureName '${safeName}' -NoRestart -ErrorAction SilentlyContinue; Write-Output 'OK'`;
+      }
+    } else {
+      return res.status(400).json({ error: "Unknown type" });
+    }
+    try {
+      const out = await runPowerShell(script, 60000);
+      res.json({ success: true, output: out });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || "Action failed" });
+    }
+  });
+
+  // ── Software & Apps: External action (winget) ──────────────────────
+  app.post("/api/software/ext-action", async (req, res) => {
+    if (process.platform !== "win32") return res.status(400).json({ error: "Windows only" });
+    const { id, action } = req.body as { id: string; action: "install" | "uninstall" };
+    if (!id || !action) return res.status(400).json({ error: "Missing params" });
+    const safeId = (id || "").replace(/"/g, "");
+    let cmd = "";
+    if (action === "install") {
+      cmd = `winget install --id "${safeId}" --accept-source-agreements --accept-package-agreements --silent 2>&1`;
+    } else {
+      cmd = `winget uninstall --id "${safeId}" --silent 2>&1`;
+    }
+    try {
+      const out = await runCmd(cmd, 120000);
+      res.json({ success: true, output: out });
+    } catch (err: any) {
+      res.status(500).json({ error: err?.message || "Action failed" });
+    }
+  });
+
   // ── Downloadable profiles ──────────────────────────────────────────
   // In Electron production, files are in process.resourcesPath/profiles (extraResources)
   // In development, they live at server/profiles/ relative to CWD
