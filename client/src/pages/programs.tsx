@@ -113,150 +113,150 @@ const WIN_FEATURES: WinFeat[] = [
 const EXTERNAL_CATEGORIES: ExtCategory[] = [
   {
     category: "Browsers", icon: Globe, apps: [
-      { name: "Arc Browser", id: "TheBrowserCompany.Arc", url: "https://arc.net" },
-      { name: "Brave", id: "Brave.Brave", url: "https://brave.com" },
+      { name: "Arc Browser", id: "TheBrowserCompany.Arc", url: "https://arc.net/download" },
+      { name: "Brave", id: "Brave.Brave", url: "https://brave.com/download/" },
       { name: "DuckDuckGo Browser", id: "DuckDuckGo.DesktopBrowser", url: "https://duckduckgo.com/windows" },
-      { name: "Google Chrome", id: "Google.Chrome", url: "https://www.google.com/chrome" },
-      { name: "LibreWolf", id: "LibreWolf.LibreWolf", url: "https://librewolf.net" },
-      { name: "Mozilla Firefox", id: "Mozilla.Firefox", url: "https://www.mozilla.org/firefox" },
-      { name: "Opera", id: "Opera.Opera", url: "https://www.opera.com" },
+      { name: "Google Chrome", id: "Google.Chrome", url: "https://www.google.com/chrome/" },
+      { name: "LibreWolf", id: "LibreWolf.LibreWolf", url: "https://librewolf.net/installation/windows/" },
+      { name: "Mozilla Firefox", id: "Mozilla.Firefox", url: "https://www.mozilla.org/en-US/firefox/new/" },
+      { name: "Opera", id: "Opera.Opera", url: "https://www.opera.com/download" },
       { name: "Opera GX", id: "Opera.OperaGX", url: "https://www.opera.com/gx" },
-      { name: "Tor Browser", id: "TorProject.TorBrowser", url: "https://www.torproject.org" },
-      { name: "Vivaldi", id: "Vivaldi.Vivaldi", url: "https://vivaldi.com" },
-      { name: "Waterfox", id: "Waterfox.Waterfox", url: "https://www.waterfox.net" },
-      { name: "Zen Browser", id: "Zen-Team.Zen-Browser.Specific", url: "https://www.zen-browser.app" },
+      { name: "Tor Browser", id: "TorProject.TorBrowser", url: "https://www.torproject.org/download/" },
+      { name: "Vivaldi", id: "Vivaldi.Vivaldi", url: "https://vivaldi.com/download/" },
+      { name: "Waterfox", id: "Waterfox.Waterfox", url: "https://www.waterfox.net/download/" },
+      { name: "Zen Browser", id: "Zen-Team.Zen-Browser.Specific", url: "https://www.zen-browser.app/download" },
     ],
   },
   {
     category: "Compression", icon: Archive, apps: [
-      { name: "7-Zip", id: "7zip.7zip", url: "https://www.7-zip.org" },
-      { name: "NanaZip", id: "M2Team.NanaZip", url: "https://github.com/M2Team/NanaZip" },
-      { name: "PeaZip", id: "Giorgiotani.Peazip", url: "https://peazip.github.io" },
-      { name: "WinRAR", id: "RARLab.WinRAR", url: "https://www.win-rar.com" },
+      { name: "7-Zip", id: "7zip.7zip", url: "https://www.7-zip.org/download.html" },
+      { name: "NanaZip", id: "M2Team.NanaZip", url: "https://github.com/M2Team/NanaZip/releases/latest" },
+      { name: "PeaZip", id: "Giorgiotani.Peazip", url: "https://peazip.github.io/peazip-64bit.html" },
+      { name: "WinRAR", id: "RARLab.WinRAR", url: "https://www.win-rar.com/download.html" },
     ],
   },
   {
     category: "Development", icon: Code2, apps: [
-      { name: "Git", id: "Git.Git", url: "https://git-scm.com" },
-      { name: "GitHub Desktop", id: "GitHub.GitHubDesktop", url: "https://desktop.github.com" },
-      { name: "Node.js LTS", id: "OpenJS.NodeJS.LTS", url: "https://nodejs.org" },
-      { name: "Notepad++", id: "Notepad++.Notepad++", url: "https://notepad-plus-plus.org" },
-      { name: "Python 3", id: "Python.Python.3", url: "https://www.python.org" },
-      { name: "PuTTY", id: "PuTTY.PuTTY", url: "https://www.putty.org" },
-      { name: "Visual Studio Code", id: "Microsoft.VisualStudioCode", url: "https://code.visualstudio.com" },
-      { name: "WinMerge", id: "WinMerge.WinMerge", url: "https://winmerge.org" },
-      { name: "WinSCP", id: "WinSCP.WinSCP", url: "https://winscp.net" },
+      { name: "Git", id: "Git.Git", url: "https://git-scm.com/download/win" },
+      { name: "GitHub Desktop", id: "GitHub.GitHubDesktop", url: "https://desktop.github.com/" },
+      { name: "Node.js LTS", id: "OpenJS.NodeJS.LTS", url: "https://nodejs.org/en/download/" },
+      { name: "Notepad++", id: "Notepad++.Notepad++", url: "https://notepad-plus-plus.org/downloads/" },
+      { name: "Python 3", id: "Python.Python.3", url: "https://www.python.org/downloads/" },
+      { name: "PuTTY", id: "PuTTY.PuTTY", url: "https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html" },
+      { name: "Visual Studio Code", id: "Microsoft.VisualStudioCode", url: "https://code.visualstudio.com/download" },
+      { name: "WinMerge", id: "WinMerge.WinMerge", url: "https://winmerge.org/downloads/" },
+      { name: "WinSCP", id: "WinSCP.WinSCP", url: "https://winscp.net/eng/download.php" },
     ],
   },
   {
     category: "Document Viewers", icon: FileText, apps: [
-      { name: "Adobe Acrobat Reader DC", id: "Adobe.Acrobat.Reader.64-bit", url: "https://acrobat.adobe.com/us/en/acrobat/pdf-reader.html" },
-      { name: "LibreOffice", id: "TheDocumentFoundation.LibreOffice", url: "https://www.libreoffice.org" },
-      { name: "ONLYOFFICE Desktop", id: "ONLYOFFICE.DesktopEditors", url: "https://www.onlyoffice.com/desktop.aspx" },
-      { name: "OpenOffice", id: "Apache.OpenOffice", url: "https://www.openoffice.org" },
-      { name: "SumatraPDF", id: "SumatraPDF.SumatraPDF", url: "https://www.sumatrapdfreader.org" },
+      { name: "Adobe Acrobat Reader DC", id: "Adobe.Acrobat.Reader.64-bit", url: "https://get.adobe.com/reader/" },
+      { name: "LibreOffice", id: "TheDocumentFoundation.LibreOffice", url: "https://www.libreoffice.org/download/download-libreoffice/" },
+      { name: "ONLYOFFICE Desktop", id: "ONLYOFFICE.DesktopEditors", url: "https://www.onlyoffice.com/download-desktop.aspx" },
+      { name: "OpenOffice", id: "Apache.OpenOffice", url: "https://www.openoffice.org/download/" },
+      { name: "SumatraPDF", id: "SumatraPDF.SumatraPDF", url: "https://www.sumatrapdfreader.org/download-free-pdf-viewer" },
     ],
   },
   {
     category: "File & Disk Management", icon: FolderOpen, apps: [
-      { name: "Advanced Renamer", id: "DenisKutlubaev.AdvancedRenamer", url: "https://www.advancedrenamer.com" },
-      { name: "Crystal Disk Info", id: "CrystalDewWorld.CrystalDiskInfo", url: "https://crystalmark.info/en/software/crystaldiskinfo" },
-      { name: "Everything", id: "voidtools.Everything", url: "https://www.voidtools.com" },
-      { name: "Rufus", id: "Rufus.Rufus", url: "https://rufus.ie" },
-      { name: "TeraCopy", id: "CodeSector.TeraCopy", url: "https://www.codesector.com/teracopy" },
+      { name: "Advanced Renamer", id: "DenisKutlubaev.AdvancedRenamer", url: "https://www.advancedrenamer.com/download" },
+      { name: "Crystal Disk Info", id: "CrystalDewWorld.CrystalDiskInfo", url: "https://crystalmark.info/en/software/crystaldiskinfo/" },
+      { name: "Everything", id: "voidtools.Everything", url: "https://www.voidtools.com/downloads/" },
+      { name: "Rufus", id: "Rufus.Rufus", url: "https://rufus.ie/en/" },
+      { name: "TeraCopy", id: "CodeSector.TeraCopy", url: "https://www.codesector.com/downloads" },
       { name: "TreeSize Free", id: "JAMSoftware.TreeSize.Free", url: "https://www.jam-software.com/treesize_free" },
-      { name: "WinDirStat", id: "WinDirStat.WinDirStat", url: "https://windirstat.net" },
-      { name: "WizTree", id: "AntibodySoftware.WizTree", url: "https://www.diskanalyzer.com" },
+      { name: "WinDirStat", id: "WinDirStat.WinDirStat", url: "https://windirstat.net/download.html" },
+      { name: "WizTree", id: "AntibodySoftware.WizTree", url: "https://www.diskanalyzer.com/download" },
     ],
   },
   {
     category: "Gaming", icon: Gamepad2, apps: [
       { name: "Epic Games Launcher", id: "EpicGames.EpicGamesLauncher", url: "https://store.epicgames.com/en-US/download" },
       { name: "GOG Galaxy", id: "GOG.Galaxy", url: "https://www.gog.com/galaxy" },
-      { name: "Steam", id: "Valve.Steam", url: "https://store.steampowered.com/about" },
+      { name: "Steam", id: "Valve.Steam", url: "https://store.steampowered.com/about/" },
     ],
   },
   {
     category: "Imaging & Design", icon: Monitor, apps: [
-      { name: "Blender", id: "BlenderFoundation.Blender", url: "https://www.blender.org" },
-      { name: "GIMP", id: "GIMP.GIMP", url: "https://www.gimp.org" },
-      { name: "Greenshot", id: "Greenshot.Greenshot", url: "https://getgreenshot.org" },
-      { name: "ImageGlass", id: "DuyHoang-Tiger.ImageGlass", url: "https://imageglass.org" },
-      { name: "Inkscape", id: "Inkscape.Inkscape", url: "https://inkscape.org" },
-      { name: "IrfanView", id: "IrfanSkiljan.IrfanView", url: "https://www.irfanview.com" },
-      { name: "Krita", id: "KDE.Krita", url: "https://krita.org" },
-      { name: "Paint.NET", id: "dotPDN.PaintDotNet", url: "https://www.getpaint.net" },
-      { name: "ShareX", id: "ShareX.ShareX", url: "https://getsharex.com" },
+      { name: "Blender", id: "BlenderFoundation.Blender", url: "https://www.blender.org/download/" },
+      { name: "GIMP", id: "GIMP.GIMP", url: "https://www.gimp.org/downloads/" },
+      { name: "Greenshot", id: "Greenshot.Greenshot", url: "https://getgreenshot.org/downloads/" },
+      { name: "ImageGlass", id: "DuyHoang-Tiger.ImageGlass", url: "https://imageglass.org/releases" },
+      { name: "Inkscape", id: "Inkscape.Inkscape", url: "https://inkscape.org/release/" },
+      { name: "IrfanView", id: "IrfanSkiljan.IrfanView", url: "https://www.irfanview.com/main_download_engl.htm" },
+      { name: "Krita", id: "KDE.Krita", url: "https://krita.org/en/download/" },
+      { name: "Paint.NET", id: "dotPDN.PaintDotNet", url: "https://www.getpaint.net/download.html" },
+      { name: "ShareX", id: "ShareX.ShareX", url: "https://getsharex.com/downloads/" },
     ],
   },
   {
     category: "Messaging & Email", icon: MessageSquare, apps: [
-      { name: "Discord", id: "Discord.Discord", url: "https://discord.com" },
-      { name: "Element", id: "Element.Element", url: "https://element.io" },
-      { name: "Mozilla Thunderbird", id: "Mozilla.Thunderbird", url: "https://www.thunderbird.net" },
-      { name: "Signal", id: "OpenWhisperSystems.Signal", url: "https://signal.org" },
-      { name: "Slack", id: "SlackTechnologies.Slack", url: "https://slack.com" },
-      { name: "Telegram Desktop", id: "Telegram.TelegramDesktop", url: "https://telegram.org" },
+      { name: "Discord", id: "Discord.Discord", url: "https://discord.com/download" },
+      { name: "Element", id: "Element.Element", url: "https://element.io/download" },
+      { name: "Mozilla Thunderbird", id: "Mozilla.Thunderbird", url: "https://www.thunderbird.net/en-US/thunderbird/all/" },
+      { name: "Signal", id: "OpenWhisperSystems.Signal", url: "https://signal.org/en/download/" },
+      { name: "Slack", id: "SlackTechnologies.Slack", url: "https://slack.com/downloads/windows" },
+      { name: "Telegram Desktop", id: "Telegram.TelegramDesktop", url: "https://desktop.telegram.org/" },
       { name: "WhatsApp", id: "WhatsApp.WhatsApp", url: "https://www.whatsapp.com/download" },
       { name: "Zoom", id: "Zoom.Zoom", url: "https://zoom.us/download" },
     ],
   },
   {
     category: "Multimedia", icon: Music, apps: [
-      { name: "Audacity", id: "Audacity.Audacity", url: "https://www.audacityteam.org" },
-      { name: "foobar2000", id: "PeterPawlowski.foobar2000", url: "https://www.foobar2000.org" },
-      { name: "HandBrake", id: "HandBrake.HandBrake", url: "https://handbrake.fr" },
-      { name: "iTunes", id: "Apple.iTunes", url: "https://www.apple.com/itunes" },
+      { name: "Audacity", id: "Audacity.Audacity", url: "https://www.audacityteam.org/download/" },
+      { name: "foobar2000", id: "PeterPawlowski.foobar2000", url: "https://www.foobar2000.org/download" },
+      { name: "HandBrake", id: "HandBrake.HandBrake", url: "https://handbrake.fr/downloads.php" },
+      { name: "iTunes", id: "Apple.iTunes", url: "https://www.apple.com/itunes/download/" },
       { name: "K-Lite Codec Pack", id: "CodecGuide.K-LiteCodecPackMega", url: "https://codecguide.com/download_kl.htm" },
-      { name: "MPC-HC", id: "clsid2.mpc-hc", url: "https://github.com/clsid2/mpc-hc" },
-      { name: "MusicBee", id: "MusicBee.MusicBee", url: "https://www.getmusicbee.com" },
-      { name: "OBS Studio", id: "OBSProject.OBSStudio", url: "https://obsproject.com" },
-      { name: "PotPlayer", id: "Daum.PotPlayer", url: "https://potplayer.daum.net" },
-      { name: "Spotify", id: "Spotify.Spotify", url: "https://www.spotify.com/download" },
-      { name: "VLC Media Player", id: "VideoLAN.VLC", url: "https://www.videolan.org/vlc" },
+      { name: "MPC-HC", id: "clsid2.mpc-hc", url: "https://github.com/clsid2/mpc-hc/releases/latest" },
+      { name: "MusicBee", id: "MusicBee.MusicBee", url: "https://www.getmusicbee.com/downloads/" },
+      { name: "OBS Studio", id: "OBSProject.OBSStudio", url: "https://obsproject.com/download" },
+      { name: "PotPlayer", id: "Daum.PotPlayer", url: "https://potplayer.daum.net/" },
+      { name: "Spotify", id: "Spotify.Spotify", url: "https://www.spotify.com/us/download/windows/" },
+      { name: "VLC Media Player", id: "VideoLAN.VLC", url: "https://www.videolan.org/vlc/#download" },
     ],
   },
   {
     category: "Online Storage & Backup", icon: Cloud, apps: [
       { name: "Dropbox", id: "Dropbox.Dropbox", url: "https://www.dropbox.com/install" },
-      { name: "FreeFileSync", id: "FreeFileSync.FreeFileSync", url: "https://freefilesync.org" },
-      { name: "Google Drive", id: "Google.GoogleDrive", url: "https://www.google.com/drive/download" },
+      { name: "FreeFileSync", id: "FreeFileSync.FreeFileSync", url: "https://freefilesync.org/download.php" },
+      { name: "Google Drive", id: "Google.GoogleDrive", url: "https://www.google.com/drive/download/" },
       { name: "Nextcloud Desktop", id: "Nextcloud.NextcloudDesktop", url: "https://nextcloud.com/install/#install-clients" },
       { name: "Proton Drive", id: "ProtonTechnologies.ProtonDrive", url: "https://proton.me/drive/download" },
     ],
   },
   {
     category: "Privacy & Security", icon: Shield, apps: [
-      { name: "Bitwarden", id: "Bitwarden.Bitwarden", url: "https://bitwarden.com/download" },
-      { name: "Malwarebytes", id: "Malwarebytes.Malwarebytes", url: "https://www.malwarebytes.com/mwb-download" },
-      { name: "Malwarebytes AdwCleaner", id: "Malwarebytes.AdwCleaner", url: "https://www.malwarebytes.com/adwcleaner" },
+      { name: "Bitwarden", id: "Bitwarden.Bitwarden", url: "https://bitwarden.com/download/" },
+      { name: "Malwarebytes", id: "Malwarebytes.Malwarebytes", url: "https://www.malwarebytes.com/mwb-download/thankyou" },
+      { name: "Malwarebytes AdwCleaner", id: "Malwarebytes.AdwCleaner", url: "https://www.malwarebytes.com/adwcleaner/" },
       { name: "O&O ShutUp10++", id: "OO-Software.ShutUp10", url: "https://www.oo-software.com/en/shutup10" },
-      { name: "OnionShare", id: "OnionShare.OnionShare", url: "https://onionshare.org" },
-      { name: "Proton VPN", id: "ProtonTechnologies.ProtonVPN", url: "https://protonvpn.com/download" },
+      { name: "OnionShare", id: "OnionShare.OnionShare", url: "https://onionshare.org/" },
+      { name: "Proton VPN", id: "ProtonTechnologies.ProtonVPN", url: "https://protonvpn.com/download/windows" },
     ],
   },
   {
     category: "System Utilities", icon: Wrench, apps: [
-      { name: "CCleaner", id: "Piriform.CCleaner", url: "https://www.ccleaner.com" },
+      { name: "CCleaner", id: "Piriform.CCleaner", url: "https://www.ccleaner.com/ccleaner/download" },
       { name: "CPU-Z", id: "CPUID.CPU-Z", url: "https://www.cpuid.com/softwares/cpu-z.html" },
-      { name: "CrystalDiskMark", id: "CrystalDewWorld.CrystalDiskMark", url: "https://crystalmark.info/en/software/crystaldiskmark" },
-      { name: "GPU-Z", id: "TechPowerUp.GPU-Z", url: "https://www.techpowerup.com/gpuz" },
-      { name: "HWiNFO64", id: "REALiX.HWiNFO", url: "https://www.hwinfo.com" },
-      { name: "MSI Afterburner", id: "Guru3D.MSIAfterburner", url: "https://www.msi.com/page/afterburner" },
-      { name: "OpenRGB", id: "OpenRGBdotorg.OpenRGB", url: "https://openrgb.org" },
-      { name: "Oracle VirtualBox", id: "Oracle.VirtualBox", url: "https://www.virtualbox.org" },
-      { name: "UniGetUI", id: "MartiCliment.UniGetUI", url: "https://www.marticliment.com/wingetui" },
+      { name: "CrystalDiskMark", id: "CrystalDewWorld.CrystalDiskMark", url: "https://crystalmark.info/en/software/crystaldiskmark/" },
+      { name: "GPU-Z", id: "TechPowerUp.GPU-Z", url: "https://www.techpowerup.com/gpuz/" },
+      { name: "HWiNFO64", id: "REALiX.HWiNFO", url: "https://www.hwinfo.com/download/" },
+      { name: "MSI Afterburner", id: "Guru3D.MSIAfterburner", url: "https://www.msi.com/Landing/afterburner/graphics-cards" },
+      { name: "OpenRGB", id: "OpenRGBdotorg.OpenRGB", url: "https://openrgb.org/releases.html" },
+      { name: "Oracle VirtualBox", id: "Oracle.VirtualBox", url: "https://www.virtualbox.org/wiki/Downloads" },
+      { name: "UniGetUI", id: "MartiCliment.UniGetUI", url: "https://github.com/marticliment/UniGetUI/releases/latest" },
       { name: "Wise Registry Cleaner", id: "WiseCleaner.WiseRegistryCleaner", url: "https://www.wisecleaner.com/wise-registry-cleaner.html" },
     ],
   },
   {
     category: "Runtimes & Dependencies", icon: Box, apps: [
-      { name: ".NET Runtime 6", id: "Microsoft.DotNet.Runtime.6", url: "https://dotnet.microsoft.com/download" },
-      { name: ".NET Runtime 7", id: "Microsoft.DotNet.Runtime.7", url: "https://dotnet.microsoft.com/download" },
-      { name: ".NET Runtime 8", id: "Microsoft.DotNet.Runtime.8", url: "https://dotnet.microsoft.com/download" },
-      { name: ".NET Runtime 9", id: "Microsoft.DotNet.Runtime.9", url: "https://dotnet.microsoft.com/download" },
+      { name: ".NET Runtime 6", id: "Microsoft.DotNet.Runtime.6", url: "https://dotnet.microsoft.com/download/dotnet/6.0" },
+      { name: ".NET Runtime 7", id: "Microsoft.DotNet.Runtime.7", url: "https://dotnet.microsoft.com/download/dotnet/7.0" },
+      { name: ".NET Runtime 8", id: "Microsoft.DotNet.Runtime.8", url: "https://dotnet.microsoft.com/download/dotnet/8.0" },
+      { name: ".NET Runtime 9", id: "Microsoft.DotNet.Runtime.9", url: "https://dotnet.microsoft.com/download/dotnet/9.0" },
       { name: "DirectX Runtime", id: "Microsoft.DirectX", url: "https://www.microsoft.com/en-us/download/details.aspx?id=35" },
-      { name: "Java Runtime (JRE)", id: "Oracle.JavaRuntimeEnvironment", url: "https://www.java.com/download" },
+      { name: "Java Runtime (JRE)", id: "Oracle.JavaRuntimeEnvironment", url: "https://www.java.com/en/download/" },
       { name: "Visual C++ 2015-2022 x64", id: "Microsoft.VCRedist.x64.14", url: "https://aka.ms/vs/17/release/vc_redist.x64.exe" },
       { name: "Visual C++ 2015-2022 x86", id: "Microsoft.VCRedist.x86.14", url: "https://aka.ms/vs/17/release/vc_redist.x86.exe" },
     ],
@@ -868,22 +868,25 @@ function ExternalTab() {
                             >
                               {app.name}
                             </span>
-                            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {/* External link */}
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              {/* External link — always visible, brightens on hover */}
                               {app.url && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); openUrl(app.url!); }}
-                                  className="p-0.5 rounded transition-colors text-muted-foreground/40 hover:text-primary"
-                                  title={`Open ${app.name} website`}
+                                  className="p-0.5 rounded transition-all duration-150"
+                                  style={{ color: "hsl(var(--primary) / 0.35)" }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--primary))"; }}
+                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--primary) / 0.35)"; }}
+                                  title={`Open ${app.name} download page`}
                                 >
                                   <ExternalLink className="h-2.5 w-2.5" />
                                 </button>
                               )}
-                              {/* Quick action */}
+                              {/* Quick action — only on hover */}
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleSingleAction(app.id, app.name, installed ? "uninstall" : "install"); }}
                                 disabled={isThisActing || bulkActing}
-                                className="p-0.5 rounded transition-colors"
+                                className="p-0.5 rounded transition-all duration-150 opacity-0 group-hover:opacity-100"
                                 style={{ color: installed ? "hsl(var(--destructive) / 0.7)" : "hsl(var(--primary) / 0.7)" }}
                                 title={installed ? `Uninstall ${app.name}` : `Install ${app.name}`}
                               >
