@@ -244,71 +244,93 @@ function getCleanCategories(): CleanCategory[] {
       id: "temp",
       group: "system",
       name: "Temporary Files",
-      description: "User & system temp files — %TEMP% and C:\\Windows\\Temp",
-      paths: [tmp, "C:\\Windows\\Temp"],
+      description: "User & Windows temp files — %TEMP%, %TMP%, and C:\\Windows\\Temp",
+      paths: [],
+      psScan: `$seen=@{};$t=0L;$c=0;foreach($base in @($env:TEMP,$env:TMP,'C:\\Windows\\Temp')|Where-Object{$_}){$key=$base.ToLower();if($seen[$key]){continue};$seen[$key]=$true;if(Test-Path $base){Get-ChildItem $base -Force -EA SilentlyContinue|ForEach-Object{try{if($_.PSIsContainer){$s=(Get-ChildItem $_.FullName -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c++}else{$t+=$_.Length;$c++}}catch{}}}};Write-Output "$t $c"`,
+      psClean: `$seen=@{};$t=0L;foreach($base in @($env:TEMP,$env:TMP,'C:\\Windows\\Temp')|Where-Object{$_}){$key=$base.ToLower();if($seen[$key]){continue};$seen[$key]=$true;if(Test-Path $base){Get-ChildItem $base -Force -EA SilentlyContinue|Where-Object{$_.Extension.ToLower() -ne '.ps1'}|ForEach-Object{try{$sz=0L;if($_.PSIsContainer){$sz=[long]((Get-ChildItem $_.FullName -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum);Remove-Item $_.FullName -Recurse -Force -EA SilentlyContinue}else{$sz=$_.Length;Remove-Item $_.FullName -Force -EA SilentlyContinue};$t+=$sz}catch{}}}};Write-Output $t`,
     },
     {
       id: "prefetch",
       group: "system",
       name: "Prefetch Cache",
-      description: "Windows app launch prefetch files that accumulate over time",
-      paths: ["C:\\Windows\\Prefetch"],
+      description: "Windows app launch prefetch .pf files — rebuilt automatically on next launch",
+      paths: [],
+      psScan: `$p='C:\\Windows\\Prefetch';$t=0L;$c=0;if(Test-Path $p){$items=Get-ChildItem $p -File -Filter '*.pf' -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=$items.Count};Write-Output "$t $c"`,
+      psClean: `$p='C:\\Windows\\Prefetch';$t=0L;if(Test-Path $p){$items=Get-ChildItem $p -File -Filter '*.pf' -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$items|Remove-Item -Force -EA SilentlyContinue};Write-Output $t`,
     },
     {
       id: "wupdate",
       group: "system",
       name: "Windows Update Cache",
-      description: "Downloaded Windows Update packages — safe to clear after updates finish",
-      paths: ["C:\\Windows\\SoftwareDistribution\\Download"],
+      description: "Downloaded Windows Update packages — safe to clear after updates finish installing",
+      paths: [],
+      psScan: `$p='C:\\Windows\\SoftwareDistribution\\Download';$t=0L;$c=0;if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Write-Output "$t $c"`,
+      psClean: `$p='C:\\Windows\\SoftwareDistribution\\Download';$t=0L;Stop-Service wuauserv -Force -EA SilentlyContinue;Stop-Service bits -Force -EA SilentlyContinue;if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service wuauserv -EA SilentlyContinue;Start-Service bits -EA SilentlyContinue;Write-Output $t`,
     },
     {
       id: "deliveryopt",
       group: "system",
       name: "Delivery Optimization",
-      description: "Windows P2P update distribution cache used to share updates with other PCs",
+      description: "Windows P2P update delivery cache used to share updates between devices on your network",
       paths: [],
+      psScan: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;$c=0;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Write-Output "$t $c"`,
+      psClean: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;Stop-Service DoSvc -Force -EA SilentlyContinue;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service DoSvc -EA SilentlyContinue;Write-Output $t`,
     },
     {
       id: "errorreports",
       group: "system",
       name: "Error Reports",
-      description: "Windows crash and error report archives (WER)",
-      paths: [
-        path.join(local, "Microsoft", "Windows", "WER", "ReportArchive"),
-        path.join(local, "Microsoft", "Windows", "WER", "ReportQueue"),
-        "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive",
-      ],
+      description: "Windows crash and error report archives (WER) — user and system-wide",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\Microsoft\\Windows\\WER\\ReportArchive","$env:LOCALAPPDATA\\Microsoft\\Windows\\WER\\ReportQueue","C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive","C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportQueue")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\Microsoft\\Windows\\WER\\ReportArchive","$env:LOCALAPPDATA\\Microsoft\\Windows\\WER\\ReportQueue","C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive","C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportQueue")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
     {
       id: "logs",
       group: "system",
       name: "System Logs",
-      description: "Windows CBS, DISM, MoSetup, and Panther log files",
-      paths: [
-        "C:\\Windows\\Logs\\CBS",
-        "C:\\Windows\\Logs\\DISM",
-        "C:\\Windows\\Logs\\MoSetup",
-        "C:\\Windows\\Panther",
-      ],
+      description: "Windows CBS, DISM, MoSetup, and Panther setup log and .etl trace files",
+      paths: [],
+      psScan: `$t=0L;$c=0;$exts=@('.log','.etl','.cab','.txt');foreach($p in @('C:\\Windows\\Logs\\CBS','C:\\Windows\\Logs\\DISM','C:\\Windows\\Logs\\MoSetup','C:\\Windows\\Panther')){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -File -Force -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()};$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=$items.Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;$exts=@('.log','.etl','.cab','.txt');foreach($p in @('C:\\Windows\\Logs\\CBS','C:\\Windows\\Logs\\DISM','C:\\Windows\\Logs\\MoSetup','C:\\Windows\\Panther')){if(Test-Path $p){Get-ChildItem $p -Recurse -File -Force -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{try{$t+=$_.Length;Remove-Item $_.FullName -Force -EA Stop}catch{}}}};Write-Output $t`,
     },
     {
       id: "dumpfiles",
       group: "system",
       name: "Memory Dump Files",
-      description: "Windows crash minidump files and local crash dumps",
-      paths: [
-        "C:\\Windows\\Minidump",
-        path.join(local, "CrashDumps"),
-      ],
+      description: "Windows crash minidumps, full memory dumps, and local app crash dumps",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @('C:\\Windows\\Minidump',"$env:LOCALAPPDATA\\CrashDumps")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};$dm='C:\\Windows\\MEMORY.DMP';if(Test-Path $dm){try{$t+=(Get-Item $dm).Length;$c++}catch{}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @('C:\\Windows\\Minidump',"$env:LOCALAPPDATA\\CrashDumps")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};$dm='C:\\Windows\\MEMORY.DMP';if(Test-Path $dm){try{$t+=(Get-Item $dm).Length;Remove-Item $dm -Force -EA Stop}catch{}};Write-Output $t`,
     },
     {
       id: "thumbnails",
       group: "system",
       name: "Thumbnail Cache",
-      description: "Windows Explorer thumbnail cache (thumbcache_*.db files)",
+      description: "Windows Explorer thumbnail cache (thumbcache_*.db) — rebuilt automatically on next browse",
       paths: [],
       globDir: path.join(local, "Microsoft", "Windows", "Explorer"),
       globPattern: "thumbcache_*.db",
+    },
+    {
+      id: "iconcache",
+      group: "system",
+      name: "Icon Cache",
+      description: "Windows icon database files (iconcache_*.db) — rebuilt automatically on next login",
+      paths: [],
+      psScan: `$dir="$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer";$t=0L;$c=0;if(Test-Path $dir){$items=Get-ChildItem $dir -File -Force -EA SilentlyContinue|Where-Object{$_.Name -like 'iconcache_*.db'};$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=$items.Count};Write-Output "$t $c"`,
+      psClean: `$dir="$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer";$t=0L;$items=@();if(Test-Path $dir){$items=Get-ChildItem $dir -File -Force -EA SilentlyContinue|Where-Object{$_.Name -like 'iconcache_*.db'}};if($items.Count -gt 0){Stop-Process -Name explorer -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 800;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$items|ForEach-Object{Remove-Item $_.FullName -Force -EA SilentlyContinue};Start-Sleep -Milliseconds 300;Start-Process explorer};Write-Output $t`,
+    },
+    {
+      id: "recentfiles",
+      group: "system",
+      name: "Recent Files Cache",
+      description: "Windows jump list automatic destinations and custom destinations — clears recent files list",
+      autoSelect: false,
+      warnNote: "Clears your recent files list in Windows Explorer and Start menu jump lists.",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:APPDATA\\Microsoft\\Windows\\Recent\\AutomaticDestinations","$env:APPDATA\\Microsoft\\Windows\\Recent\\CustomDestinations")){if(Test-Path $p){$items=Get-ChildItem $p -File -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=$items.Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:APPDATA\\Microsoft\\Windows\\Recent\\AutomaticDestinations","$env:APPDATA\\Microsoft\\Windows\\Recent\\CustomDestinations")){if(Test-Path $p){$items=Get-ChildItem $p -File -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$items|ForEach-Object{Remove-Item $_.FullName -Force -EA SilentlyContinue}}};Write-Output $t`,
     },
     {
       id: "shadercache",
@@ -425,6 +447,73 @@ function getCleanCategories(): CleanCategory[] {
         path.join(local, "Roblox Player", "logs"),
         path.join(tmp, "RobloxLogs"),
       ],
+    },
+    {
+      id: "vscode",
+      group: "apps",
+      name: "Visual Studio Code",
+      description: "VS Code browser cache, GPU cache, and code cache (Stable and Insiders)",
+      installCheck: [path.join(roaming, "Code"), path.join(roaming, "Code - Insiders")],
+      paths: [
+        path.join(roaming, "Code", "Cache", "Cache_Data"),
+        path.join(roaming, "Code", "Code Cache"),
+        path.join(roaming, "Code", "GPUCache"),
+        path.join(roaming, "Code", "CachedData"),
+        path.join(roaming, "Code - Insiders", "Cache", "Cache_Data"),
+        path.join(roaming, "Code - Insiders", "Code Cache"),
+        path.join(roaming, "Code - Insiders", "GPUCache"),
+        path.join(roaming, "Code - Insiders", "CachedData"),
+      ],
+    },
+    {
+      id: "vlc",
+      group: "apps",
+      name: "VLC Media Player",
+      description: "VLC art cache (thumbnail images for media library)",
+      installCheck: [path.join(roaming, "vlc")],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:APPDATA\\vlc\\art_cache")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:APPDATA\\vlc\\art_cache")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+    },
+    {
+      id: "riot",
+      group: "apps",
+      name: "Riot Client / Valorant / LoL",
+      description: "Riot Client log files and browser cache (Valorant, League of Legends, TFT)",
+      installCheck: [path.join(local, "Riot Games"), path.join(roaming, "Riot Games")],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\Riot Games\\Riot Client\\Logs","$env:LOCALAPPDATA\\Riot Games\\Riot Client\\Cache","$env:APPDATA\\Riot Games\\Riot Client\\Cache")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\Riot Games\\Riot Client\\Logs","$env:LOCALAPPDATA\\Riot Games\\Riot Client\\Cache","$env:APPDATA\\Riot Games\\Riot Client\\Cache")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+    },
+    {
+      id: "minecraft",
+      group: "apps",
+      name: "Minecraft Java",
+      description: "Minecraft Java Edition log files (.log, .log.gz archives)",
+      installCheck: [path.join(roaming, ".minecraft")],
+      paths: [],
+      psScan: `$t=0L;$c=0;$p="$env:APPDATA\\.minecraft\\logs";if(Test-Path $p){$items=Get-ChildItem $p -File -Force -EA SilentlyContinue|Where-Object{$_.Name -ne 'latest.log'};$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=$items.Count};Write-Output "$t $c"`,
+      psClean: `$t=0L;$p="$env:APPDATA\\.minecraft\\logs";if(Test-Path $p){$items=Get-ChildItem $p -File -Force -EA SilentlyContinue|Where-Object{$_.Name -ne 'latest.log'};$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$items|ForEach-Object{Remove-Item $_.FullName -Force -EA SilentlyContinue}};Write-Output $t`,
+    },
+    {
+      id: "geforce",
+      group: "apps",
+      name: "NVIDIA GeForce Experience",
+      description: "GeForce Experience CEF browser cache and NvContainer log files",
+      installCheck: [path.join(local, "NVIDIA", "NvBackend"), path.join(local, "NVIDIA Corporation")],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log","$env:LOCALAPPDATA\\NVIDIA Corporation\\Drs")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+    },
+    {
+      id: "adobecc",
+      group: "apps",
+      name: "Adobe Creative Cloud",
+      description: "Adobe CC media cache files and Creative Cloud log files",
+      installCheck: [path.join(roaming, "Adobe"), path.join(local, "Adobe")],
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:APPDATA\\Adobe\\Common\\Media Cache Files","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache Files","$env:APPDATA\\Adobe\\Common\\Media Cache","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache","$env:APPDATA\\Adobe\\Adobe Creative Cloud\\Logs","$env:LOCALAPPDATA\\Adobe\\Adobe Creative Cloud\\Logs")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:APPDATA\\Adobe\\Common\\Media Cache Files","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache Files","$env:APPDATA\\Adobe\\Common\\Media Cache","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
 
     // ── GAME JUNK ──────────────────────────────────────────────────────────────
@@ -559,6 +648,20 @@ function getCleanCategories(): CleanCategory[] {
       ],
     },
     {
+      id: "vivaldi",
+      group: "browser",
+      name: "Vivaldi",
+      description: "Vivaldi browser cache files — all profiles auto-detected",
+      warnNote: "Close Vivaldi before cleaning for best results.",
+      installCheck: [path.join(local, "Vivaldi", "User Data")],
+      subDirScan: [
+        { parent: path.join(local, "Vivaldi", "User Data"), subdir: path.join("Cache", "Cache_Data") },
+        { parent: path.join(local, "Vivaldi", "User Data"), subdir: "Code Cache" },
+        { parent: path.join(local, "Vivaldi", "User Data"), subdir: "GPUCache" },
+      ],
+      paths: [],
+    },
+    {
       id: "brave",
       group: "browser",
       name: "Brave",
@@ -621,6 +724,19 @@ function getCleanCategories(): CleanCategory[] {
       paths: [],
       psScan: `$t=0L;$c=0;foreach($d in @("$env:APPDATA\\Opera Software\\Opera GX Stable","$env:LOCALAPPDATA\\Opera Software\\Opera GX Stable")){if(Test-Path $d){foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $d $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}};Write-Output "$t $c"`,
       psClean: `$t=0L;foreach($d in @("$env:APPDATA\\Opera Software\\Opera GX Stable","$env:LOCALAPPDATA\\Opera Software\\Opera GX Stable")){if(Test-Path $d){foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $d $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}};Write-Output $t`,
+    },
+
+    {
+      id: "vivaldiPrivacy",
+      group: "privacy",
+      name: "Vivaldi History & Cookies",
+      description: "Vivaldi browsing history, cookies, and login data — all profiles",
+      autoSelect: false,
+      warnNote: "Close Vivaldi completely before cleaning. This removes browsing history and cookies — you will be logged out of websites.",
+      installCheck: [path.join(local, "Vivaldi", "User Data")],
+      paths: [],
+      psScan: `$t=0L;$c=0;$base="$env:LOCALAPPDATA\\Vivaldi\\User Data";if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $_.FullName $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}};Write-Output "$t $c"`,
+      psClean: `$t=0L;$base="$env:LOCALAPPDATA\\Vivaldi\\User Data";if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $_.FullName $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}};Write-Output $t`,
     },
 
     // ── RECYCLE BIN ────────────────────────────────────────────────────────────
@@ -1271,23 +1387,6 @@ try {
   Write-Output "$tot $cnt"
 } catch { Write-Output "0 0" }`.trim();
             const raw = await runPowerShell(psRecycleScan, 12000).catch(() => "0 0");
-            const parts = raw.trim().split(/\s+/);
-            totalSize += Math.max(0, parseInt(parts[0]) || 0);
-            totalCount += Math.max(0, parseInt(parts[1]) || 0);
-          } else if (cat.id === "deliveryopt" && process.platform === "win32") {
-            const psDoScan = `
-try {
-  $root = Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization'
-  $tot=0L; $cnt=0
-  if (Test-Path -LiteralPath $root -EA SilentlyContinue) {
-    $items = Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue
-    $s = ($items | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
-    if ($s) { $tot = [long]$s }
-    $cnt = ($items | Where-Object { -not $_.PSIsContainer }).Count
-  }
-  Write-Output "$tot $cnt"
-} catch { Write-Output "0 0" }`.trim();
-            const raw = await runPowerShell(psDoScan, 12000).catch(() => "0 0");
             const parts = raw.trim().split(/\s+/);
             totalSize += Math.max(0, parseInt(parts[0]) || 0);
             totalCount += Math.max(0, parseInt(parts[1]) || 0);
