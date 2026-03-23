@@ -53,7 +53,7 @@ const CAT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   steam: Gamepad2, epic: Gamepad2, gog: Gamepad2, ea: Gamepad2,
   ubisoft: Gamepad2, battlenet: Gamepad2,
   chrome: Globe, edge: Globe, firefox: Globe, operagx: Globe, brave: Globe, vivaldi: Globe,
-  chromeprivacy: Lock, edgeprivacy: Lock, firefoxprivacy: Lock, operagxprivacy: Lock, vivaldiPrivacy: Lock,
+  chromeprivacy: Lock, edgeprivacy: Lock, firefoxprivacy: Lock, operagxprivacy: Lock, vivaldiPrivacy: Lock, braveprivacy: Lock,
   recycle: Archive,
   dl_installers: Download, dl_partial: Download, dl_winodd: Download,
   winold: HardDrive, backup_wbadmin: HardDrive, backup_wiebkup: HardDrive,
@@ -136,14 +136,16 @@ function SubItemRow({
       onClick={() => cat.found && onToggle()}
       data-testid={`row-cleaner-${cat.id}`}
     >
-      {/* Checkbox */}
-      <Checkbox
-        checked={isSelected && cat.found}
-        disabled={!cat.found}
-        onCheckedChange={() => cat.found && onToggle()}
-        className="shrink-0 border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-        data-testid={`checkbox-cleaner-${cat.id}`}
-      />
+      {/* Checkbox — stop propagation so click doesn't also bubble to parent onClick */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={isSelected && cat.found}
+          disabled={!cat.found}
+          onCheckedChange={() => cat.found && onToggle()}
+          className="shrink-0 border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          data-testid={`checkbox-cleaner-${cat.id}`}
+        />
+      </div>
 
       {/* Icon */}
       <div className={cn(

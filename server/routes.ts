@@ -273,8 +273,8 @@ function getCleanCategories(): CleanCategory[] {
       name: "Delivery Optimization",
       description: "Windows P2P update delivery cache used to share updates between devices on your network",
       paths: [],
-      psScan: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;$c=0;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Write-Output "$t $c"`,
-      psClean: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;Stop-Service DoSvc -Force -EA SilentlyContinue;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service DoSvc -EA SilentlyContinue;Write-Output $t`,
+      psScan: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;$c=0;Stop-Service DoSvc -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 400;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Start-Service DoSvc -EA SilentlyContinue;Write-Output "$t $c"`,
+      psClean: `$root=Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization';$t=0L;Stop-Service DoSvc -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 400;if(Test-Path -LiteralPath $root -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service DoSvc -EA SilentlyContinue;Write-Output $t`,
     },
     {
       id: "errorreports",
@@ -386,18 +386,17 @@ function getCleanCategories(): CleanCategory[] {
       id: "teams",
       group: "apps",
       name: "Microsoft Teams",
-      description: "Teams browser cache, GPU cache, and code cache",
+      description: "Teams cache, GPU cache, and code cache — Classic and New Teams (2.0)",
       warnNote: "Close Teams before cleaning.",
-      installCheck: [path.join(roaming, "Microsoft", "Teams"), path.join(local, "Microsoft", "Teams")],
-      paths: [
-        path.join(roaming, "Microsoft", "Teams", "Cache"),
-        path.join(roaming, "Microsoft", "Teams", "Code Cache"),
-        path.join(roaming, "Microsoft", "Teams", "GPUCache"),
-        path.join(roaming, "Microsoft", "Teams", "Application Cache"),
-        path.join(local, "Microsoft", "Teams", "Cache"),
-        path.join(local, "Microsoft", "Teams", "Code Cache"),
-        path.join(local, "Microsoft", "Teams", "GPUCache"),
+      installCheck: [
+        path.join(roaming, "Microsoft", "Teams"),
+        path.join(local, "Microsoft", "Teams"),
+        path.join(local, "Microsoft", "Teams", "current"),
+        path.join(local, "Packages", "MSTeams_8wekyb3d8bbwe"),
       ],
+      paths: [],
+      psScan: `$t=0L;$c=0;$dirs=@("$env:APPDATA\\Microsoft\\Teams\\Cache","$env:APPDATA\\Microsoft\\Teams\\Code Cache","$env:APPDATA\\Microsoft\\Teams\\GPUCache","$env:APPDATA\\Microsoft\\Teams\\Application Cache","$env:LOCALAPPDATA\\Microsoft\\Teams\\Cache","$env:LOCALAPPDATA\\Microsoft\\Teams\\Code Cache","$env:LOCALAPPDATA\\Microsoft\\Teams\\GPUCache");$pkg="$env:LOCALAPPDATA\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache\\Microsoft\\MSTeams";if(Test-Path $pkg){$dirs+="$pkg\\EBWebView\\Default\\Cache","$pkg\\EBWebView\\Default\\Code Cache","$pkg\\EBWebView\\Default\\GPUCache"};foreach($p in $dirs){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;$dirs=@("$env:APPDATA\\Microsoft\\Teams\\Cache","$env:APPDATA\\Microsoft\\Teams\\Code Cache","$env:APPDATA\\Microsoft\\Teams\\GPUCache","$env:APPDATA\\Microsoft\\Teams\\Application Cache","$env:LOCALAPPDATA\\Microsoft\\Teams\\Cache","$env:LOCALAPPDATA\\Microsoft\\Teams\\Code Cache","$env:LOCALAPPDATA\\Microsoft\\Teams\\GPUCache");$pkg="$env:LOCALAPPDATA\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache\\Microsoft\\MSTeams";if(Test-Path $pkg){$dirs+="$pkg\\EBWebView\\Default\\Cache","$pkg\\EBWebView\\Default\\Code Cache","$pkg\\EBWebView\\Default\\GPUCache"};foreach($p in $dirs){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
     {
       id: "zoom",
@@ -738,6 +737,18 @@ function getCleanCategories(): CleanCategory[] {
       psScan: `$t=0L;$c=0;$base="$env:LOCALAPPDATA\\Vivaldi\\User Data";if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $_.FullName $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}};Write-Output "$t $c"`,
       psClean: `$t=0L;$base="$env:LOCALAPPDATA\\Vivaldi\\User Data";if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{foreach($f in @('History','Cookies','Login Data','Visited Links')){$fp=Join-Path $_.FullName $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}};Write-Output $t`,
     },
+    {
+      id: "braveprivacy",
+      group: "privacy",
+      name: "Brave History & Cookies",
+      description: "Brave browsing history, cookies, and login data — all profiles",
+      autoSelect: false,
+      warnNote: "Close Brave completely before cleaning. This removes browsing history and cookies — you will be logged out of websites.",
+      installCheck: [path.join(local, "BraveSoftware", "Brave-Browser", "User Data")],
+      paths: [],
+      psScan: `$t=0L;$c=0;$base="$env:LOCALAPPDATA\\BraveSoftware\\Brave-Browser\\User Data";if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{foreach($f in @('History','Cookies','Login Data','Visited Links','Top Sites')){$fp=Join-Path $_.FullName $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;$t+=$s;$c++}catch{}}}}};Write-Output "$t $c"`,
+      psClean: `$t=0L;$base="$env:LOCALAPPDATA\\BraveSoftware\\Brave-Browser\\User Data";if(Test-Path $base){Get-ChildItem $base -Directory -EA SilentlyContinue|ForEach-Object{foreach($f in @('History','Cookies','Login Data','Visited Links','Top Sites')){$fp=Join-Path $_.FullName $f;if(Test-Path $fp){try{$s=(Get-Item $fp -EA Stop).Length;Remove-Item $fp -Force -EA Stop;$t+=$s}catch{}}}}};Write-Output $t`,
+    },
 
     // ── RECYCLE BIN ────────────────────────────────────────────────────────────
     {
@@ -757,8 +768,8 @@ function getCleanCategories(): CleanCategory[] {
       autoSelect: false,
       warnNote: "Review before cleaning — these are files in your personal Downloads folder. Only installer and archive formats are counted.",
       paths: [],
-      psScan: `$dl=[System.Environment]::GetFolderPath('MyDocuments');$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.exe','.msi','.iso','.zip','.rar','.7z','.tar','.gz','.cab','.pkg');$t=0L;$c=0;foreach($base in @($dl2)){if(Test-Path $base){Get-ChildItem $base -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{$t+=$_.Length;$c++}}};Write-Output "$t $c"`,
-      psClean: `$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.exe','.msi','.iso','.zip','.rar','.7z','.tar','.gz','.cab','.pkg');$t=0L;foreach($base in @($dl2)){if(Test-Path $base){Get-ChildItem $base -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{try{$s=$_.Length;Remove-Item $_.FullName -Force -EA Stop;$t+=$s}catch{}}}};Write-Output $t`,
+      psScan: `$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.exe','.msi','.iso','.zip','.rar','.7z','.tar','.gz','.cab','.pkg','.appx','.msix');$t=0L;$c=0;if(Test-Path $dl2){Get-ChildItem $dl2 -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{$t+=$_.Length;$c++}};Write-Output "$t $c"`,
+      psClean: `$dl2=Join-Path ([System.Environment]::GetFolderPath('UserProfile')) 'Downloads';$exts=@('.exe','.msi','.iso','.zip','.rar','.7z','.tar','.gz','.cab','.pkg','.appx','.msix');$t=0L;if(Test-Path $dl2){Get-ChildItem $dl2 -File -EA SilentlyContinue|Where-Object{$exts -contains $_.Extension.ToLower()}|ForEach-Object{try{$s=$_.Length;Remove-Item $_.FullName -Force -EA Stop;$t+=$s}catch{}}};Write-Output $t`,
     },
     {
       id: "dl_partial",
@@ -774,12 +785,11 @@ function getCleanCategories(): CleanCategory[] {
     {
       id: "dl_winodd",
       group: "downloads",
-      name: "Windows Download Temp",
-      description: "Windows Store and Microsoft download temp files",
-      paths: [
-        path.join(local, "Microsoft", "Windows", "INetCache", "IE"),
-        path.join(roaming, "Microsoft", "Windows", "IECompatCache"),
-      ],
+      name: "Temporary Internet Files",
+      description: "Windows Internet Explorer / Edge legacy web cache and compatibility cache files",
+      paths: [],
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\Microsoft\\Windows\\INetCache\\IE","$env:LOCALAPPDATA\\Microsoft\\Windows\\INetCache\\Low","$env:APPDATA\\Microsoft\\Windows\\IECompatCache","$env:APPDATA\\Microsoft\\Windows\\IECompatUaCache")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\Microsoft\\Windows\\INetCache\\IE","$env:LOCALAPPDATA\\Microsoft\\Windows\\INetCache\\Low","$env:APPDATA\\Microsoft\\Windows\\IECompatCache","$env:APPDATA\\Microsoft\\Windows\\IECompatUaCache")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
 
     // ── BACKUP FILES ───────────────────────────────────────────────────────────
