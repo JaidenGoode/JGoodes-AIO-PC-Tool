@@ -13,7 +13,7 @@ import {
 import {
   HardDrive, Zap, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
-  Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Settings2, Gamepad2,
+  Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Settings2, Gamepad2, Timer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -1197,32 +1197,57 @@ export default function Utilities() {
 
       {/* ── NETWORK & ADMIN ─────────────────────────────────────────────────── */}
       <SectionLabel title="Network & Admin" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
 
-        <UtilCard icon={Network} title="Network Tools" description="Reset and repair network settings" delay={0.20}>
-          <RunButton action="flush-dns" label="Flush DNS Cache" pending={isPending("flush-dns")} onRun={run} />
-          <RunButton action="release-ip" label="Release IP Address" pending={isPending("release-ip")} onRun={run} />
-          <RunButton action="renew-ip" label="Renew IP Address" pending={isPending("renew-ip")} onRun={run} />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="outline" className="w-full h-7 text-xs justify-start gap-2 border-border/50 hover:border-destructive/40 text-muted-foreground/60 hover:text-destructive transition-all">
-                <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
-                Full Network Reset
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="bg-card border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="font-bold">Full Network Reset?</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm text-muted-foreground">
-                  This resets ALL network settings including Winsock and IP stack. A restart may be required.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => run("network-reset")} className="bg-destructive text-white text-sm">Reset Network</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        <UtilCard icon={Network} title="Network Tools" description="Run in order from top to bottom to fix connectivity" delay={0.20}>
+          <p className="text-[10px] text-muted-foreground/50 leading-relaxed -mt-0.5 mb-1">Steps 1-3: safe, run anytime. Step 4: resets Winsock (restart needed). Step 5: nuclear option.</p>
+          <RunButton action="flush-dns" label="1. Flush DNS Cache" pending={isPending("flush-dns")} onRun={run} />
+          <RunButton action="release-ip" label="2. Release IP Address" pending={isPending("release-ip")} onRun={run} />
+          <RunButton action="renew-ip" label="3. Renew IP Address" pending={isPending("renew-ip")} onRun={run} />
+          <div className="pt-1.5 border-t border-border/30 mt-0.5">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" data-testid="button-reset-winsock" className="w-full h-7 text-xs justify-start gap-2 border-border/50 hover:border-amber-500/40 text-muted-foreground/60 hover:text-amber-400 transition-all">
+                  <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
+                  4. Reset Winsock
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-card border-border">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-bold">Reset Winsock?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm text-muted-foreground">
+                    Resets the Windows networking catalog (Winsock). A PC restart is required after this to complete the fix.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => run("reset-winsock")} className="bg-primary text-white text-sm">Reset Winsock</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <div className="mt-1.5">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" data-testid="button-network-reset" className="w-full h-7 text-xs justify-start gap-2 border-border/50 hover:border-destructive/40 text-muted-foreground/60 hover:text-destructive transition-all">
+                    <AlertTriangle className="h-3 w-3 text-red-400 shrink-0" />
+                    5. Full Network Reset
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-card border-border">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-bold">Full Network Reset?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm text-muted-foreground">
+                      Resets ALL network settings — Winsock, IP stack, IPv4, IPv6, and clears DNS. This is the nuclear option. A restart is required to complete it.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => run("network-reset")} className="bg-destructive text-white text-sm">Reset Network</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
         </UtilCard>
 
         <UtilCard icon={Settings2} title="Windows Admin Tools" description="Quick access to system management panels" delay={0.22}>
@@ -1236,6 +1261,38 @@ export default function Utilities() {
             <div className="mt-1.5">
               <RunButton action="resmon" label="Resource Monitor" pending={isPending("resmon")} onRun={run} />
             </div>
+          </div>
+        </UtilCard>
+
+        <UtilCard icon={Timer} title="Windows Timer Resolution Reset" description="Reset bcdedit timer settings and re-register Windows Time" delay={0.24}>
+          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+            Removes <span className="font-mono text-[9.5px]">useplatformclock</span>, <span className="font-mono text-[9.5px]">useplatformtick</span>, and <span className="font-mono text-[9.5px]">tscsyncpolicy</span> overrides. Restores <span className="font-mono text-[9.5px]">disabledynamictick</span> to default. Then stops, unregisters, re-registers, and restarts the Windows Time service (w32tm).
+          </p>
+          <div className="flex items-start gap-1.5 p-2 rounded-lg bg-amber-500/8 border border-amber-500/20 my-1">
+            <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-[10px] text-amber-400/80 leading-relaxed">A PC restart is required after running this for all changes to take effect.</p>
+          </div>
+          <div className="mt-auto">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" data-testid="button-reset-timer-resolution" className="w-full h-7 text-xs justify-start gap-2 border-border/50 hover:border-primary/40 text-muted-foreground/60 hover:text-foreground transition-all">
+                  <Timer className="h-3 w-3 shrink-0" />
+                  Reset Timer Resolution to Default
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-card border-border">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-bold">Reset Timer Resolution?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm text-muted-foreground">
+                    This will remove all bcdedit timer overrides and re-register the Windows Time service. Use this if you applied timer tweaks and want to go back to Windows defaults. A restart is required to see the changes.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => run("reset-timer-resolution")} className="bg-primary text-white text-sm">Reset Timer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </UtilCard>
 

@@ -578,6 +578,26 @@ Get-AppxPackage Microsoft.Link2Windows -AllUsers -ErrorAction SilentlyContinue |
     disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Dsh" /v AllowNewsAndInterests /t REG_DWORD /d 1 /f`,
   },
 
+  "Advanced Latency & Timer Precision": {
+    requiresAdmin: true,
+    requiresRestart: true,
+    enable: `bcdedit /set disabledynamictick yes 2>$null
+bcdedit /set useplatformclock true 2>$null
+bcdedit /set useplatformtick yes 2>$null
+bcdedit /set tscsyncpolicy Enhanced 2>$null
+reg add "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f`,
+    disable: `bcdedit /deletevalue useplatformclock 2>$null
+bcdedit /set disabledynamictick no 2>$null
+bcdedit /deletevalue useplatformtick 2>$null
+bcdedit /deletevalue tscsyncpolicy 2>$null
+reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 0 /f
+net stop w32time 2>$null
+w32tm /unregister 2>$null
+w32tm /register 2>$null
+net start w32time 2>$null`,
+  },
+
   // ── NETWORK (One-Click Optimization) ──────────────────────────────────────
   "Network Optimization": {
     requiresAdmin: true,

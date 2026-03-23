@@ -1884,6 +1884,7 @@ Write-Host "Restore point created successfully."`;
         .object({
           action: z.enum([
             "sfc","dism","checkdisk","network-reset","flush-dns","release-ip","renew-ip",
+            "reset-winsock","reset-timer-resolution",
             "restart-explorer","disk-cleanup","storage-sense-on","storage-sense-off",
             "fast-startup-on","fast-startup-off","windows-update-default","windows-update-security",
             "location-on","location-off","open-system-restore",
@@ -1895,14 +1896,35 @@ Write-Host "Restore point created successfully."`;
         })
         .parse(req.body);
 
-      const commands: Record<string, { name: string; command: string; description: string }> = {
+      const commands: Record<string, { name: string; command: string; description: string; timeout?: number }> = {
         sfc: { name: "System File Checker", command: `powershell -NoProfile -Command "Start-Process cmd.exe -Verb RunAs -ArgumentList '/k','sfc /scannow & echo. & echo ===== SFC Complete ===== & pause'"`, description: "Scans and repairs corrupted Windows system files. Opens an elevated window." },
         dism: { name: "DISM Health Restore", command: `powershell -NoProfile -Command "Start-Process cmd.exe -Verb RunAs -ArgumentList '/k','DISM /Online /Cleanup-Image /RestoreHealth & echo. & echo ===== DISM Complete ===== & pause'"`, description: "Repairs the Windows image. Requires internet. Can take 10-30 minutes." },
         checkdisk: { name: "Check Disk", command: "chkdsk C: /f /r /x", description: "Checks and repairs disk errors. Schedules for next restart. Requires Administrator." },
-        "network-reset": { name: "Network Reset", command: "netsh winsock reset && netsh int ip reset && ipconfig /release && ipconfig /flushdns && ipconfig /renew", description: "Resets all network settings. Restart required." },
-        "flush-dns": { name: "Flush DNS Cache", command: "ipconfig /flushdns", description: "Clears the local DNS resolver cache." },
-        "release-ip": { name: "Release IP Address", command: "ipconfig /release", description: "Releases the current IP address from DHCP." },
-        "renew-ip": { name: "Renew IP Address", command: "ipconfig /renew", description: "Requests a new IP address from DHCP." },
+        "network-reset": { name: "Full Network Reset", command: `netsh winsock reset
+netsh int ip reset
+netsh int ipv4 reset
+netsh int ipv6 reset
+ipconfig /release
+ipconfig /flushdns
+Write-Output "Network stack fully reset. Please restart your PC to complete the process."`, description: "All network settings reset. Restart required." },
+        "flush-dns": { name: "Flush DNS Cache", command: `ipconfig /flushdns
+Write-Output "DNS resolver cache flushed."`, description: "DNS cache cleared successfully." },
+        "release-ip": { name: "Release IP Address", command: `ipconfig /release 2>&1 | Out-Null
+Write-Output "IP address released. Run Renew IP to get a new address."`, description: "IP address released from DHCP." },
+        "renew-ip": { name: "Renew IP Address", command: `ipconfig /renew
+Write-Output "IP address renewed."`, description: "New IP address obtained from DHCP.", timeout: 60000 },
+        "reset-winsock": { name: "Reset Winsock", command: `netsh winsock reset
+Write-Output "Winsock catalog reset. Restart your PC to complete the fix."`, description: "Winsock catalog reset. Restart required." },
+        "reset-timer-resolution": { name: "Reset Timer Resolution to Default", command: `$ErrorActionPreference = 'SilentlyContinue'
+bcdedit /deletevalue useplatformclock 2>&1 | Out-Null
+bcdedit /set disabledynamictick no 2>&1 | Out-Null
+bcdedit /deletevalue useplatformtick 2>&1 | Out-Null
+bcdedit /deletevalue tscsyncpolicy 2>&1 | Out-Null
+net stop w32time 2>&1 | Out-Null
+w32tm /unregister 2>&1 | Out-Null
+w32tm /register 2>&1 | Out-Null
+net start w32time 2>&1 | Out-Null
+Write-Output "Windows timer resolution has been reset to defaults. Please restart your PC to see the changes take effect."`, description: "Timer resolution reset to Windows defaults. Restart required." },
         "restart-explorer": { name: "Restart Explorer", command: `powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command "Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; Start-Process explorer"`, description: "Restarts Windows Explorer (taskbar and desktop)." },
         "disk-cleanup": { name: "Disk Cleanup", command: "cleanmgr", description: "Runs Windows built-in Disk Cleanup utility." },
         "storage-sense-on": { name: "Enable Storage Sense", command: 'reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\StorageSense" /v "AllowStorageSenseGlobal" /t REG_DWORD /d 1 /f', description: "Enables Storage Sense automatic cleanup." },
@@ -1963,9 +1985,13 @@ try {
       }
 
       const TERMINAL_ACTIONS = new Set([
-        "checkdisk", "network-reset",
+        "checkdisk",
       ]);
-      const PS_ACTIONS = new Set(["empty-standby-memory"]);
+      const PS_ACTIONS = new Set([
+        "empty-standby-memory",
+        "flush-dns", "release-ip", "renew-ip", "reset-winsock", "network-reset",
+        "reset-timer-resolution",
+      ]);
       const GUI_ACTIONS = new Set([
         "open-system-restore", "disk-cleanup",
         "sfc", "dism",
@@ -1977,7 +2003,7 @@ try {
       ]);
 
       if (PS_ACTIONS.has(action)) {
-        const output = await runPowerShell(info.command, 20000);
+        const output = await runPowerShell(info.command, info.timeout ?? 20000);
         return res.json({ success: true, action, ...info, output: output || "Done." });
       }
 
