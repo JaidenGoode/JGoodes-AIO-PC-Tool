@@ -123,73 +123,107 @@ function SubItemRow({
 }) {
   const Icon = CAT_ICONS[cat.id] || Trash2;
   const pct = totalSize > 0 ? (cat.size / totalSize) * 100 : 0;
+  const sizeColor = cat.size > 500 * 1024 * 1024
+    ? "text-primary"
+    : cat.size > 50 * 1024 * 1024
+    ? "text-amber-400"
+    : "text-muted-foreground/50";
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: 1, x: 0 }}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 border-b border-border/20 transition-all duration-150 last:border-0",
+        "relative flex items-center gap-3 px-4 py-3 border-b border-border/15 transition-all duration-150 last:border-0 group",
         cat.found ? "cursor-pointer" : "cursor-default",
-        isSelected && cat.found ? "bg-primary/5 hover:bg-primary/8" : cat.found ? "hover:bg-secondary/20" : "opacity-30"
+        isSelected && cat.found
+          ? "bg-primary/6"
+          : cat.found
+          ? "hover:bg-secondary/15"
+          : "opacity-25 pointer-events-none"
       )}
+      style={isSelected && cat.found ? {
+        boxShadow: "inset 3px 0 0 hsl(var(--primary) / 0.6)"
+      } : {}}
       onClick={() => cat.found && onToggle()}
       data-testid={`row-cleaner-${cat.id}`}
     >
-      {/* Checkbox — stop propagation so click doesn't also bubble to parent onClick */}
-      <div onClick={(e) => e.stopPropagation()}>
-        <Checkbox
-          checked={isSelected && cat.found}
-          disabled={!cat.found}
-          onCheckedChange={() => cat.found && onToggle()}
-          className="shrink-0 border-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+      {/* Checkbox */}
+      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+        <div className={cn(
+          "flex items-center justify-center h-4 w-4 rounded border-[1.5px] transition-all duration-150",
+          isSelected && cat.found
+            ? "bg-primary border-primary shadow-[0_0_6px_hsl(var(--primary)/0.4)]"
+            : cat.found
+            ? "border-border/50 group-hover:border-primary/40"
+            : "border-border/30"
+        )}
+          onClick={() => cat.found && onToggle()}
           data-testid={`checkbox-cleaner-${cat.id}`}
-        />
+        >
+          {isSelected && cat.found && (
+            <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 12 12">
+              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
       </div>
 
       {/* Icon */}
       <div className={cn(
-        "p-1.5 rounded-md shrink-0 transition-colors",
-        isSelected && cat.found ? cfg.bgColor : "bg-secondary/30"
+        "p-1.5 rounded-lg shrink-0 transition-all duration-150",
+        isSelected && cat.found
+          ? "bg-primary/15 border border-primary/20"
+          : "bg-secondary/40 border border-border/30 group-hover:border-border/50"
       )}>
-        <Icon className={cn("h-3 w-3", isSelected && cat.found ? cfg.color : "text-muted-foreground/40")} />
+        <Icon className={cn("h-3.5 w-3.5 transition-colors", isSelected && cat.found ? cfg.color : "text-muted-foreground/35 group-hover:text-muted-foreground/55")} />
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[12px] font-semibold text-foreground leading-none">{cat.name}</span>
-          {!cat.found && <span className="text-[10px] text-muted-foreground/35 font-mono">Nothing found</span>}
+          <span className={cn(
+            "text-[12px] font-semibold leading-none transition-colors",
+            isSelected && cat.found ? "text-foreground" : "text-foreground/75"
+          )}>{cat.name}</span>
+          {!cat.found && <span className="text-[9.5px] text-muted-foreground/30 font-mono italic">Nothing found</span>}
           {cat.autoSelect === false && cat.found && (
-            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 leading-none shrink-0">
-              <Info className="h-2.5 w-2.5" />
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border bg-amber-500/10 text-amber-400 border-amber-500/25 leading-none shrink-0">
+              <Info className="h-2 w-2" />
               Review
             </span>
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground/55 mt-0.5 leading-relaxed line-clamp-1">{cat.description}</p>
+        <p className="text-[10px] text-muted-foreground/45 mt-0.5 leading-relaxed line-clamp-1">{cat.description}</p>
         {cat.warnNote && cat.found && (
-          <p className="text-[10px] text-amber-400/70 mt-0.5 leading-relaxed line-clamp-1">{cat.warnNote}</p>
+          <p className="text-[10px] text-amber-400/60 mt-0.5 leading-relaxed line-clamp-1">{cat.warnNote}</p>
         )}
-        {cat.found && (
-          <div className="mt-1.5 h-0.5 w-full rounded-full bg-secondary/50 overflow-hidden">
+        {cat.found && pct > 0 && (
+          <div className="mt-1.5 h-[3px] w-full rounded-full bg-secondary/40 overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all duration-500", isSelected ? "bg-primary" : "bg-secondary/50")}
-              style={{ width: `${Math.min(100, pct)}%` }}
+              className={cn("h-full rounded-full transition-all duration-500", isSelected ? "bg-primary/70" : "bg-border/60")}
+              style={{ width: `${Math.max(2, Math.min(100, pct))}%` }}
             />
           </div>
         )}
       </div>
 
       {/* Size + count */}
-      <div className="text-right shrink-0 ml-3 min-w-[64px]">
-        <p className={cn("text-[12px] font-bold font-mono", isSelected && cat.found ? cfg.color : "text-muted-foreground/35")}>
-          {cat.found ? cat.sizeHuman : "—"}
-        </p>
-        {cat.found && (
-          <p className="text-[9px] text-muted-foreground/35 mt-0.5 font-mono">
-            {cat.fileCount.toLocaleString()} files
-          </p>
+      <div className="text-right shrink-0 ml-2 min-w-[68px]">
+        {cat.found ? (
+          <>
+            <p className={cn(
+              "text-[13px] font-black font-mono transition-colors",
+              isSelected ? "text-primary" : sizeColor
+            )}>
+              {cat.sizeHuman}
+            </p>
+            <p className="text-[9px] text-muted-foreground/30 mt-0.5 font-mono">
+              {cat.fileCount.toLocaleString()} {cat.fileCount === 1 ? "file" : "files"}
+            </p>
+          </>
+        ) : (
+          <p className="text-[11px] font-mono text-muted-foreground/20">—</p>
         )}
       </div>
     </motion.div>
@@ -382,11 +416,11 @@ export default function CleanerPage() {
                 const Icon = cfg.icon;
                 return (
                   <motion.div key={groupId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-2.5 p-3 rounded-xl border border-border/60 bg-secondary/20 hover:bg-secondary/40 hover:border-border transition-all duration-150">
-                    <div className={cn("p-1.5 rounded-lg shrink-0", cfg.bgColor)}>
+                    className="flex items-center gap-2.5 p-3 rounded-xl border border-border/50 bg-secondary/15 hover:bg-secondary/30 hover:border-border/70 hover:border-primary/20 transition-all duration-150 group">
+                    <div className={cn("p-1.5 rounded-lg shrink-0 border transition-all duration-150 group-hover:scale-105", cfg.bgColor, cfg.borderColor)}>
                       <Icon className={cn("h-3 w-3", cfg.color)} />
                     </div>
-                    <p className="text-[11px] font-semibold text-foreground/80 leading-tight">{cfg.label}</p>
+                    <p className="text-[11px] font-semibold text-foreground/70 group-hover:text-foreground/90 leading-tight transition-colors">{cfg.label}</p>
                   </motion.div>
                 );
               })}
@@ -476,27 +510,33 @@ export default function CleanerPage() {
             <motion.div key="scanned" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
 
               {/* Top summary bar */}
-              <div className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5">
-                <div className="flex items-center gap-2.5">
-                  <Sparkles className="h-4 w-4 text-primary" />
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-primary/25 relative overflow-hidden"
+                style={{ background: "hsl(var(--primary) / 0.06)", boxShadow: "0 0 20px hsl(var(--primary) / 0.08), inset 0 1px 0 hsl(var(--primary) / 0.08)" }}>
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-lg bg-primary/15 border border-primary/20 shrink-0"
+                    style={{ boxShadow: "0 0 10px hsl(var(--primary) / 0.2)" }}>
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  </div>
                   <div>
-                    <span className="text-sm font-bold text-foreground">
-                      Found <span className="text-primary">{scanData.totalSizeHuman}</span> of junk
-                    </span>
-                    <span className="text-[11px] text-muted-foreground ml-2">
-                      {scanData.totalCount.toLocaleString()} files
-                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[15px] font-black text-primary font-mono">{scanData.totalSizeHuman}</span>
+                      <span className="text-[11px] text-foreground/70 font-semibold">of junk found</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/50 mt-0.5 font-mono">
+                      {scanData.totalCount.toLocaleString()} files &nbsp;·&nbsp; {selected.size} categories selected
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Button size="sm" variant="ghost" onClick={() => {
+                  <button onClick={() => {
                     setSelected(new Set(scanData.categories.filter((c) => c.found && c.installed).map((c) => c.id)));
-                  }} className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1" data-testid="button-select-all">
-                    <CheckSquare className="h-3 w-3" /> All
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1" data-testid="button-deselect-all">
+                  }} className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-border/40 bg-secondary/30 text-muted-foreground/70 hover:border-primary/30 hover:bg-primary/8 hover:text-primary transition-all duration-150" data-testid="button-select-all">
+                    <CheckSquare className="h-3 w-3" /> Select All
+                  </button>
+                  <button onClick={() => setSelected(new Set())} className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-border/40 bg-secondary/30 text-muted-foreground/70 hover:border-border/60 hover:bg-secondary/50 hover:text-foreground/80 transition-all duration-150" data-testid="button-deselect-all">
                     <Square className="h-3 w-3" /> None
-                  </Button>
+                  </button>
                 </div>
               </div>
 
@@ -504,48 +544,72 @@ export default function CleanerPage() {
               <div className="flex gap-3" style={{ minHeight: "460px" }}>
 
                 {/* ── LEFT SIDEBAR: category list ─────────────────────────── */}
-                <div className="w-48 shrink-0 rounded-xl border border-border bg-card overflow-hidden">
-                  <div className="px-3 py-2 border-b border-border/50">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Categories</p>
+                <div className="w-52 shrink-0 rounded-xl border border-border bg-card overflow-hidden flex flex-col">
+                  <div className="px-3 py-2.5 border-b border-border/50 bg-secondary/10 shrink-0">
+                    <p className="text-[9.5px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">Categories</p>
                   </div>
-                  <div className="divide-y divide-border/20">
+                  <div className="flex-1 overflow-y-auto">
                     {GROUP_ORDER.map((groupId) => {
                       const cats = grouped[groupId] ?? [];
                       const gcfg = GROUP_CONFIG[groupId];
                       const GIcon = gcfg.icon;
                       const groupTotal = cats.reduce((s, c) => s + c.size, 0);
                       const hasFound = cats.some((c) => c.found);
-                      const someSelected = cats.some((c) => selected.has(c.id));
+                      const numSelected = cats.filter((c) => selected.has(c.id)).length;
+                      const numFound = cats.filter((c) => c.found).length;
                       const isActive = activeGroup === groupId;
+                      const allSelected = numFound > 0 && numSelected === numFound;
 
                       return (
                         <button
                           key={groupId}
                           className={cn(
-                            "w-full flex items-start gap-2.5 px-3 py-2.5 text-left transition-all duration-150 border-l-2",
+                            "w-full flex items-center gap-2.5 px-3 py-3 text-left transition-all duration-150 border-b border-border/15 last:border-0",
                             isActive
-                              ? cn("border-l-primary bg-primary/8")
-                              : "border-l-transparent hover:bg-secondary/20"
+                              ? "bg-primary/8 border-l-2 border-l-primary pl-[10px]"
+                              : "border-l-2 border-l-transparent hover:bg-secondary/15 hover:pl-[10px]"
                           )}
                           onClick={() => setActiveGroup(groupId)}
                           data-testid={`sidebar-group-${groupId}`}
                         >
-                          {/* Status dot */}
-                          <div className="mt-0.5 shrink-0">
-                            {hasFound ? (
-                              <div className={cn("w-2 h-2 rounded-full", someSelected ? "bg-primary" : gcfg.color.replace("text-", "bg-"))} />
-                            ) : (
-                              <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />
-                            )}
+                          <div className={cn(
+                            "p-1.5 rounded-lg shrink-0 transition-all duration-150",
+                            isActive
+                              ? "bg-primary/15 border border-primary/25"
+                              : hasFound
+                              ? "bg-secondary/50 border border-border/30"
+                              : "bg-secondary/20 border border-border/20"
+                          )}>
+                            <GIcon className={cn("h-3 w-3 transition-colors", isActive ? gcfg.color : hasFound ? "text-muted-foreground/50" : "text-muted-foreground/20")} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={cn("text-[11px] font-semibold leading-tight truncate", isActive ? "text-foreground" : "text-foreground/70")}>
+                            <p className={cn(
+                              "text-[11px] font-semibold leading-tight truncate transition-colors",
+                              isActive ? "text-foreground" : "text-foreground/60"
+                            )}>
                               {gcfg.label}
                             </p>
-                            <p className={cn("text-[10px] mt-0.5 font-mono font-bold", hasFound ? gcfg.color : "text-muted-foreground/35")}>
-                              {hasFound ? fmtSizeLocal(groupTotal) : "Clean"}
-                            </p>
+                            {hasFound ? (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <p className={cn("text-[10px] font-black font-mono", isActive ? gcfg.color : "text-muted-foreground/40")}>
+                                  {fmtSizeLocal(groupTotal)}
+                                </p>
+                                {numSelected > 0 && (
+                                  <span className="text-[9px] font-bold text-primary/70">
+                                    ({numSelected}/{numFound})
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[9.5px] mt-0.5 text-muted-foreground/25 font-medium">Clean</p>
+                            )}
                           </div>
+                          {allSelected && numFound > 0 && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          )}
+                          {!allSelected && numSelected > 0 && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0" />
+                          )}
                         </button>
                       );
                     })}
@@ -555,19 +619,24 @@ export default function CleanerPage() {
                 {/* ── RIGHT PANEL: sub-items ──────────────────────────────── */}
                 <div className="flex-1 rounded-xl border border-border bg-card overflow-hidden flex flex-col">
                   {/* Right panel header */}
-                  <div className={cn("flex items-center justify-between px-4 py-3 border-b border-border/50", cfg.activeBg)}>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-secondary/8 shrink-0 relative overflow-hidden">
+                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
                     <div className="flex items-center gap-3">
-                      <div className={cn("p-2 rounded-lg", cfg.bgColor)}>
+                      <div className={cn("p-2 rounded-lg border shrink-0", cfg.bgColor, cfg.borderColor)}>
                         <GroupIcon className={cn("h-4 w-4", cfg.color)} />
                       </div>
                       <div>
-                        <p className="text-[14px] font-bold text-foreground">{cfg.label}</p>
-                        <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                          Total: <span className={cn("font-bold", cfg.color)}>{fmtSizeLocal(activeTotal)}</span>
+                        <p className="text-[13.5px] font-bold text-foreground tracking-tight">{cfg.label}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground/50">
+                            Found: <span className={cn("font-black font-mono", cfg.color)}>{fmtSizeLocal(activeTotal)}</span>
+                          </span>
                           {activeSelected > 0 && (
-                            <> &nbsp;·&nbsp; Selected: <span className="font-bold text-primary">{fmtSizeLocal(activeSelected)}</span></>
+                            <span className="text-[10px] text-primary/80">
+                              Selected: <span className="font-black font-mono text-primary">{fmtSizeLocal(activeSelected)}</span>
+                            </span>
                           )}
-                        </p>
+                        </div>
                       </div>
                     </div>
                     {/* Group select/deselect */}
@@ -575,13 +644,13 @@ export default function CleanerPage() {
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => selectAll(activeCats)}
-                          className="text-[10px] font-semibold px-2 py-1 rounded border border-border/50 text-muted-foreground/70 hover:text-foreground hover:border-border transition-colors"
+                          className="text-[10px] font-bold px-2 py-1 rounded-md border border-border/40 text-muted-foreground/60 hover:text-foreground hover:border-primary/30 hover:bg-primary/6 transition-all duration-150"
                         >
                           Select all
                         </button>
                         <button
                           onClick={() => deselectAll(activeCats)}
-                          className="text-[10px] font-semibold px-2 py-1 rounded border border-border/50 text-muted-foreground/70 hover:text-foreground hover:border-border transition-colors"
+                          className="text-[10px] font-bold px-2 py-1 rounded-md border border-border/40 text-muted-foreground/60 hover:text-foreground hover:border-border/60 hover:bg-secondary/40 transition-all duration-150"
                         >
                           Deselect
                         </button>
@@ -654,20 +723,21 @@ export default function CleanerPage() {
 
               {/* Clean button row */}
               <div className="flex items-center justify-between pt-1">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs">
                   {selected.size > 0 ? (
-                    <>
-                      <span className="text-primary font-bold">{selected.size}</span>{" "}
-                      {selected.size === 1 ? "category" : "categories"} selected
-                    </>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-primary font-black text-sm">{selected.size}</span>
+                      <span className="text-muted-foreground/70">{selected.size === 1 ? "category" : "categories"} selected</span>
+                      <span className="text-primary/60 font-bold font-mono text-[11px]">({fmtSizeLocal(selectedSize)})</span>
+                    </div>
                   ) : (
-                    "Select at least one category to clean"
+                    <span className="text-muted-foreground/50">Select categories to clean</span>
                   )}
                 </div>
                 <Button onClick={handleClean} disabled={selected.size === 0} data-testid="button-clean-selected"
-                  className="h-9 px-6 bg-primary text-white font-bold text-sm disabled:opacity-30"
-                  style={selected.size > 0 ? { boxShadow: "0 0 20px hsl(var(--primary) / 0.25)" } : {}}>
-                  <Sparkles className="mr-2 h-3.5 w-3.5" />
+                  className="h-9 px-7 bg-primary text-white font-black text-sm disabled:opacity-25 gap-2"
+                  style={selected.size > 0 ? { boxShadow: "0 0 22px hsl(var(--primary) / 0.35), 0 4px 12px rgba(0,0,0,0.35)" } : {}}>
+                  <Sparkles className="h-3.5 w-3.5" />
                   Clean Selected
                 </Button>
               </div>

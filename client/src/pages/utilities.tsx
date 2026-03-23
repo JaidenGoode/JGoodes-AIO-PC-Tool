@@ -25,14 +25,20 @@ function UtilCard({
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="h-full">
-      <div className="h-full flex flex-col rounded-xl border border-border bg-card hover:border-primary/30 transition-colors duration-200 overflow-hidden">
-        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50 bg-secondary/8 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-primary/12 border border-primary/15 flex items-center justify-center shrink-0">
+      <div className="h-full flex flex-col rounded-xl border border-border/80 bg-card hover:border-primary/40 transition-all duration-200 overflow-hidden group"
+        style={{ boxShadow: "0 0 0 0 transparent" }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px hsl(var(--primary) / 0.07), 0 2px 12px rgba(0,0,0,0.4)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 0 transparent"; }}
+      >
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50 bg-secondary/10 shrink-0 relative overflow-hidden">
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+          <div className="w-7 h-7 rounded-lg bg-primary/12 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/18 group-hover:border-primary/30 transition-all duration-200"
+            style={{ boxShadow: "0 0 8px hsl(var(--primary) / 0.12)" }}>
             <Icon className="h-3.5 w-3.5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-[12.5px] text-foreground tracking-tight leading-tight">{title}</h3>
-            <p className="text-[9.5px] text-muted-foreground/55 mt-0.5 leading-none truncate">{description}</p>
+            <p className="text-[9.5px] text-muted-foreground/50 mt-0.5 leading-none truncate">{description}</p>
           </div>
         </div>
         <div className="flex-1 flex flex-col space-y-1.5 p-3">{children}</div>
@@ -49,22 +55,28 @@ function RunButton({ action, label, pending, onRun }: {
       onClick={() => onRun(action)}
       disabled={pending}
       size="sm"
-      className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150"
+      className={cn(
+        "w-full h-7 text-xs font-semibold justify-start gap-2 transition-all duration-150 border",
+        pending
+          ? "bg-primary/8 border-primary/25 text-primary cursor-not-allowed"
+          : "bg-transparent hover:bg-primary/8 text-foreground/65 hover:text-primary border-border/35 hover:border-primary/30"
+      )}
       data-testid={`button-utility-${action}`}
     >
       {pending
         ? <Loader2 className="h-2.5 w-2.5 animate-spin text-primary shrink-0" />
-        : <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />}
-      {pending ? "Running..." : label}
+        : <div className="h-1.5 w-1.5 rounded-full bg-primary/40 shrink-0 group-hover:bg-primary transition-colors" />}
+      <span className="truncate">{pending ? "Running..." : label}</span>
     </Button>
   );
 }
 
 function SectionLabel({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-3 pt-1">
-      <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/35 shrink-0 whitespace-nowrap">{title}</span>
-      <div className="flex-1 h-px bg-border/40" />
+    <div className="flex items-center gap-3 pt-2">
+      <div className="h-[1px] w-3 bg-gradient-to-r from-primary/50 to-primary/20 shrink-0" />
+      <span className="text-[9.5px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 shrink-0 whitespace-nowrap">{title}</span>
+      <div className="flex-1 h-px bg-gradient-to-r from-border/50 to-transparent" />
     </div>
   );
 }
@@ -80,11 +92,16 @@ function LaunchBtn({
   return (
     <Button size="sm" onClick={onClick} disabled={disabled}
       className={cn(
-        "w-full h-8 text-xs font-bold transition-all duration-150 gap-1.5",
-        status === "done" ? "bg-green-500/12 border border-green-500/35 text-green-400 hover:bg-green-500/18"
-          : status === "error" ? "bg-destructive/12 border border-destructive/35 text-destructive hover:bg-destructive/18"
-          : "bg-primary text-primary-foreground hover:bg-primary/90"
+        "w-full h-8 text-xs font-bold transition-all duration-200 gap-1.5 relative overflow-hidden",
+        status === "done"
+          ? "bg-green-500/12 border border-green-500/30 text-green-400 hover:bg-green-500/18"
+          : status === "error"
+          ? "bg-destructive/12 border border-destructive/30 text-destructive hover:bg-destructive/18"
+          : "bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/0"
       )}
+      style={(!busy && status !== "done" && status !== "error") ? {
+        boxShadow: "0 0 16px hsl(var(--primary) / 0.3), 0 2px 8px rgba(0,0,0,0.3)"
+      } : undefined}
       data-testid={testId}>
       {busy ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Working...</>
         : status === "done" ? <><CheckCircle2 className="h-3.5 w-3.5" /> Launched Successfully</>

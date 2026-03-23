@@ -789,8 +789,9 @@ export default function Tweaks() {
       )}
 
       {/* ── Presets + Bulk Actions Bar ─────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border border-border/40 bg-secondary/15">
-        <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-wider shrink-0">
+      <div className="flex items-center gap-2 flex-wrap px-3.5 py-2.5 rounded-xl border border-border/50 bg-secondary/10"
+        style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+        <span className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] shrink-0 pr-1">
           Quick Select
         </span>
         {TWEAK_PRESETS.map((preset) => {
@@ -803,11 +804,9 @@ export default function Tweaks() {
               data-testid={`button-preset-${preset.id}`}
               title={preset.description}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-150 disabled:opacity-50",
-                "border-border/50 bg-secondary/40 text-muted-foreground",
-                preset.bgColor,
-                preset.borderColor,
-                `hover:${preset.color}`
+                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all duration-150 disabled:opacity-40",
+                "border-border/40 bg-secondary/30 text-muted-foreground/70",
+                "hover:bg-secondary/60 hover:border-border/70 hover:text-foreground/80"
               )}
             >
               <Icon className={cn("h-3 w-3 shrink-0", preset.color)} />
@@ -815,13 +814,13 @@ export default function Tweaks() {
             </button>
           );
         })}
-        <div className="h-4 w-px bg-border/60 mx-0.5 shrink-0" />
+        <div className="h-4 w-px bg-border/40 mx-0.5 shrink-0" />
         <button
           onClick={selectAllUnoptimized}
           disabled={isBulkPending}
           data-testid="button-select-all-tweaks"
           title="Select all un-optimized tweaks"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-150 border-border/50 bg-secondary/40 text-muted-foreground hover:border-primary/30 hover:bg-primary/8 hover:text-primary disabled:opacity-50"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all duration-150 border-border/40 bg-secondary/30 text-muted-foreground/70 hover:border-primary/35 hover:bg-primary/8 hover:text-primary disabled:opacity-40"
         >
           <CheckSquare className="h-3 w-3" />
           Select All
@@ -831,7 +830,7 @@ export default function Tweaks() {
             onClick={clearSelection}
             data-testid="button-clear-selection"
             title="Clear selection"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-150 border-border/50 bg-secondary/40 text-muted-foreground hover:border-red-500/30 hover:bg-red-500/8 hover:text-red-400"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all duration-150 border-border/40 bg-secondary/30 text-muted-foreground/70 hover:border-red-500/35 hover:bg-red-500/8 hover:text-red-400"
           >
             <X className="h-3 w-3" />
             Clear ({selectedCount})
@@ -866,22 +865,26 @@ export default function Tweaks() {
               onClick={() => setFilter(cat)}
               data-testid={`filter-${cat}`}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 capitalize",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-bold border transition-all duration-150 capitalize",
                 isSelected
-                  ? "bg-primary/12 border-primary/30 text-primary"
-                  : "bg-secondary/40 border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
+                  ? "border-primary/35 text-primary"
+                  : "bg-secondary/30 border-border/35 text-muted-foreground/65 hover:text-foreground/80 hover:border-border/60 hover:bg-secondary/50"
               )}
+              style={isSelected ? {
+                background: "hsl(var(--primary) / 0.1)",
+                boxShadow: "0 0 10px hsl(var(--primary) / 0.12), inset 0 1px 0 hsl(var(--primary) / 0.08)"
+              } : undefined}
             >
-              <Icon className={cn("h-3 w-3", isSelected ? "text-primary" : "text-muted-foreground/60")} />
+              <Icon className={cn("h-3 w-3", isSelected ? "text-primary" : "text-muted-foreground/45")} />
               {cat}
               <span className={cn(
-                "text-[10px] px-1 rounded font-mono",
-                isSelected ? "text-primary/80" : "text-muted-foreground/40"
+                "text-[9.5px] font-mono font-black ml-0.5",
+                isSelected ? "text-primary/70" : "text-muted-foreground/35"
               )}>
                 {optimized > 0 ? (
                   <span>
-                    <span className={isSelected ? "text-primary" : "text-primary/60"}>{optimized}</span>
-                    <span className="text-muted-foreground/30">/{total}</span>
+                    <span className={isSelected ? "text-primary/80" : "text-primary/50"}>{optimized}</span>
+                    <span className="text-muted-foreground/25">/{total}</span>
                   </span>
                 ) : (
                   total
@@ -937,40 +940,55 @@ export default function Tweaks() {
                 >
                   <div
                     className={cn(
-                      "card-premium h-full flex flex-col p-4 rounded-xl border transition-all duration-200 cursor-pointer",
+                      "h-full flex flex-col p-4 rounded-xl border transition-all duration-200 cursor-pointer relative overflow-hidden",
                       isOptimized
-                        ? "bg-primary/4 border-primary/25 hover:border-primary/40"
+                        ? "bg-primary/5 border-primary/30"
                         : isSelected
-                          ? "bg-primary/6 border-primary/35 hover:border-primary/50"
-                          : "bg-card border-border hover:border-border/80"
+                          ? "bg-primary/7 border-primary/40"
+                          : "bg-card border-border/70 hover:border-border"
                     )}
-                    style={(isOptimized || isSelected) ? {
-                      boxShadow: "0 0 15px hsl(var(--primary) / 0.1), inset 0 1px 0 hsl(var(--primary) / 0.06)"
-                    } : undefined}
+                    style={
+                      isOptimized
+                        ? { boxShadow: "0 0 20px hsl(var(--primary) / 0.12), inset 0 1px 0 hsl(var(--primary) / 0.08), 0 2px 12px rgba(0,0,0,0.35)" }
+                        : isSelected
+                        ? { boxShadow: "0 0 18px hsl(var(--primary) / 0.15), inset 0 1px 0 hsl(var(--primary) / 0.1), 0 2px 12px rgba(0,0,0,0.35)" }
+                        : { boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }
+                    }
                     onClick={() => !isOptimized && toggleSelect(tweak.id)}
                     data-testid={`card-tweak-${tweak.id}`}
                   >
+                    {/* Top accent glow bar for optimized/selected */}
+                    {(isOptimized || isSelected) && (
+                      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
+                    )}
+
                     <div className="flex justify-between items-start gap-3 mb-2.5">
                       <h3 className={cn(
-                        "font-semibold text-[13px] leading-snug flex-1",
-                        isOptimized ? "text-foreground" : "text-foreground/80"
+                        "font-bold text-[13px] leading-snug flex-1 tracking-tight",
+                        isOptimized ? "text-foreground" : "text-foreground/85"
                       )}>
                         {tweak.title}
                       </h3>
                       {isOptimized ? (
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/12 border border-primary/25 shrink-0" data-testid={`badge-optimized-${tweak.id}`}>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-full shrink-0"
+                          style={{ background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.3)", boxShadow: "0 0 8px hsl(var(--primary) / 0.2)" }}
+                          data-testid={`badge-optimized-${tweak.id}`}>
                           <CheckCircle2 className="h-3 w-3 text-primary" />
-                          <span className="text-[10px] font-bold text-primary">Optimized</span>
+                          <span className="text-[10px] font-black text-primary tracking-wide">Optimized</span>
                         </div>
                       ) : (
                         <button
                           onClick={(e) => { e.stopPropagation(); toggleSelect(tweak.id); }}
                           className={cn(
-                            "flex items-center justify-center h-5 w-5 rounded border-2 transition-all duration-150 shrink-0",
+                            "flex items-center justify-center h-5 w-5 rounded-md border-[1.5px] transition-all duration-150 shrink-0",
                             isSelected
-                              ? "bg-primary border-primary text-white"
-                              : "border-border/60 hover:border-primary/50"
+                              ? "border-primary text-white"
+                              : "border-border/50 hover:border-primary/50 hover:bg-primary/5"
                           )}
+                          style={isSelected ? {
+                            background: "hsl(var(--primary))",
+                            boxShadow: "0 0 8px hsl(var(--primary) / 0.45)"
+                          } : undefined}
                           data-testid={`checkbox-tweak-${tweak.id}`}
                         >
                           {isSelected && <Check className="h-3 w-3" />}
@@ -978,21 +996,21 @@ export default function Tweaks() {
                       )}
                     </div>
 
-                    <p className="text-[11.5px] text-muted-foreground leading-relaxed flex-1">
+                    <p className="text-[11.5px] text-muted-foreground/80 leading-relaxed flex-1">
                       {tweak.description}
                     </p>
 
                     {tweak.warning && (
-                      <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-amber-500/6 border border-amber-500/15">
+                      <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-amber-500/6 border border-amber-500/18">
                         <AlertTriangle className="w-3 h-3 mt-0.5 text-amber-400 shrink-0" />
-                        <p className="text-[11px] text-amber-400/90 leading-snug">{tweak.warning}</p>
+                        <p className="text-[11px] text-amber-400/85 leading-snug">{tweak.warning}</p>
                       </div>
                     )}
 
                     {tweak.featureBreaks && (
-                      <div className="mt-2 p-2 rounded-lg bg-secondary/60 border border-border/40">
-                        <p className="text-[10.5px] text-muted-foreground leading-snug">
-                          <span className="text-foreground/60 font-semibold">Impact: </span>
+                      <div className="mt-2 p-2 rounded-lg bg-secondary/50 border border-border/35">
+                        <p className="text-[10.5px] text-muted-foreground/75 leading-snug">
+                          <span className="text-foreground/55 font-semibold">Breaks: </span>
                           {tweak.featureBreaks}
                         </p>
                       </div>
@@ -1001,23 +1019,23 @@ export default function Tweaks() {
                     {conflictIsActive && conflictTitle && (
                       <div className="mt-2.5 p-2 rounded-lg flex items-start gap-2 bg-orange-500/6 border border-orange-500/20">
                         <AlertOctagon className="w-3 h-3 mt-0.5 text-orange-400 shrink-0" />
-                        <p className="text-[10.5px] text-orange-400/90 leading-snug">
+                        <p className="text-[10.5px] text-orange-400/85 leading-snug">
                           Conflicts with <span className="font-semibold">"{conflictTitle}"</span>
                         </p>
                       </div>
                     )}
 
-                    <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5">
+                    <div className="mt-3 pt-2 border-t border-border/30 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1">
                           <Icon className={cn("h-3 w-3", colorClass)} />
-                          <span className={cn("text-[10px] font-semibold capitalize", colorClass)}>
+                          <span className={cn("text-[9.5px] font-bold capitalize", colorClass)}>
                             {tweak.category}
                           </span>
                         </div>
                         {impact && (
                           <span className={cn(
-                            "text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border",
+                            "text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border",
                             impactStyle[impact]
                           )}
                             data-testid={`badge-impact-${tweak.id}`}
@@ -1027,45 +1045,45 @@ export default function Tweaks() {
                         )}
                         {cmd?.requiresRestart && (
                           <span
-                            className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border text-orange-400 bg-orange-500/8 border-orange-500/20"
+                            className="text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-orange-400 bg-orange-500/8 border-orange-500/20"
                             data-testid={`badge-restart-${tweak.id}`}
-                            title="This tweak requires a system restart to take effect"
+                            title="Requires a system restart"
                           >
                             Restart
                           </span>
                         )}
                         {cmd?.requiresAdmin && (
                           <span
-                            className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border text-sky-400/70 bg-sky-500/6 border-sky-500/15"
+                            className="text-[8.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border text-sky-400/70 bg-sky-500/6 border-sky-500/15"
                             data-testid={`badge-admin-${tweak.id}`}
-                            title="Requires Administrator privileges"
+                            title="Requires Administrator"
                           >
                             Admin
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isSelected && !isOptimized && (
+                          <div className="flex items-center gap-1 text-primary/80">
+                            <CheckSquare className="h-2.5 w-2.5" />
+                            <span className="text-[9.5px] font-black">Selected</span>
+                          </div>
+                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); handleRevertOne(tweak); }}
                           disabled={isRunning}
                           className={cn(
-                            "flex items-center gap-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed",
+                            "flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md border transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed",
                             isOptimized
-                              ? "border-red-500/40 bg-red-500/8 text-red-400 hover:bg-red-500/18 hover:border-red-500/60"
-                              : "border-border/30 bg-secondary/40 text-muted-foreground hover:border-red-500/30 hover:bg-red-500/8 hover:text-red-400"
+                              ? "border-red-500/40 bg-red-500/8 text-red-400 hover:bg-red-500/15 hover:border-red-500/60"
+                              : "border-border/25 bg-transparent text-muted-foreground/40 hover:border-red-500/30 hover:bg-red-500/6 hover:text-red-400/70"
                           )}
                           data-testid={`button-revert-one-${tweak.id}`}
-                          title={`Revert "${tweak.title}" back to Windows default`}
+                          title={`Revert "${tweak.title}" to Windows default`}
                         >
                           <RotateCcw className="h-2.5 w-2.5" />
                           Revert
                         </button>
-                        {isSelected && !isOptimized && (
-                          <div className="flex items-center gap-1 text-primary">
-                            <CheckSquare className="h-3 w-3" />
-                            <span className="text-[10px] font-bold">Selected</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
