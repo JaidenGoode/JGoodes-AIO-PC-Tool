@@ -390,14 +390,6 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortL
     disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Psched" /v NonBestEffortLimit /t REG_DWORD /d 20 /f`,
   },
 
-  "Disable Delivery Optimization Service": {
-    requiresAdmin: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 3 /f
-reg add "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DoSvc" /v Start /t REG_DWORD /d 3 /f
-sc.exe config DoSvc start= demand 2>&1 | Out-Null
-sc.exe start DoSvc 2>&1 | Out-Null`,
-  },
 
   "Disable Auto-Restart After Windows Updates": {
     requiresAdmin: true,

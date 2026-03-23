@@ -15,7 +15,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Memory Compression":                    "High",
   "Disable Connected Telemetry (DiagTrack)":       "High",
   "Unlock Reserved Network Bandwidth":             "High",
-  "Disable Delivery Optimization Service":         "High",
   "Disable Virtualization-Based Security (VBS)":   "High",
 
   // Medium — measurable improvement, may not be immediately obvious

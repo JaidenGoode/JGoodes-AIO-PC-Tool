@@ -50,7 +50,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Disable Cortana",
       "Disable Remote Assistance",
       "Disable Phone Link & Mobile Sync",
-      "Disable Delivery Optimization Service",
       "Disable Connected Telemetry (DiagTrack)",
       "Disable Application Compatibility Telemetry",
       "Disable Windows Activity History",

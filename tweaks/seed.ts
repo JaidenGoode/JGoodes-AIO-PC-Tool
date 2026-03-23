@@ -363,14 +363,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
 
   // ── NETWORK ───────────────────────────────────────────────────────────────
   {
-    title: "Disable Delivery Optimization Service",
-    description: "Stops your PC from uploading Windows update files to strangers on the internet. Microsoft's Delivery Optimization silently uses your upload bandwidth as a P2P node by default. This sets it to LAN-only mode — your own downloads from Windows Update and the Microsoft Store are completely unaffected.",
-    category: "network",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Your PC will no longer upload Windows update files to random PCs on the internet. Windows Update downloads and Microsoft Store downloads are fully unaffected — only internet P2P uploading is disabled."
-  },
-  {
     title: "Network Optimization",
     description: "Applies a comprehensive set of network optimizations in one click: sets Cloudflare DNS (1.1.1.1) on Wi-Fi and Ethernet, enables DNS over HTTPS, configures RSS CPU queues to match your hardware, disables Nagle's Algorithm for lower gaming latency, applies ~50 NIC driver-level performance parameters, and enables MSI (Message Signaled Interrupts) for your NIC. All changes are fully reversible.",
     category: "network",
