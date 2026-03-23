@@ -16,7 +16,7 @@ function runPowerShell(script: string, timeoutMs = 20000): Promise<string> {
   return new Promise((resolve) => {
     const tmpFile = path.join(os.tmpdir(), `jgoode-ps-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ps1`);
     try {
-      fs.writeFileSync(tmpFile, script, "utf-8");
+      fs.writeFileSync(tmpFile, '\uFEFF' + script, "utf-8");
     } catch {
       resolve("");
       return;
@@ -1938,10 +1938,10 @@ try {
         "nvidia-cp": { name: "NVIDIA Control Panel", command: String.raw`powershell -NoProfile -WindowStyle Hidden -Command "$sa=Get-StartApps -EA SilentlyContinue|Where-Object{$_.Name -like '*NVIDIA Control Panel*'}|Select-Object -First 1;if($sa){Start-Process ('shell:AppsFolder\'+$sa.AppID);exit};$pkg=Get-AppxPackage -EA SilentlyContinue|Where-Object{$_.Name -like '*NVIDIAControlPanel*' -or $_.Name -like '*NVIDIA*Control*'}|Select-Object -First 1;if($pkg){$aid=((Get-AppxPackageManifest $pkg -EA SilentlyContinue).Package.Applications.Application|Select-Object -First 1).Id;Start-Process ('shell:AppsFolder\'+$pkg.PackageFamilyName+'!'+$aid);exit};$regs=@('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*');foreach($r in $regs){$e=Get-ItemProperty $r -EA SilentlyContinue|Where-Object{$_.DisplayName -match 'NVIDIA Control Panel'}|Select-Object -First 1;if($e){if($e.DisplayIcon){$i=($e.DisplayIcon -split ',')[0].Trim([char]34);if($i -and (Test-Path $i)){Start-Process $i;exit}};if($e.InstallLocation){$f=Get-ChildItem $e.InstallLocation -Filter 'nvcplui.exe' -Recurse -Depth 3 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($f){Start-Process $f;exit}}}};$drives=Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|Select-Object -Exp Root;foreach($d in $drives){$pp=@($d+'Program Files\NVIDIA Corporation\Control Panel Client\nvcplui.exe',$d+'Windows\System32\nvcplui.exe',$d+'Windows\SysWOW64\nvcplui.exe');$f=$pp|Where-Object{Test-Path $_}|Select-Object -First 1;if($f){Start-Process $f;exit};$f=Get-ChildItem @($d+'Program Files',$d+'Windows\System32',$d+'Windows\SysWOW64') -Filter 'nvcplui.exe' -Recurse -Depth 4 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($f){Start-Process $f;exit}};Start-Process 'https://www.nvidia.com/en-us/drivers/nvidia-control-panel/'"`, description: "Opens the NVIDIA Control Panel. Detects Start Menu, Store/AppX, Win32 registry, and all drives. Falls back to download page." },
         "nvidia-app": { name: "NVIDIA App", command: String.raw`powershell -NoProfile -WindowStyle Hidden -Command "$sa=Get-StartApps -EA SilentlyContinue|Where-Object{$_.Name -like '*NVIDIA App*'}|Select-Object -First 1;if($sa){Start-Process ('shell:AppsFolder\'+$sa.AppID);exit};$proc=Get-Process -Name 'nvidia-app' -EA SilentlyContinue|Select-Object -First 1;if($proc -and $proc.Path){Start-Process $proc.Path;exit};$pkg=Get-AppxPackage -EA SilentlyContinue|Where-Object{$_.Name -like '*NVIDIA*App*'}|Select-Object -First 1;if($pkg){$aid=((Get-AppxPackageManifest $pkg -EA SilentlyContinue).Package.Applications.Application|Select-Object -First 1).Id;Start-Process ('shell:AppsFolder\'+$pkg.PackageFamilyName+'!'+$aid);exit};$regs=@('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*');foreach($r in $regs){$e=Get-ItemProperty $r -EA SilentlyContinue|Where-Object{$_.DisplayName -match 'NVIDIA App'}|Select-Object -First 1;if($e){if($e.DisplayIcon){$i=($e.DisplayIcon -split ',')[0].Trim([char]34);if($i -and (Test-Path $i)){Start-Process $i;exit}};if($e.InstallLocation){$f=Get-ChildItem $e.InstallLocation -Filter 'nvidia-app.exe' -Recurse -Depth 3 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($f){Start-Process $f;exit}}}};$drives=Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|Select-Object -Exp Root;foreach($d in $drives){$f=Get-ChildItem @($d+'Program Files',$d+'Program Files (x86)') -Filter 'nvidia-app.exe' -Recurse -Depth 4 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($f){Start-Process $f;exit}};Start-Process 'https://www.nvidia.com/en-us/software/nvidia-app/'"`, description: "Opens the NVIDIA App. Detects Start Menu, running process, Store/AppX, Win32 registry, and all drives. Falls back to website." },
         "windows-update": { name: "Windows Update", command: "start ms-settings:windowsupdate", description: "Opens Windows Update settings." },
-        "clear-shader-cache": { name: "Clear Shader Cache", command: `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand JABsAGEAPQAkAGUAbgB2ADoATABPAEMAQQBMAEEAUABQAEQAQQBUAEEAOwAkAHIAYQA9ACQAZQBuAHYAOgBBAFAAUABEAEEAVABBADsAJABwAGEAdABoAHMAPQBAACgAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARABYAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARwBMAEMAYQBjAGgAZQAiACwAIgAkAHIAYQBcAE4AVgBJAEQASQBBAFwAQwBvAG0AcAB1AHQAZQBDAGEAYwBoAGUAIgAsACIAJABsAGEAXABBAE0ARABcAEQAeABDAGEAYwBoAGUAIgAsACIAJABsAGEAXABEADMARABTAEMAYQBjAGgAZQAiACkAOwAkAGMAPQAwADsAZgBvAHIAZQBhAGMAaAAoACQAcAAgAGkAbgAgACQAcABhAHQAaABzACkAewBpAGYAKABUAGUAcwB0AC0AUABhAHQAaAAgACQAcAApAHsARwBlAHQALQBDAGgAaQBsAGQASQB0AGUAbQAgACQAcAAgAC0AUgBlAGMAdQByAHMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQB8AFIAZQBtAG8AdgBlAC0ASQB0AGUAbQAgAC0ARgBvAHIAYwBlACAALQBSAGUAYwB1AHIAcwBlACAALQBFAEEAIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlADsAJABjACsAKwB9AH0AOwBXAHIAaQB0AGUALQBPAHUAdABwAHUAdAAgACgAIgBDAGwAZQBhAHIAZQBkACAAIgArACQAYwArACIAIABvAGYAIAA1ACAAcwBoAGEAZABlAHIAIABjAGEAYwBoAGUAIABsAG8AYwBhAHQAaQBvAG4AcwAuACAARwBQAFUAIAByAGUAYgB1AGkAbABkAHMAIABvAG4AIABuAGUAeAB0ACAAZwBhAG0AZQAgAGwAYQB1AG4AYwBoAC4AIgApAA==`, description: "Cleared NVIDIA, AMD, and DirectX shader caches. Your GPU will rebuild them on next game launch." },
+        "clear-shader-cache": { name: "Clear Shader Cache", command: `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand JABsAGEAPQAkAGUAbgB2ADoATABPAEMAQQBMAEEAUABQAEQAQQBUAEEAOwAkAHIAYQA9ACQAZQBuAHYAOgBBAFAAUABEAEEAVABBADsAJABwAGEAdABoAHMAPQBAACgAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARABYAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAE4AVgBJAEQASQBBAFwARwBMAEMAYQBjAGgAZQAiACwAIgAkAHIAYQBcAE4AVgBJAEQASQBBAFwAQwBvAG0AcAB1AHQAZQBDAGEAYwBoAGUAIgAsACIAJABsAGEAXABOAFYASQBEAEkAQQAgAEMAbwByAHAAbwByAGEAdABpAG8AbgBcAE4AVgBfAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAEEATQBEAFwARABYAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAEEATQBEAFwAcABjAFwAYwBhAGMAaABlACIALAAiACQAcgBhAFwAQQBNAEQAXABDAE4AXABHAFAAVQBDAGEAYwBoAGUAIgAsACIAJABsAGEAXABEADMARABTAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAEkAbgB0AGUAbABcAFMAaABhAGQAZQByAEMAYQBjAGgAZQAiACwAIgAkAGwAYQBcAE0AaQBjAHIAbwBzAG8AZgB0AFwARABpAHIAZQBjAHQAWAAgAFMAaABhAGQAZQByACAAQwBhAGMAaABlACIAKQA7ACQAYwA9ADAAOwAkAGYAPQAwADsAZgBvAHIAZQBhAGMAaAAoACQAcAAgAGkAbgAgACQAcABhAHQAaABzACkAewBpAGYAKABUAGUAcwB0AC0AUABhAHQAaAAgACQAcAApAHsAJABpAHQAZQBtAHMAPQBHAGUAdAAtAEMAaABpAGwAZABJAHQAZQBtACAAJABwACAALQBSAGUAYwB1AHIAcwBlACAALQBGAG8AcgBjAGUAIAAtAEUAQQAgAFMAaQBsAGUAbgB0AGwAeQBDAG8AbgB0AGkAbgB1AGUAOwAkAGYAKwA9ACgAJABpAHQAZQBtAHMAfABXAGgAZQByAGUALQBPAGIAagBlAGMAdAB7AC0AbgBvAHQAIAAkAF8ALgBQAFMASQBzAEMAbwBuAHQAYQBpAG4AZQByAH0AKQAuAEMAbwB1AG4AdAA7ACQAaQB0AGUAbQBzAHwAUgBlAG0AbwB2AGUALQBJAHQAZQBtACAALQBGAG8AcgBjAGUAIAAtAFIAZQBjAHUAcgBzAGUAIAAtAEUAQQAgAFMAaQBsAGUAbgB0AGwAeQBDAG8AbgB0AGkAbgB1AGUAOwAkAGMAKwArAH0AfQA7AFcAcgBpAHQAZQAtAE8AdQB0AHAAdAAgACgAIgBDAGwAZQBhAHIAZQBkACAAIgArACQAZgArACIAIABmAGkAbABlAHMAIABhAGMAcgBvAHMAcwAgACIAKwAkAGMAKwAiACAAbwBmACAAIgArACQAcABhAHQAaABzAC4AQwBvAHUAbgB0ACsAIgAgAHMAaABhAGQAZQByACAAYwBhAGMAaABlACAAbABvAGMAYQB0AGkAbwBuAHMALgAgAEcAUABVACAAcgBlAGIAdQBpAGwAZABzACAAcwBoAGEAZABlAHIAcwAgAG8AbgAgAG4AZQB4AHQAIABnAGEAbQBlACAAbABhAHUAbgBjAGgALgAiACkA`, description: "Cleared NVIDIA (DXCache/GLCache/ComputeCache/NV_Cache), AMD (DXCache/pc/cache/GPUCache), Intel, and DirectX shader caches. GPU rebuilds on next game launch." },
         "rebuild-icon-cache": { name: "Rebuild Icon Cache", command: `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand UwB0AG8AcAAtAFAAcgBvAGMAZQBzAHMAIAAtAE4AYQBtAGUAIABlAHgAcABsAG8AcgBlAHIAIAAtAEYAbwByAGMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQA7AFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0ATQBpAGwAbABpAHMAZQBjAG8AbgBkAHMAIAA2ADAAMAA7AFIAZQBtAG8AdgBlAC0ASQB0AGUAbQAgACIAJABlAG4AdgA6AEwATwBDAEEATABBAFAAUABEAEEAVABBAFwASQBjAG8AbgBDAGEAYwBoAGUALgBkAGIAIgAgAC0ARgBvAHIAYwBlACAALQBFAEEAIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlADsAUgBlAG0AbwB2AGUALQBJAHQAZQBtACAAIgAkAGUAbgB2ADoATABPAEMAQQBMAEEAUABQAEQAQQBUAEEAXABNAGkAYwByAG8AcwBvAGYAdABcAFcAaQBuAGQAbwB3AHMAXABFAHgAcABsAG8AcgBlAHIAXABpAGMAbwBuAGMAYQBjAGgAZQAqAC4AZABiACIAIAAtAEYAbwByAGMAZQAgAC0ARQBBACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQA7AFMAdABhAHIAdAAtAFAAcgBvAGMAZQBzAHMAIABlAHgAcABsAG8AcgBlAHIAOwBXAHIAaQB0AGUALQBPAHUAdABwAHUAdAAgACIASQBjAG8AbgAgAGMAYQBjAGgAZQAgAHIAZQBiAHUAaQBsAHQALgAgAEkAYwBvAG4AcwAgAHcAaQBsAGwAIAByAGUAZgByAGUAcwBoACAAbQBvAG0AZQBuAHQAYQByAGkAbAB5AC4AIgA=`, description: "Rebuilt the Windows icon cache. Desktop and Explorer icons will refresh." },
         "dxdiag": { name: "DirectX Diagnostic", command: "dxdiag", description: "Opened DirectX Diagnostic Tool." },
-        "amd-software": { name: "AMD Software: Adrenalin Edition", command: String.raw`powershell -NoProfile -WindowStyle Hidden -Command "$f=(Get-ItemProperty 'HKCU:\Software\AMD\CN' -Name InstallDir -EA SilentlyContinue).InstallDir;if(-not $f){$f=(Get-ItemProperty 'HKLM:\SOFTWARE\AMD\CN' -Name InstallDir -EA SilentlyContinue).InstallDir};if($f){$exe=Join-Path $f 'RadeonSoftware.exe';if(Test-Path $exe){Start-Process $exe;exit}};$regs=@('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*');foreach($r in $regs){$e=Get-ItemProperty $r -EA SilentlyContinue|Where-Object{$_.DisplayName -match 'AMD Software'}|Select-Object -First 1;if($e){if($e.InstallLocation){$exe=Get-ChildItem $e.InstallLocation -Filter 'RadeonSoftware.exe' -Recurse -Depth 3 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($exe){Start-Process $exe;exit}};if($e.DisplayIcon){$i=($e.DisplayIcon -split ',')[0].Trim([char]34);if($i -and (Test-Path $i)){Start-Process $i;exit}}}};$drives=Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|Select-Object -Exp Root;foreach($d in $drives){$exe=Get-ChildItem @($d+'Program Files\AMD',$d+'Program Files (x86)\AMD') -Filter 'RadeonSoftware.exe' -Recurse -Depth 5 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($exe){Start-Process $exe;exit}};Start-Process 'https://www.amd.com/en/technologies/software'"`, description: "Opens AMD Software: Adrenalin Edition. Registry-first detection across all drives. Falls back to AMD download page if not installed." },
+        "amd-software": { name: "AMD Software: Adrenalin Edition", command: String.raw`powershell -NoProfile -WindowStyle Hidden -Command "$f=(Get-ItemProperty 'HKCU:\Software\AMD\CN' -Name InstallDir -EA SilentlyContinue).InstallDir;if(-not $f){$f=(Get-ItemProperty 'HKLM:\SOFTWARE\AMD\CN' -Name InstallDir -EA SilentlyContinue).InstallDir};if($f){$exe=Join-Path $f 'RadeonSoftware.exe';if(Test-Path $exe){Start-Process $exe;exit}};$regs=@('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*');foreach($r in $regs){$e=Get-ItemProperty $r -EA SilentlyContinue|Where-Object{$_.DisplayName -match 'AMD Software'}|Select-Object -First 1;if($e){if($e.InstallLocation){$exe=Get-ChildItem $e.InstallLocation -Filter 'RadeonSoftware.exe' -Recurse -Depth 3 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($exe){Start-Process $exe;exit}};if($e.DisplayIcon){$i=($e.DisplayIcon -split ',')[0].Trim([char]34);if($i -and (Test-Path $i)){Start-Process $i;exit}}}};$drives=Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue|Select-Object -Exp Root;foreach($d in $drives){$exe=Get-ChildItem @($d+'Program Files\AMD',$d+'Program Files (x86)\AMD') -Filter 'RadeonSoftware.exe' -Recurse -Depth 5 -EA SilentlyContinue|Select-Object -First 1 -Exp FullName;if($exe){Start-Process $exe;exit}};Start-Process 'https://www.amd.com/en/support/download/drivers.html'"`, description: "Opens AMD Software: Adrenalin Edition. Registry-first detection across all drives. Falls back to AMD driver download page if not installed." },
         "power-balanced": { name: "Switched to Balanced Power Plan", command: "powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e", description: "Active power plan set to Balanced." },
         "power-high": { name: "Switched to High Performance", command: "powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", description: "Active power plan set to High Performance." },
         "power-ultimate": { name: "Switched to Ultimate Performance", command: `powershell -NoProfile -Command "$guid='e9a42b02-d5df-448d-aa00-03f14749eb61';$list=powercfg /list 2>&1;if(-not($list|Select-String $guid)){powercfg /duplicatescheme $guid|Out-Null};powercfg /setactive $guid;Write-Output 'Ultimate Performance plan activated.'"`, description: "Ultimate Performance plan enabled and set as active." },
@@ -2351,12 +2351,23 @@ Write-Output 'OK'
   app.get("/api/programs", async (_req, res) => {
     const isWin = process.platform === "win32";
     if (!isWin) return res.json({ programs: [], total: 0, totalSizeMB: 0 });
-    const ps = `$paths=@('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*');$all=Get-ItemProperty $paths -EA SilentlyContinue|Where-Object{$_.DisplayName -and -not $_.SystemComponent -and $_.UninstallString -and $_.DisplayName -notmatch '^(KB\\d|Security Update for|Hotfix for|Update for Windows)'};$progs=$all|Select-Object @{n='name';e={$_.DisplayName}},@{n='version';e={$_.DisplayVersion}},@{n='publisher';e={if($_.Publisher){$_.Publisher}else{''}}},@{n='installDate';e={if($_.InstallDate){$_.InstallDate}else{''}}},@{n='sizeMB';e={if($_.EstimatedSize){[Math]::Round($_.EstimatedSize/1024,1)}else{0}}},@{n='uninstallString';e={$_.UninstallString}},@{n='quietUninstall';e={if($_.QuietUninstallString){$_.QuietUninstallString}else{''}}},@{n='isMsi';e={if($_.UninstallString -match '(?i)msiexec'){$true}else{$false}}},@{n='msiGuid';e={if($_.UninstallString -match '(\\{[0-9A-Fa-f\\-]{36}\\})'){$Matches[1]}else{''}}}|Where-Object{$_.name}|Sort-Object name;ConvertTo-Json @($progs) -Compress -Depth 2`;
+
+    const win32Ps = `$seen=@{};$out=@();$paths=@('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*');$all=Get-ItemProperty $paths -EA SilentlyContinue|Where-Object{$_.DisplayName -and -not $_.SystemComponent -and $_.UninstallString -and $_.DisplayName -notmatch '^(KB\\d|Security Update for|Hotfix for|Update for Windows|Microsoft Visual C\\+\\+ \\d{4}\\s+Redist)'};foreach($p in $all){$key=$p.DisplayName.ToLower().Trim();if($seen[$key]){continue};$seen[$key]=$true;$out+=[PSCustomObject]@{name=$p.DisplayName;version=if($p.DisplayVersion){$p.DisplayVersion}else{'';};publisher=if($p.Publisher){$p.Publisher}else{'';};installDate=if($p.InstallDate){$p.InstallDate}else{'';};sizeMB=if($p.EstimatedSize){[Math]::Round($p.EstimatedSize/1024,1)}else{0};uninstallString=$p.UninstallString;quietUninstall=if($p.QuietUninstallString){$p.QuietUninstallString}else{'';};isMsi=if($p.UninstallString -match '(?i)msiexec'){$true}else{$false};msiGuid=if($p.UninstallString -match '(\\{[0-9A-Fa-f\\-]{36}\\})'){$Matches[1]}else{'';};isAppx=$false;packageFamilyName='';installLocation=if($p.InstallLocation){$p.InstallLocation}else{'';}}};ConvertTo-Json @($out|Sort-Object name) -Compress -Depth 2`;
+
+    const appxPs = `$skipNames=@('Microsoft.UI.Xaml','Microsoft.VCLibs','Microsoft.NET','Microsoft.WindowsAppRuntime','Microsoft.Desktop.VC','Microsoft.WindowsAppSDK','Microsoft.Services.Store','MicrosoftCorporationII.WinAppRuntime','Microsoft.MicrosoftEdge.Stable');$appx=Get-AppxPackage -AllUsers -EA SilentlyContinue|Where-Object{-not $_.IsFramework -and -not $_.IsResourcePackage -and $_.NonRemovable -eq $false -and $_.Name -notin $skipNames -and $_.Name -notmatch 'VCLibs|AppRuntime|DesktopVC|WindowsAppSDK|ServicesStore'};$out=$appx|ForEach-Object{$n=$_.Name -replace '^Microsoft\\.','Microsoft ' -replace '^Windows\\.','Windows ';[PSCustomObject]@{name=$n;version=$_.Version;publisher=if($_.Publisher -match 'CN=([^,]+)'){$Matches[1]}else{'Microsoft'};installDate='';sizeMB=0;uninstallString='';quietUninstall='';isMsi=$false;msiGuid='';isAppx=$true;packageFamilyName=$_.PackageFamilyName;installLocation=if($_.InstallLocation){$_.InstallLocation}else{'';}}};ConvertTo-Json @($out|Where-Object{$_.name}|Sort-Object name) -Compress -Depth 2`;
+
     try {
-      const raw = await runPowerShell(ps, 25000);
-      let programs: any[] = [];
-      try { programs = JSON.parse(raw.trim()); } catch { programs = []; }
-      if (!Array.isArray(programs)) programs = [];
+      const [win32Raw, appxRaw] = await Promise.all([
+        runPowerShell(win32Ps, 25000).catch(() => "[]"),
+        runPowerShell(appxPs, 15000).catch(() => "[]"),
+      ]);
+      let win32: any[] = [];
+      let appx: any[] = [];
+      try { win32 = JSON.parse(win32Raw.trim()); } catch { win32 = []; }
+      try { appx = JSON.parse(appxRaw.trim()); } catch { appx = []; }
+      if (!Array.isArray(win32)) win32 = [];
+      if (!Array.isArray(appx)) appx = [];
+      const programs = [...win32, ...appx].filter(p => p && p.name);
       const totalSizeMB = programs.reduce((s: number, p: any) => s + (p.sizeMB || 0), 0);
       res.json({ programs, total: programs.length, totalSizeMB: Math.round(totalSizeMB) });
     } catch (err: any) {
@@ -2367,10 +2378,23 @@ Write-Output 'OK'
   app.post("/api/programs/uninstall", async (req, res) => {
     const isWin = process.platform === "win32";
     if (!isWin) return res.json({ success: false, error: "Windows only" });
-    const { uninstallString, quietUninstall, isMsi, msiGuid, programName } = req.body as {
+    const { uninstallString, quietUninstall, isMsi, msiGuid, programName, isAppx, packageFamilyName } = req.body as {
       uninstallString: string; quietUninstall: string; isMsi: boolean;
-      msiGuid: string; programName: string;
+      msiGuid: string; programName: string; isAppx: boolean; packageFamilyName: string;
     };
+
+    if (isAppx && packageFamilyName) {
+      try {
+        const safeFam = packageFamilyName.replace(/'/g, "''");
+        const ps = `Get-AppxPackage -AllUsers | Where-Object{$_.PackageFamilyName -eq '${safeFam}'} | Remove-AppxPackage -AllUsers -EA Stop; Write-Output 'OK'`;
+        await runPowerShell(ps, 60000);
+        res.json({ success: true });
+      } catch (err: any) {
+        res.status(500).json({ error: err?.message || "AppX uninstall failed" });
+      }
+      return;
+    }
+
     if (!uninstallString) return res.status(400).json({ error: "Missing uninstall string" });
     let cmd: string;
     if (quietUninstall) {
@@ -2390,12 +2414,66 @@ Write-Output 'OK'
     }
   });
 
+  const STORE_IDS: Record<string, string> = {
+    "Microsoft.WindowsCalculator": "9WZDNCRFHVN5",
+    "Microsoft.WindowsStore": "9WZDNCRFJBMP",
+    "Microsoft.XboxApp": "9MV0B5HZVK9Z",
+    "Microsoft.GamingApp": "9MV0B5HZVK9Z",
+    "Microsoft.XboxGameOverlay": "9NZKPSTSNW4E",
+    "Microsoft.Xbox.TCUI": "9NBLGGH4XVQS",
+    "Microsoft.WindowsNotepad": "9MSMLRH6LZF3",
+    "Microsoft.Paint": "9PCFS5B6T72H",
+    "Microsoft.ScreenSketch": "9MZ95KL8MR0L",
+    "Microsoft.WindowsTerminal": "9N0DX20HK701",
+    "Microsoft.MicrosoftStickyNotes": "9NBLGGH4QGHW",
+    "Microsoft.WindowsCamera": "9WZDNCRFJBH4",
+    "Microsoft.ZuneMusic": "9WZDNCRFJ3PT",
+    "Microsoft.ZuneVideo": "9WZDNCRFJ3P2",
+    "Microsoft.YourPhone": "9NMPJ99VJBWV",
+    "Microsoft.People": "9NBLGGH10PG8",
+    "Microsoft.MicrosoftOfficeHub": "9WZDNCRD29V9",
+    "Microsoft.Todos": "9NBLGGH5R558",
+    "Microsoft.BingWeather": "9WZDNCRFJ25S",
+    "Microsoft.BingNews": "9WZDNCRFHVFW",
+    "Microsoft.GetHelp": "9PKDZBMV1H3T",
+    "Microsoft.MicrosoftEdge": "XPFFTQ037JWMHS",
+    "Microsoft.OutlookForWindows": "9NRX63209R7B",
+    "Microsoft.Clipchamp": "9P1J8S7CCWWT",
+    "Microsoft.PowerAutomateDesktop": "9NFTCH6J7FHV",
+    "Microsoft.MicrosoftTeams": "XP8BT8DW290MPQ",
+  };
+
   app.post("/api/programs/reinstall", async (req, res) => {
     const isWin = process.platform === "win32";
     if (!isWin) return res.json({ success: false, error: "Windows only" });
-    const { isMsi, msiGuid, programName } = req.body as {
+    const { isMsi, msiGuid, programName, isAppx, packageFamilyName, installLocation } = req.body as {
       isMsi: boolean; msiGuid: string; programName: string;
+      isAppx: boolean; packageFamilyName: string; installLocation: string;
     };
+
+    if (isAppx && packageFamilyName) {
+      const packageName = packageFamilyName.split("_")[0];
+      const storeId = STORE_IDS[packageName];
+      try {
+        const safeLoc = (installLocation || "").replace(/'/g, "''");
+        const safeFam = packageFamilyName.replace(/'/g, "''");
+        let ps: string;
+        if (safeLoc) {
+          ps = `try { Add-AppxPackage -DisableDevelopmentMode -Register '${safeLoc}\\AppxManifest.xml' -EA Stop; Write-Output 'OK' } catch { try { Add-AppxPackage -RegisterByFamilyName -MainPackage '${safeFam}' -EA Stop; Write-Output 'OK' } catch { Write-Output 'FALLBACK' } }`;
+        } else {
+          ps = `try { Add-AppxPackage -RegisterByFamilyName -MainPackage '${safeFam}' -EA Stop; Write-Output 'OK' } catch { Write-Output 'FALLBACK' }`;
+        }
+        const out = await runPowerShell(ps, 30000);
+        if (out.includes("OK")) {
+          return res.json({ success: true, method: "appx-register" });
+        }
+      } catch {}
+      if (storeId) {
+        return res.json({ success: true, method: "store", storeUrl: `ms-windows-store://pdp/?productid=${storeId}` });
+      }
+      return res.json({ success: true, method: "store", storeUrl: `ms-windows-store://search/?query=${encodeURIComponent(programName)}` });
+    }
+
     if (isMsi && msiGuid) {
       try {
         const safeGuid = msiGuid.replace(/'/g, "''");

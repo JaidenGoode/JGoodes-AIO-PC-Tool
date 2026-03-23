@@ -415,7 +415,7 @@ ipcMain.handle("run-ps-script", async (event, scriptContent) => {
   const tmpFile = path.join(os.tmpdir(), `jgoode-tweak-${Date.now()}.ps1`);
 
   try {
-    fs.writeFileSync(tmpFile, scriptContent, "utf-8");
+    fs.writeFileSync(tmpFile, '\uFEFF' + scriptContent, "utf-8");
   } catch (err) {
     event.sender.send("ps-output", { type: "stderr", text: `Failed to write script: ${err.message}\n` });
     event.sender.send("ps-output", { type: "done", code: 1 });

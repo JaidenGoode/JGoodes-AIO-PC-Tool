@@ -703,7 +703,11 @@ export default function Utilities() {
         toast({ title: "DDU launched", description: "For a clean uninstall, boot into Safe Mode before running DDU." });
       } else {
         setDduStatus("error");
-        toast({ title: "Launch failed", description: "Could not find DDU.", variant: "destructive" });
+        const openDl = [
+          `Start-Process 'https://www.guru3d.com/download/display-driver-uninstaller-download/'`,
+        ].join("\r\n");
+        await window.electronAPI.runScript(openDl);
+        toast({ title: "DDU not found", description: "Opening the DDU download page. Install DDU then click Launch again.", variant: "destructive" });
       }
     } catch {
       setDduStatus("error");

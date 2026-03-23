@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Search, Trash2, RefreshCw, Loader2, AlertTriangle,
-  SortAsc, Calendar, HardDrive, Building2, ExternalLink, X, CheckCircle2,
+  SortAsc, Calendar, HardDrive, Building2, ExternalLink, X, CheckCircle2, Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,9 @@ type InstalledProgram = {
   quietUninstall: string;
   isMsi: boolean;
   msiGuid: string;
+  isAppx: boolean;
+  packageFamilyName: string;
+  installLocation: string;
 };
 
 type ProgramsResult = {
@@ -36,6 +39,7 @@ type ProgramsResult = {
 };
 
 type SortKey = "name" | "size" | "publisher" | "date";
+type FilterKey = "all" | "win32" | "store";
 
 function fmtSize(mb: number): string {
   if (!mb || mb === 0) return "—";
@@ -104,13 +108,23 @@ function ProgramCard({
         <div className="flex items-start gap-3 px-4 pt-4 pb-3">
           <Monogram name={prog.name} />
           <div className="flex-1 min-w-0">
-            <p
-              className="font-bold text-[12.5px] text-foreground leading-tight truncate"
-              data-testid={`text-program-name-${index}`}
-              title={prog.name}
-            >
-              {prog.name}
-            </p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p
+                className="font-bold text-[12.5px] text-foreground leading-tight truncate"
+                data-testid={`text-program-name-${index}`}
+                title={prog.name}
+              >
+                {prog.name}
+              </p>
+              {prog.isAppx && (
+                <span
+                  className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide"
+                  style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary) / 0.8)", border: "1px solid hsl(var(--primary) / 0.2)" }}
+                >
+                  Store
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-muted-foreground/50 mt-0.5 truncate" title={prog.publisher || "Unknown publisher"}>
               {prog.publisher || "Unknown publisher"}
             </p>
@@ -166,11 +180,13 @@ function ProgramCard({
           >
             {reinstalling
               ? <Loader2 className="h-2.5 w-2.5 animate-spin shrink-0" />
-              : prog.isMsi
-                ? <RefreshCw className="h-2.5 w-2.5 shrink-0" />
-                : <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+              : prog.isAppx
+                ? <Store className="h-2.5 w-2.5 shrink-0" />
+                : prog.isMsi
+                  ? <RefreshCw className="h-2.5 w-2.5 shrink-0" />
+                  : <ExternalLink className="h-2.5 w-2.5 shrink-0" />
             }
-            {reinstalling ? "Working..." : prog.isMsi ? "Reinstall" : "Re-download"}
+            {reinstalling ? "Working..." : prog.isAppx ? "Reinstall" : prog.isMsi ? "Repair" : "Re-download"}
           </Button>
         </div>
       </div>
@@ -211,6 +227,7 @@ export default function Programs() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("name");
+  const [filter, setFilter] = useState<FilterKey>("all");
   const [confirmProg, setConfirmProg] = useState<InstalledProgram | null>(null);
   const [activeUninstall, setActiveUninstall] = useState<string | null>(null);
   const [activeReinstall, setActiveReinstall] = useState<string | null>(null);
@@ -228,6 +245,8 @@ export default function Programs() {
         isMsi: prog.isMsi,
         msiGuid: prog.msiGuid,
         programName: prog.name,
+        isAppx: prog.isAppx,
+        packageFamilyName: prog.packageFamilyName,
       }),
     onMutate: (prog) => setActiveUninstall(prog.name),
     onSuccess: (_data, prog) => {
@@ -247,11 +266,17 @@ export default function Programs() {
         isMsi: prog.isMsi,
         msiGuid: prog.msiGuid,
         programName: prog.name,
+        isAppx: prog.isAppx,
+        packageFamilyName: prog.packageFamilyName,
+        installLocation: prog.installLocation,
       }),
     onMutate: (prog) => setActiveReinstall(prog.name),
     onSuccess: (result: any, prog) => {
       setActiveReinstall(null);
-      if (result?.method === "browser") {
+      if (result?.method === "store") {
+        openUrl(result.storeUrl);
+        toast({ title: "Reinstall", description: `Opening Microsoft Store for "${prog.name}".` });
+      } else if (result?.method === "browser") {
         openUrl(result.searchUrl);
         toast({ title: "Re-download", description: `Opening search for "${prog.name}" in your browser.` });
       } else {
@@ -266,7 +291,9 @@ export default function Programs() {
   });
 
   const filtered = useMemo(() => {
-    const progs = data?.programs ?? [];
+    let progs = data?.programs ?? [];
+    if (filter === "win32") progs = progs.filter(p => !p.isAppx);
+    if (filter === "store") progs = progs.filter(p => p.isAppx);
     const q = search.toLowerCase().trim();
     const out = q
       ? progs.filter(p =>
@@ -281,7 +308,7 @@ export default function Programs() {
       if (sort === "date") return (b.installDate || "").localeCompare(a.installDate || "");
       return 0;
     });
-  }, [data, search, sort]);
+  }, [data, search, sort, filter]);
 
   const totalSizeStr = useMemo(() => {
     const mb = data?.totalSizeMB ?? 0;
@@ -319,13 +346,20 @@ export default function Programs() {
 
           {/* Stats chips */}
           {!isLoading && data && (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <div
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold font-mono"
                 style={{ background: "hsl(var(--primary)/0.06)", borderColor: "hsl(var(--primary)/0.18)", color: "hsl(var(--primary)/0.8)" }}
               >
                 <Package className="h-2.5 w-2.5" />
-                {data.total}
+                {data.programs.filter(p => !p.isAppx).length} Win32
+              </div>
+              <div
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold font-mono"
+                style={{ background: "hsl(var(--primary)/0.06)", borderColor: "hsl(var(--primary)/0.18)", color: "hsl(var(--primary)/0.8)" }}
+              >
+                <Store className="h-2.5 w-2.5" />
+                {data.programs.filter(p => p.isAppx).length} Store
               </div>
               <div
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold font-mono"
@@ -338,7 +372,7 @@ export default function Programs() {
           )}
         </div>
 
-        {/* Search + Sort controls */}
+        {/* Search + Sort + Filter controls */}
         <div className="flex items-center gap-2 mt-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/35 pointer-events-none" />
@@ -355,6 +389,19 @@ export default function Programs() {
               </button>
             )}
           </div>
+          <Select value={filter} onValueChange={(v) => setFilter(v as FilterKey)}>
+            <SelectTrigger
+              data-testid="select-programs-filter"
+              className="w-28 h-9 text-[11px] bg-secondary/15 border-border/40 focus:border-primary/40"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Apps</SelectItem>
+              <SelectItem value="win32">Win32</SelectItem>
+              <SelectItem value="store">Store</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
             <SelectTrigger
               data-testid="select-programs-sort"
