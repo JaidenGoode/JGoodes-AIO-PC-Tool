@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { runUtility, getSystemInfo } from "@/lib/api";
@@ -14,7 +14,27 @@ import {
   HardDrive, Zap, Network, ShieldCheck,
   AlertTriangle, MapPin, Loader2, ChevronDown, Shield, Download, CheckCircle2,
   Globe, MonitorPlay, MemoryStick, Sparkles, Cpu, Power, Settings2, Gamepad2, Timer,
+  Terminal, X,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+
+declare global {
+  interface Window {
+    electronAPI?: {
+      minimize: () => void;
+      maximize: () => void;
+      close: () => void;
+      isMaximized: () => Promise<boolean>;
+      onMaximizeChange: (callback: (v: boolean) => void) => () => void;
+      runScript: (script: string) => Promise<{ success: boolean; code: number }>;
+      onScriptOutput: (callback: (data: { type: string; text?: string; code?: number }) => void) => () => void;
+      saveFile?: (content: string, defaultName: string) => Promise<{ success: boolean; error?: string }>;
+      openFile?: () => Promise<{ success: boolean; content?: string; error?: string }>;
+    };
+  }
+}
 import { cn } from "@/lib/utils";
 
 function UtilCard({
@@ -145,6 +165,68 @@ export default function Utilities() {
   const [tcpStatus, setTcpStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
   const [pseStatus, setPseStatus] = useState<"idle" | "launching" | "done" | "error">("idle");
   const [runtimeStatus, setRuntimeStatus] = useState<"idle" | "installing" | "done" | "error">("idle");
+
+  // ── In-app terminal dialog (SFC / DISM) ─────────────────────────────────────
+  const [showTermDialog, setShowTermDialog] = useState(false);
+  const [termRunning, setTermRunning] = useState(false);
+  const [termTitle, setTermTitle] = useState("");
+  const [termOutput, setTermOutput] = useState<Array<{ type: string; text: string }>>([]);
+  const termRef = useRef<HTMLDivElement>(null);
+  const termCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    if (termRef.current) termRef.current.scrollTop = termRef.current.scrollHeight;
+  }, [termOutput]);
+
+  const launchInTerminal = async (title: string, psCommand: string) => {
+    if (!window.electronAPI?.runScript) {
+      toast({
+        title: "Desktop app required",
+        description: `${title} can only run from the installed desktop app.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setTermTitle(title);
+    setTermOutput([{ type: "info", text: `# JGoode's A.I.O PC Tool — ${title}\n# Running as Administrator...\n` }]);
+    setTermRunning(true);
+    setShowTermDialog(true);
+
+    const cleanup = window.electronAPI.onScriptOutput((data) => {
+      if (data.type === "done") {
+        setTermRunning(false);
+        setTermOutput((prev) => [
+          ...prev,
+          {
+            type: data.code === 0 ? "success" : "stderr",
+            text: data.code === 0 ? `\n\u2713 ${title} completed successfully.` : `\n\u2717 Script exited with code ${data.code}.`,
+          },
+        ]);
+        termCleanupRef.current?.();
+        termCleanupRef.current = null;
+      } else if (data.text) {
+        setTermOutput((prev) => [...prev, { type: data.type, text: data.text! }]);
+      }
+    });
+    termCleanupRef.current = cleanup;
+
+    try {
+      await window.electronAPI.runScript(psCommand);
+    } catch (err) {
+      setTermRunning(false);
+      setTermOutput((prev) => [...prev, { type: "stderr", text: String(err) }]);
+      termCleanupRef.current?.();
+      termCleanupRef.current = null;
+    }
+  };
+
+  const closeTermDialog = () => {
+    if (termRunning) return;
+    setShowTermDialog(false);
+    setTermOutput([]);
+    termCleanupRef.current?.();
+    termCleanupRef.current = null;
+  };
 
   const utilityMutation = useMutation({
     mutationFn: (action: string) => runUtility(action) as Promise<{ name: string; description: string; output?: string; message?: string }>,
@@ -1013,6 +1095,58 @@ export default function Utilities() {
 
   return (
     <div className="space-y-4 pb-8">
+
+      {/* ── In-app terminal dialog for SFC / DISM ───────────────────────────── */}
+      <Dialog open={showTermDialog} onOpenChange={closeTermDialog}>
+        <DialogContent className="bg-card border-border max-w-2xl" onPointerDownOutside={(e) => termRunning && e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold">
+              <Terminal className="h-4 w-4 text-primary" />
+              {termTitle}
+              {termRunning && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary ml-1" />}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              PowerShell output — requires Administrator to run.
+            </DialogDescription>
+          </DialogHeader>
+          <div
+            ref={termRef}
+            className="bg-black/70 rounded-lg border border-border/40 h-72 overflow-y-auto p-3.5 font-mono text-[11px] space-y-px"
+          >
+            {termOutput.map((line, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "leading-relaxed whitespace-pre-wrap break-words",
+                  line.type === "stderr" ? "text-red-400"
+                    : line.type === "success" ? "text-green-400 font-semibold"
+                    : line.type === "info" ? "text-muted-foreground/60"
+                    : "text-green-300"
+                )}
+              >
+                {line.text}
+              </div>
+            ))}
+            {termRunning && <div className="text-primary animate-pulse mt-1">&#9612;</div>}
+          </div>
+          <div className="flex items-center justify-between pt-0.5">
+            <p className="text-[10px] text-muted-foreground/40">
+              {termRunning ? "Do not close — scan in progress" : "Scan complete"}
+            </p>
+            <Button
+              size="sm"
+              onClick={closeTermDialog}
+              disabled={termRunning}
+              className="h-7 text-xs"
+              data-testid="button-close-term-dialog"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -1061,12 +1195,21 @@ export default function Utilities() {
 
         <UtilCard icon={ShieldCheck} title="System File Repair" description="Scan and repair Windows system files" delay={0.06}>
           <p className="text-[10px] text-muted-foreground/60 leading-relaxed">Replaces corrupt protected files with cached Microsoft copies. Run first for crashes, missing DLLs, or BSODs.</p>
-          <RunButton action="sfc" label="Run SFC Scan" pending={isPending("sfc")} onRun={run} />
+          <Button
+            size="sm"
+            data-testid="button-utility-sfc"
+            disabled={termRunning}
+            onClick={() => launchInTerminal("SFC Scan", `$ErrorActionPreference = 'SilentlyContinue'\nsfc /scannow\nWrite-Output ""`)}
+            className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150"
+          >
+            {termRunning && termTitle === "SFC Scan" ? <Loader2 className="h-3 w-3 animate-spin shrink-0" /> : <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />}
+            Run SFC Scan
+          </Button>
           <div className="pt-1.5 border-t border-border/30 mt-0.5">
             <p className="text-[10px] text-muted-foreground/60 leading-relaxed mb-1.5">Repairs the Windows image & component store. Use when SFC can't fix issues. Requires internet — 10–30 min.</p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150" data-testid="button-utility-dism">
+                <Button size="sm" className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150" data-testid="button-utility-dism" disabled={termRunning}>
                   <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
                   Run DISM Repair
                 </Button>
@@ -1080,7 +1223,7 @@ export default function Utilities() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => run("dism")} className="bg-primary text-white text-sm">Run DISM</AlertDialogAction>
+                  <AlertDialogAction onClick={() => launchInTerminal("DISM Repair", `$ErrorActionPreference = 'SilentlyContinue'\nDISM /Online /Cleanup-Image /RestoreHealth\nWrite-Output ""`)} className="bg-primary text-white text-sm">Run DISM</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
