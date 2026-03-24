@@ -53,7 +53,6 @@ $d['Instant Menu Response (Zero Delay)']=creg 'HKCU:\Control Panel\Desktop' 'Men
 $d['Disable Full Screen Optimizations']=creg 'HKCU:\System\GameConfigStore' 'GameDVR_FSEBehavior' 2
 try{$_sp='HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile';$_nti=(Get-ItemProperty -Path $_sp -Name 'NetworkThrottlingIndex' -EA Stop).NetworkThrottlingIndex;$_sr=(Get-ItemProperty -Path $_sp -Name 'SystemResponsiveness' -EA Stop).SystemResponsiveness;$d['System Responsiveness & Network Throttling']=if(($_nti -eq -1 -or [uint32]$_nti -eq 4294967295) -and $_sr -eq 0){1}else{0}}catch{$d['System Responsiveness & Network Throttling']=0}
 $d['Maximum Priority for Games']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games' 'Latency Sensitive' 'True'
-$d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\FortniteClient-Win64-Shipping.exe\PerfOptions' 'CpuPriorityClass' 5
 $d['Disable Xbox Core Services']=csvc 'XboxGipSvc'
 
 # System / Network

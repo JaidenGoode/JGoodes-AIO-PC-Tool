@@ -30,7 +30,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Optimize for Windowed & Borderless Games":      "Medium",
   "Disable Windows TCP Auto-Tuning":               "Medium",
   "Disable Windows Automatic Maintenance":         "Medium",
-  "Fortnite Process High Priority":                "Medium",
   "Disable Xbox Core Services":                    "Medium",
   "Disable Web Search in Windows Search":          "Medium",
   "Instant Menu Response (Zero Delay)":            "Medium",

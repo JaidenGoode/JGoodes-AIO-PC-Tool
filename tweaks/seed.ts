@@ -172,14 +172,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background applications receive fewer scheduler slots while a game is running. No side effects outside of gaming."
   },
   {
-    title: "Fortnite Process High Priority",
-    description: "FORTNITE PLAYERS ONLY. Applies Image File Execution Options (IFEO) for FortniteClient-Win64-Shipping.exe: sets CPU priority class to High (5) and I/O priority to High (3). Ensures Fortnite gets elevated CPU and disk access priority over background processes. No effect if Fortnite is not installed.",
-    category: "gaming",
-    isActive: false,
-    warning: "FORTNITE PLAYERS ONLY — skip this tweak if you do not play Fortnite. High CPU priority (not Realtime) is used — safe and stable. Revert removes the IFEO override entirely, returning Fortnite to its Windows default (no priority override).",
-    featureBreaks: "Background applications receive lower CPU scheduling while Fortnite is running. No system stability risk — High priority is well below Realtime. Revert deletes the IFEO keys, fully restoring the Windows default state."
-  },
-  {
     title: "Disable Auto-Restart After Windows Updates",
     description: "Prevents Windows from automatically rebooting your PC after installing updates — even when you're in the middle of a game or important work. Windows normally schedules forced restarts and can interrupt active sessions. This tweak keeps your PC running until you choose to restart.",
     category: "system",

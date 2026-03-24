@@ -74,10 +74,6 @@ async function seedTweaksIfNeeded() {
       }
       console.log(`[seed] Seeded ${TWEAKS_SEED.length} tweaks`);
     } else {
-      // Remove any tweaks that were previously seeded under removed categories
-      const removed = await storage.removeTweaksByCategory("privacy");
-      if (removed > 0) console.log(`[seed] Removed ${removed} legacy privacy tweaks`);
-
       // Purge any orphaned tweaks whose title is no longer in the current seed
       const seedTitles = TWEAKS_SEED.map((t) => t.title);
       const orphaned = await storage.removeTweaksNotInSeed(seedTitles);
