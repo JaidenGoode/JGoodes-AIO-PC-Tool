@@ -615,7 +615,7 @@ export default function Debloat() {
       <div className="rounded-xl border border-border/50 bg-secondary/10 p-4 space-y-3">
         <div className="flex items-center gap-2">
           <FileDown className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[12px] font-black text-foreground tracking-tight">Download JGoode's Presets</span>
+          <span className="text-[12px] font-black text-foreground tracking-tight">Download JGoode's Profiles</span>
           <div className="flex-1 h-[1px] bg-border/25 rounded-full" />
         </div>
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed -mt-0.5">
@@ -626,7 +626,7 @@ export default function Debloat() {
             onClick={importCttProfile}
             disabled={cttImportStatus === "done"}
             status={cttImportStatus}
-            label="Download CTT Preset"
+            label="Download CTT Profile"
             icon={FileDown}
             testId="button-download-ctt-preset"
           />
