@@ -10,14 +10,6 @@ export interface TweakCommand {
 
 export const TWEAK_COMMANDS: Record<string, TweakCommand> = {
   // ── PERFORMANCE ────────────────────────────────────────────────────────────
-  "Disable SuperFetch / SysMain": {
-    requiresAdmin: true,
-    enable: `Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue
-Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue`,
-    disable: `Set-Service -Name "SysMain" -StartupType Automatic -ErrorAction SilentlyContinue
-Start-Service -Name "SysMain" -ErrorAction SilentlyContinue`,
-  },
-
   "Disable NTFS Access Timestamps": {
     requiresAdmin: true,
     enable: `fsutil behavior set disablelastaccess 1`,
@@ -93,14 +85,6 @@ reg add "HKCU\\Control Panel\\Mouse" /v MouseThreshold2 /t REG_SZ /d "10" /f`,
 powercfg -setactive SCHEME_CURRENT`,
     disable: `powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR 0cc5b647-c1df-4637-891a-dec35c318583 0
 powercfg -setactive SCHEME_CURRENT`,
-  },
-
-  "Win32 Priority Separation": {
-    requiresAdmin: true,
-    // 0x24 = 36 decimal = fixed short quanta, max foreground boost (gaming-optimal)
-    // 0x26 = 38 decimal = variable quanta, short foreground boost (Windows default)
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 36 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f`,
   },
 
   "Disable Background UWP Apps": {
@@ -208,12 +192,6 @@ reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v Disabl
     disable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BingSearchEnabled /t REG_DWORD /d 1 /f
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v CortanaConsent /t REG_DWORD /d 1 /f
 reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Search" /v DisableWebSearch /t REG_DWORD /d 0 /f`,
-  },
-
-  "Disable Windows TCP Auto-Tuning": {
-    requiresAdmin: true,
-    enable: `netsh int tcp set global autotuninglevel=disabled`,
-    disable: `netsh int tcp set global autotuninglevel=normal`,
   },
 
   "Disable Startup Program Delay": {

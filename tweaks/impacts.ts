@@ -6,7 +6,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Maximum Priority for Games":                    "High",
   "System Responsiveness & Network Throttling":    "High",
   "Enable Hardware Accelerated GPU Scheduling (HAGS)": "High",
-  "Disable SuperFetch / SysMain":                  "High",
   "Disable Windows File Indexing":                 "High",
   "Optimize Visual Effects for Performance":       "High",
   "Disable Power Throttling":                      "High",
@@ -17,7 +16,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   // Medium — measurable improvement, may not be immediately obvious
   "Disable Background UWP Apps":                   "Medium",
   "Keep All CPU Cores Active (Unpark Cores)":      "Medium",
-  "Win32 Priority Separation":                     "Medium",
   "Disable GameBar":                               "Medium",
   "Disable GameBar Background Recording":          "Medium",
   "Enable Game Mode":                              "Medium",
@@ -26,7 +24,7 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Hibernation":                           "Medium",
   "Disable Full Screen Optimizations":             "Medium",
   "Optimize for Windowed & Borderless Games":      "Medium",
-  "Disable Windows TCP Auto-Tuning":               "Medium",
+
   "Disable Windows Automatic Maintenance":         "Medium",
   "Disable Xbox Core Services":                    "Medium",
   "Disable Web Search in Windows Search":          "Medium",

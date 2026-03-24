@@ -10,14 +10,6 @@ export interface TweakSeed {
 export const TWEAKS_SEED: TweakSeed[] = [
   // ── PERFORMANCE ──────────────────────────────────────────────────────────────
   {
-    title: "Disable SuperFetch / SysMain",
-    description: "Stops the SysMain (SuperFetch) service which preloads frequently used apps into RAM. Provides the greatest benefit on HDDs (traditional spinning drives) where load times are long. On NVMe/SSD systems the improvement is minimal since SSDs already load apps near-instantly.",
-    category: "performance",
-    isActive: false,
-    warning: "HDD USERS: Recommended — SysMain causes significant unnecessary disk writes on spinning drives. SSD/NVMe USERS: Benefit is minimal. Safe to apply either way, but impact varies by storage type.",
-    featureBreaks: "Apps may load slightly slower on first launch on HDD systems. Negligible difference on SSD/NVMe."
-  },
-  {
     title: "Disable NTFS Access Timestamps",
     description: "Disables the automatic recording of last-access timestamps on NTFS files and folders, reducing unnecessary disk writes and slightly improving I/O performance.",
     category: "performance",
@@ -148,14 +140,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Background system tasks receive no reserved CPU time. Network packets are never throttled. Background downloads or tasks may feel marginally slower while gaming — this is intentional."
   },
   {
-    title: "Win32 Priority Separation",
-    description: "Configures how the Windows CPU scheduler distributes processing time between the active foreground application and background tasks. The gaming-optimised value (0x24) gives your game a fixed, maximum CPU time boost with the shortest possible scheduling intervals — reducing micro-stutter and improving frame consistency. Revert restores the Windows default (0x26).",
-    category: "gaming",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Background processes receive less CPU scheduler time while a game is running. No effect outside of gaming sessions."
-  },
-  {
     title: "Maximum Priority for Games",
     description: "Configures the Windows Multimedia SystemProfile Tasks\\Games entry to give games the highest possible scheduler priority: GPU Priority 8 (max), CPU Priority 6 (High), Scheduling Category High, SFIO Priority High, Background Only False, and Latency Sensitive True. Every process registered as a game gets maximum CPU, GPU, and disk access priority.",
     category: "gaming",
@@ -188,14 +172,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: null,
     featureBreaks: "Web search results won't appear in Start menu. Must open a browser manually for web searches."
-  },
-  {
-    title: "Disable Windows TCP Auto-Tuning",
-    description: "Disables Windows TCP receive window auto-tuning which dynamically adjusts the TCP receive window size. Auto-tuning can sometimes over-compensate on certain networks and cause latency spikes. Disabling it sets a fixed receive window, which can improve consistency and reduce jitter in online games.",
-    category: "system",
-    isActive: false,
-    warning: "May reduce large file download speeds on high-latency connections (e.g. satellite internet or very long-distance servers). Test your download speeds after applying — if throughput drops significantly, revert. Broadband cable and fibre connections are generally unaffected.",
-    featureBreaks: "Large file download throughput may be reduced on high-latency connections. Gaming latency consistency typically improves."
   },
   {
     title: "Disable Startup Program Delay",

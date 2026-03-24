@@ -66,7 +66,6 @@ export const TWEAK_PRESETS: TweakPreset[] = [
     bgColor: "hover:bg-primary/10",
     borderColor: "hover:border-primary/30",
     titles: [
-      "Disable SuperFetch / SysMain",
       "Disable NTFS Access Timestamps",
       "Disable Windows Performance Counters",
       "Disable Windows File Indexing",
@@ -77,7 +76,7 @@ export const TWEAK_PRESETS: TweakPreset[] = [
       "Disable Startup Program Delay",
       "Disable Windows Automatic Maintenance",
       "Enable SSD TRIM Optimization",
-      "Disable Windows TCP Auto-Tuning",
+
     ],
   },
   {
