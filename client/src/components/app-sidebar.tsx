@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { SiDiscord } from "react-icons/si";
 import {
   LayoutDashboard, Wrench, Box, Sparkles, RotateCcw,
-  Globe, Settings, ChevronRight, MonitorCheck, Package,
+  Globe, Settings, ChevronRight, MonitorCheck, Package, PackageX,
 } from "lucide-react";
 import { openUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ const NAV_GROUPS = [
     items: [
       { title: "Dashboard",   url: "/",          icon: LayoutDashboard },
       { title: "PC Cleaner",  url: "/cleaner",   icon: Sparkles },
+      { title: "Debloat",     url: "/debloat",   icon: PackageX },
       { title: "Tweaks",      url: "/tweaks",    icon: Wrench },
       { title: "Utilities",   url: "/utilities", icon: Box },
       { title: "Programs",    url: "/programs",  icon: Package },

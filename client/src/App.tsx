@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import Tweaks from "@/pages/tweaks";
 import DNSManager from "@/pages/dns-manager";
 import Cleaner from "@/pages/cleaner";
+import Debloat from "@/pages/debloat";
 import RestorePoints from "@/pages/restore-points";
 import Utilities from "@/pages/utilities";
 import Programs from "@/pages/programs";
@@ -43,6 +44,7 @@ function AnimatedRoutes() {
           <Route path="/tweaks" component={Tweaks}/>
           <Route path="/dns" component={DNSManager}/>
           <Route path="/cleaner" component={Cleaner}/>
+          <Route path="/debloat" component={Debloat}/>
           <Route path="/utilities" component={Utilities}/>
           <Route path="/programs" component={Programs}/>
           <Route path="/startup" component={Startup} />
