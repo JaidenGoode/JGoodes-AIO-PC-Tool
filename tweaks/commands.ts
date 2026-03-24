@@ -33,13 +33,6 @@ sc.exe config "wsearch" start= disabled 2>&1 | Out-Null`,
 sc.exe start "wsearch" 2>&1 | Out-Null`,
   },
 
-  "Disable Multiplane Overlay (MPO)": {
-    requiresAdmin: true,
-    requiresRestart: true,
-    enable: `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\Dwm" /v OverlayTestMode /t REG_DWORD /d 5 /f`,
-    disable: `Remove-ItemProperty -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm" -Name "OverlayTestMode" -Force -ErrorAction SilentlyContinue`,
-  },
-
   "Disable Hibernation": {
     requiresAdmin: true,
     enable: `powercfg /hibernate off
@@ -265,13 +258,6 @@ reg add "HKCU\\Control Panel\\Desktop" /v WaitToKillAppTimeout /t REG_SZ /d "200
     requiresAdmin: true,
     enable: `Get-ScheduledTask -TaskName "ScheduledDefrag" -ErrorAction SilentlyContinue | Disable-ScheduledTask -ErrorAction SilentlyContinue`,
     disable: `Get-ScheduledTask -TaskName "ScheduledDefrag" -ErrorAction SilentlyContinue | Enable-ScheduledTask -ErrorAction SilentlyContinue`,
-  },
-
-  "Keep Kernel & Drivers in RAM": {
-    requiresAdmin: true,
-    requiresRestart: true,
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 1 /f`,
-    disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 0 /f`,
   },
 
   "Svchost Process Isolation": {

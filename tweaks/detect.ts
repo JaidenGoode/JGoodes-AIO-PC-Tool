@@ -34,7 +34,6 @@ $d=[ordered]@{}
 $d['Disable SuperFetch / SysMain']=csvc 'SysMain'
 try{$fsu=((fsutil behavior query disablelastaccess 2>$null) -join ' ');$d['Disable NTFS Access Timestamps']=if($fsu -match 'DisableLastAccess\w*\s*=\s*[1-9]'){1}else{0}}catch{$d['Disable NTFS Access Timestamps']=0}
 $d['Disable Windows File Indexing']=csvc 'WSearch'
-$d['Disable Multiplane Overlay (MPO)']=creg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'OverlayTestMode' 5
 $d['Disable Hibernation']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power' 'HiberbootEnabled' 0
 $d['Disable Background UWP Apps']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications' 'GlobalUserDisabled' 1
 $d['Optimize Visual Effects for Performance']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' 'VisualFXSetting' 2
@@ -66,7 +65,6 @@ $d['Disable Phone Link & Mobile Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\W
 # Performance (Disk / Memory)
 $d['Auto-End Unresponsive Programs']=creg 'HKCU:\Control Panel\Desktop' 'AutoEndTasks' '1'
 try{$dfTask=schtasks /Query /TN "Microsoft\Windows\Defrag\ScheduledDefrag" /FO CSV 2>$null;$d['Disable Scheduled Disk Defragmentation']=if($dfTask -match 'Disabled'){1}else{0}}catch{$d['Disable Scheduled Disk Defragmentation']=0}
-$d['Keep Kernel & Drivers in RAM']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'DisablePagingExecutive' 1
 try{$svch=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' -EA Stop).SvcHostSplitThresholdInKB;$d['Svchost Process Isolation']=if($svch -gt 1000000){1}else{0}}catch{$d['Svchost Process Isolation']=0}
 $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsDisable8dot3NameCreation' 1
 try{$bcd=(bcdedit /enum '{current}' 2>$null) -join ' ';$d['Optimize Boot Configuration']=if($bcd -match 'quietboot\s+Yes'){1}else{0}}catch{$d['Optimize Boot Configuration']=0}

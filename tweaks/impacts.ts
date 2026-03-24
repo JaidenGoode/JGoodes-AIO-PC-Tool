@@ -3,7 +3,6 @@ export type ImpactLevel = "High" | "Medium" | "Low";
 export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   // High — users notice a clear real-world difference
   "Disable Mouse Acceleration":                    "High",
-  "Disable Multiplane Overlay (MPO)":              "High",
   "Maximum Priority for Games":                    "High",
   "System Responsiveness & Network Throttling":    "High",
   "Enable Hardware Accelerated GPU Scheduling (HAGS)": "High",
@@ -11,7 +10,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Windows File Indexing":                 "High",
   "Optimize Visual Effects for Performance":       "High",
   "Disable Power Throttling":                      "High",
-  "Keep Kernel & Drivers in RAM":                  "High",
   "Disable Connected Telemetry (DiagTrack)":       "High",
   "Unlock Reserved Network Bandwidth":             "High",
   "Disable Virtualization-Based Security (VBS)":   "High",

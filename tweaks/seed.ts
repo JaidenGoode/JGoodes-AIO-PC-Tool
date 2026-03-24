@@ -42,14 +42,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "UWP apps will not refresh content or receive live tile updates in the background. Opening an app will always show up-to-date content once launched."
   },
   {
-    title: "Disable Multiplane Overlay (MPO)",
-    description: "Disables the GPU Multiplane Overlay feature which is known to cause stuttering, flickering, and frame pacing issues in many games on NVIDIA and AMD dedicated graphics cards. Only applies to systems with a discrete (dedicated) GPU.",
-    category: "gaming",
-    isActive: false,
-    warning: "DISCRETE GPU REQUIRED: This tweak only applies to systems with a dedicated NVIDIA or AMD graphics card. If you only have Intel/AMD integrated graphics (no dedicated GPU), this tweak has no effect and can be skipped.",
-    featureBreaks: "Overlapping windows may use slightly more GPU bandwidth. Fixes stuttering and flickering for most games with dedicated GPU."
-  },
-  {
     title: "Disable Hibernation",
     description: "Disables hibernation mode and deletes the hiberfil.sys file, freeing disk space equal to your total installed RAM (e.g. 16GB RAM = 16GB freed). Desktop users who never hibernate gain free space with no downside.",
     category: "performance",
@@ -254,14 +246,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     isActive: false,
     warning: "HDD USERS: If you have a traditional spinning hard drive, you may want to run manual defragmentation periodically instead. SSDs should always have this disabled.",
     featureBreaks: "Automatic disk defragmentation disabled. Run manually via Defragment and Optimize Drives if needed for HDD."
-  },
-  {
-    title: "Keep Kernel & Drivers in RAM",
-    description: "Forces the Windows kernel and device drivers to remain in physical RAM at all times instead of being paged to the swap file. Reduces latency for system calls and driver operations. Most beneficial on systems with 8GB+ RAM.",
-    category: "performance",
-    isActive: false,
-    warning: "Requires sufficient RAM (8GB+). On systems with low RAM (4GB or less), this may reduce available memory for applications.",
-    featureBreaks: "Slightly higher base RAM usage. Kernel and drivers never swapped to disk."
   },
   {
     title: "Svchost Process Isolation",
