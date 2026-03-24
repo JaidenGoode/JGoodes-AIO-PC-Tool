@@ -4,7 +4,7 @@ import {
   Search, Wrench, Zap, SlidersHorizontal,
   AlertTriangle, Gamepad2, CheckCircle2,
   Download, Copy, Check, Terminal, Loader2,
-  Play, X, RotateCcw, AlertOctagon, Info, CheckSquare, Network,
+  Play, X, RotateCcw, AlertOctagon, Info, CheckSquare,
   Upload, Database,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -45,13 +45,12 @@ declare global {
   }
 }
 
-const CATEGORIES = ["all", "performance", "gaming", "system", "network"] as const;
+const CATEGORIES = ["all", "performance", "gaming", "system"] as const;
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   performance: Zap,
   system: SlidersHorizontal,
   gaming: Gamepad2,
-  network: Network,
   all: Wrench,
 };
 
@@ -59,7 +58,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   performance: "text-primary",
   system: "text-primary",
   gaming: "text-primary",
-  network: "text-primary",
   all: "text-primary",
 };
 
