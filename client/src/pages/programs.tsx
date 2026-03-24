@@ -1090,19 +1090,14 @@ function AllProgramsTab() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {filtered.map((prog, i) => {
+            {filtered.map((prog) => {
               const uninstalling = activeUninstall === prog.name;
               const letter = (prog.name || "?")[0].toUpperCase();
               return (
-                <motion.div
+                <div
                   key={prog.name + prog.version}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(i * 0.02, 0.3), duration: 0.15 }}
-                >
-                  <div
-                    className="flex flex-col rounded-xl border border-border/60 bg-card overflow-hidden group relative transition-all duration-200"
-                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
+                  className="flex flex-col rounded-xl border border-border/60 bg-card overflow-hidden group relative transition-all duration-200"
+                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
                     onMouseEnter={e => {
                       (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px hsl(var(--primary) / 0.08), 0 4px 16px rgba(0,0,0,0.35)";
                       (e.currentTarget as HTMLElement).style.borderColor = "hsl(var(--primary) / 0.28)";
@@ -1159,15 +1154,14 @@ function AllProgramsTab() {
                         size="sm"
                         disabled={uninstalling}
                         onClick={() => setConfirmProg(prog)}
-                        data-testid={`button-uninstall-${i}`}
+                        data-testid={`button-uninstall-${prog.name}`}
                         className="w-full h-7 text-[11px] font-bold gap-1.5 bg-red-950/20 hover:bg-red-900/30 text-red-400/60 hover:text-red-300 border border-red-900/25 hover:border-red-800/40 transition-all"
                       >
                         {uninstalling ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
                         {uninstalling ? "Removing..." : "Uninstall"}
                       </Button>
                     </div>
-                  </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -1268,8 +1262,7 @@ export default function Programs() {
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 {t.label}
                 {active && (
-                  <motion.div
-                    layoutId="tab-indicator"
+                  <div
                     className="absolute bottom-0 inset-x-0 h-[2px]"
                     style={{ background: "hsl(var(--primary))" }}
                   />
