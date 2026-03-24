@@ -502,12 +502,4 @@ export const TWEAKS_SEED: TweakSeed[] = [
     warning: null,
     featureBreaks: "Widgets taskbar button removed. No news, weather, or stock data in Widgets. No effect on Windows 10 — this key is ignored on Win10."
   },
-  {
-    title: "Advanced Latency & Timer Precision",
-    description: "Applies a full stack of timer and scheduling optimizations in one click: Disables Dynamic Tick (bcdedit disabledynamictick yes) to lock the CPU at a constant scheduling rate and eliminate micro-stutters; Forces the High Precision Event Timer (useplatformclock true) for a reliable hardware clock source; Enables Platform Tick (useplatformtick yes) to force use of the TSC; Sets TSC Sync Policy to Enhanced (tscsyncpolicy Enhanced) for consistent cross-core timing; Sets Windows Multimedia SystemProfile SystemResponsiveness to 0 (maximum app priority, minimum background yield); and enables GlobalTimerResolutionRequests so any app requesting a high-precision timer gets it system-wide. Together these minimize scheduling jitter, reduce input lag, and improve frame-time consistency at high refresh rates.",
-    category: "gaming",
-    isActive: false,
-    warning: "RESTART REQUIRED after applying for bcdedit changes to take effect. Slightly increases idle CPU power usage due to constant timer tick (dynamic tick disabled). Recommended for gaming desktops; test on laptops. Revert resets all bcdedit values to Windows defaults, resets GlobalTimerResolutionRequests to 0, and re-registers the Windows Time service. SystemResponsiveness is intentionally kept at 0 (max performance) on revert.",
-    featureBreaks: "Restart required for bcdedit changes. Constant CPU tick rate increases idle power draw slightly. SystemResponsiveness stays at 0 after revert by design. All bcdedit timer values are fully removed on revert."
-  },
 ];

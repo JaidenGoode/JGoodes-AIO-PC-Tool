@@ -115,7 +115,4 @@ try{$yp=(Get-AppxPackage -AllUsers Microsoft.YourPhone -ErrorAction SilentlyCont
 $d['Disable Windows 11 Widgets Panel']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Dsh' 'AllowNewsAndInterests' 0
 $d['Disable Auto-Restart After Windows Updates']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' 'NoAutoRebootWithLoggedOnUsers' 1
 
-# Advanced Latency & Timer Precision — detected if useplatformclock=True AND GlobalTimerResolutionRequests=1
-try{$bcdL=(bcdedit /enum '{current}' 2>$null) -join ' ';$upc=if($bcdL -match 'useplatformclock\s+Yes'){1}else{0};$gtr=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Kernel' 'GlobalTimerResolutionRequests' 1;$d['Advanced Latency & Timer Precision']=if($upc -eq 1 -and $gtr -eq 1){1}else{0}}catch{$d['Advanced Latency & Timer Precision']=0}
-
 $d | ConvertTo-Json -Compress`;
