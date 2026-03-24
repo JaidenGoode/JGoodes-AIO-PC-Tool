@@ -1274,21 +1274,10 @@ export default function Programs() {
       </div>
 
       {/* ── Tab Content ── */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <AnimatePresence mode="sync" initial={false}>
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
-            style={{ height: "100%", display: "flex", flexDirection: "column" }}
-          >
-            {tab === "winApps" && <WinAppsTab />}
-            {tab === "external" && <ExternalTab />}
-            {tab === "allPrograms" && <AllProgramsTab />}
-          </motion.div>
-        </AnimatePresence>
+      <div className="flex-1 min-h-0 overflow-hidden" style={{ display: "flex", flexDirection: "column" }}>
+        {tab === "winApps" && <WinAppsTab />}
+        {tab === "external" && <ExternalTab />}
+        {tab === "allPrograms" && <AllProgramsTab />}
       </div>
     </div>
   );

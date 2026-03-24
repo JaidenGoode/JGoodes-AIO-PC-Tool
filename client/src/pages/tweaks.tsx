@@ -954,8 +954,7 @@ export default function Tweaks() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <AnimatePresence mode="popLayout">
-            {filteredTweaks?.map((tweak, i) => {
+            {filteredTweaks?.map((tweak) => {
               const Icon = CATEGORY_ICONS[tweak.category.toLowerCase()] || Wrench;
               const colorClass = CATEGORY_COLORS[tweak.category.toLowerCase()] || "text-primary";
               const cmd = getTweakCommand(tweak.title);
@@ -973,13 +972,8 @@ export default function Tweaks() {
               };
 
               return (
-                <motion.div
+                <div
                   key={tweak.id}
-                  layout
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.3) }}
                   className="h-full"
                 >
                   <div
@@ -1131,10 +1125,9 @@ export default function Tweaks() {
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
-          </AnimatePresence>
         </div>
       )}
 
