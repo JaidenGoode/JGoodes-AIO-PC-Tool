@@ -107,6 +107,7 @@ export default function Tweaks() {
   const importFileRef = useRef<HTMLInputElement>(null);
   const [importTweakTitles, setImportTweakTitles] = useState<string[]>([]);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [repairStatus, setRepairStatus] = useState<"idle" | "running" | "done" | "error">("idle");
 
   const bulkMutation = useMutation({
     mutationFn: ({ titles, isActive }: { titles: string[]; isActive: boolean }) =>
@@ -414,6 +415,30 @@ export default function Tweaks() {
     } catch {
       toast({ title: "Invalid file", description: "Could not parse the profile JSON.", variant: "destructive" });
     }
+  };
+
+  const handleRepairBadTweaks = async () => {
+    if (!window.electronAPI?.runScript) {
+      toast({ title: "Desktop app required", description: "Requires the desktop .exe to run elevated PowerShell.", variant: "destructive" });
+      return;
+    }
+    setRepairStatus("running");
+    const script = [
+      `$cmd = "iwr 'https://raw.githubusercontent.com/zoicware/RepairBadTweaks/main/RepairTweaks.ps1' | iex"`,
+      `$enc = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($cmd))`,
+      `Start-Process powershell.exe -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $enc -Verb RunAs`,
+    ].join("\r\n");
+    try {
+      const r = await window.electronAPI.runScript(script);
+      if (r.success) {
+        setRepairStatus("done");
+        toast({ title: "Repair Bad Tweaks launched", description: "Accept the UAC prompt to run the repair script elevated." });
+      } else {
+        setRepairStatus("error");
+        toast({ title: "Launch failed", description: "Could not launch Repair Bad Tweaks.", variant: "destructive" });
+      }
+    } catch { setRepairStatus("error"); }
+    setTimeout(() => setRepairStatus("idle"), 5000);
   };
 
   const handleExportProfile = async () => {
@@ -829,6 +854,41 @@ export default function Tweaks() {
           </div>
         </div>
       )}
+
+      {/* ── Repair Bad Tweaks ──────────────────────────────────────────────── */}
+      <div
+        className="rounded-xl border border-border/50 bg-secondary/10 px-4 py-3 flex items-center gap-3"
+        style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}
+      >
+        <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-[11px] font-black text-foreground/80 tracking-wide">Repair Bad Tweaks</span>
+            <span className="text-[9px] text-muted-foreground/35 font-mono">zoicware/RepairBadTweaks</span>
+          </div>
+          <code className="text-[9.5px] font-mono text-muted-foreground/40 truncate block">
+            iwr 'https://raw.githubusercontent.com/zoicware/RepairBadTweaks/main/RepairTweaks.ps1' | iex
+          </code>
+        </div>
+        <button
+          onClick={handleRepairBadTweaks}
+          disabled={repairStatus === "running"}
+          data-testid="button-repair-bad-tweaks"
+          className={cn(
+            "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all duration-150",
+            repairStatus === "idle" && "border-border/40 bg-secondary/50 text-muted-foreground/70 hover:border-primary/40 hover:bg-primary/10 hover:text-primary",
+            repairStatus === "running" && "border-border/30 bg-secondary/30 text-muted-foreground/40 cursor-not-allowed",
+            repairStatus === "done" && "border-green-500/30 bg-green-500/10 text-green-400",
+            repairStatus === "error" && "border-red-500/30 bg-red-500/10 text-red-400"
+          )}
+        >
+          {repairStatus === "running" && <Loader2 className="h-3 w-3 animate-spin" />}
+          {repairStatus === "done" && <CheckCircle2 className="h-3 w-3" />}
+          {repairStatus === "error" && <X className="h-3 w-3" />}
+          {repairStatus === "idle" && <Play className="h-3 w-3" />}
+          {repairStatus === "idle" ? "Run Elevated" : repairStatus === "running" ? "Launching..." : repairStatus === "done" ? "Launched" : "Failed"}
+        </button>
+      </div>
 
       {/* ── Presets + Bulk Actions Bar ─────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap px-3.5 py-2.5 rounded-xl border border-border/50 bg-secondary/10"
