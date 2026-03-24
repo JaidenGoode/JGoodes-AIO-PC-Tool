@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useMemo } from "react";
+import { ReactNode, useState, useEffect, useMemo, useRef } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { ShieldCheck, Minus, Square, X, Maximize2 } from "lucide-react";
@@ -6,6 +6,7 @@ import { useTheme, THEME_COLORS } from "./theme-provider";
 import { cn } from "@/lib/utils";
 import { useDetect } from "@/hooks/detect-context";
 import { useTweaks } from "@/hooks/use-tweaks";
+import { useLocation } from "wouter";
 
 interface LayoutProps { children: ReactNode; }
 
@@ -66,7 +67,13 @@ export function Layout({ children }: LayoutProps) {
   const { accentHue, setAccentHue, toggleMode, mode } = useTheme();
   const { isDetecting, lastDetectedAt } = useDetect();
   const { data: tweaks } = useTweaks();
+  const [location] = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
   const style = { "--sidebar-width": "15rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties;
+
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [location]);
 
   const tweakStats = useMemo(() => {
     if (!tweaks) return null;
@@ -196,7 +203,7 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main content */}
-          <main className="flex-1 min-h-0 overflow-y-auto w-full">
+          <main ref={mainRef} className="flex-1 min-h-0 overflow-y-auto w-full">
             <div className="container mx-auto p-5 md:p-7 max-w-[1600px] min-h-full flex flex-col">
               {children}
             </div>
