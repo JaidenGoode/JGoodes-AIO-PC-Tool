@@ -37,6 +37,58 @@ declare global {
 }
 import { cn } from "@/lib/utils";
 
+// ── SFC: spawn sfc.exe with Unicode stdout encoding so UTF-16LE output decodes correctly ──
+const SFC_COMMAND = [
+  "chcp 65001 | Out-Null",
+  "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+  "$OutputEncoding = [System.Text.Encoding]::UTF8",
+  '$psi = [System.Diagnostics.ProcessStartInfo]::new("sfc.exe", "/scannow")',
+  "$psi.UseShellExecute = $false",
+  "$psi.RedirectStandardOutput = $true",
+  "$psi.StandardOutputEncoding = [System.Text.Encoding]::Unicode",
+  "$psi.CreateNoWindow = $true",
+  "$p = [System.Diagnostics.Process]::new()",
+  "$p.StartInfo = $psi",
+  "$null = $p.Start()",
+  "while ($true) {",
+  "    $line = $p.StandardOutput.ReadLine()",
+  "    if ($null -eq $line) { break }",
+  '    $clean = $line.Trim()',
+  '    if ($clean -and $clean -notmatch "^-+$" -and $clean -notmatch "Microsoft Windows" -and $clean -notmatch "^Copyright") { Write-Output $clean }',
+  "}",
+  "$p.WaitForExit()",
+].join("\n");
+
+// ── DISM: read char-by-char to handle \r-based progress bar; only emit on whole-% change ──
+const DISM_COMMAND = [
+  "chcp 65001 | Out-Null",
+  "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+  "$OutputEncoding = [System.Text.Encoding]::UTF8",
+  '$psi = [System.Diagnostics.ProcessStartInfo]::new("DISM.exe", "/Online /Cleanup-Image /RestoreHealth")',
+  "$psi.UseShellExecute = $false",
+  "$psi.RedirectStandardOutput = $true",
+  "$psi.CreateNoWindow = $true",
+  "$p = [System.Diagnostics.Process]::new()",
+  "$p.StartInfo = $psi",
+  "$null = $p.Start()",
+  "$sb = [System.Text.StringBuilder]::new()",
+  "$lastPct = -1",
+  "while ($true) {",
+  "    $c = $p.StandardOutput.Read()",
+  "    if ($c -eq -1) { break }",
+  "    if ($c -eq 13 -or $c -eq 10) {",
+  "        $line = $sb.ToString().Trim()",
+  "        $null = $sb.Clear()",
+  '        if ($line) { if ($line -match "\\[.*?(\\d+)\\.\\d+%") { $pct = [int]$Matches[1]; if ($pct -ne $lastPct) { $lastPct = $pct; Write-Output $line } } else { Write-Output $line } }',
+  "    } else {",
+  "        $null = $sb.Append([char]$c)",
+  "    }",
+  "}",
+  "$line = $sb.ToString().Trim()",
+  "if ($line) { Write-Output $line }",
+  "$p.WaitForExit()",
+].join("\n");
+
 function UtilCard({
   icon: Icon, title, description, children, delay = 0,
 }: {
@@ -192,19 +244,62 @@ export default function Utilities() {
     setTermRunning(true);
     setShowTermDialog(true);
 
+    // Collect all output lines so we can parse the final result on completion
+    const collectedOutput: string[] = [];
+
     const cleanup = window.electronAPI.onScriptOutput((data) => {
       if (data.type === "done") {
         setTermRunning(false);
-        setTermOutput((prev) => [
-          ...prev,
-          {
-            type: data.code === 0 ? "success" : "stderr",
-            text: data.code === 0 ? `\n\u2713 ${title} completed successfully.` : `\n\u2717 Script exited with code ${data.code}.`,
-          },
-        ]);
+
+        const fullOutput = collectedOutput.join("\n").toLowerCase();
+        let resultText: string;
+        let resultType: string;
+
+        if (data.code !== 0) {
+          resultText = `\n\u2717 Script exited with code ${data.code}.`;
+          resultType = "stderr";
+        } else if (title === "SFC Scan") {
+          if (fullOutput.includes("did not find any integrity violations")) {
+            resultText = "\n\u2713 No corrupted files found \u2014 your system files are clean.";
+            resultType = "success";
+          } else if (fullOutput.includes("found corrupt files and successfully repaired")) {
+            resultText = "\n\u2713 Corrupt files were found and repaired successfully.";
+            resultType = "success";
+          } else if (fullOutput.includes("unable to fix some") || fullOutput.includes("was unable to fix")) {
+            resultText = "\n\u26a0 Corrupt files found but some could not be repaired. Run DISM Repair first, then re-run SFC.";
+            resultType = "stderr";
+          } else if (fullOutput.includes("could not perform the requested operation") || fullOutput.includes("could not start the repair")) {
+            resultText = "\n\u2717 SFC could not complete the scan. Try restarting and running again.";
+            resultType = "stderr";
+          } else {
+            resultText = "\n\u2713 SFC scan complete.";
+            resultType = "success";
+          }
+        } else if (title === "DISM Repair") {
+          const repaired = fullOutput.includes("the component store is repairable") || fullOutput.includes("repairing") || (fullOutput.includes("restore operation completed") && fullOutput.includes("repairable"));
+          if (fullOutput.includes("the restore operation completed successfully") && repaired) {
+            resultText = "\n\u2713 Component store was repaired and restored successfully.";
+            resultType = "success";
+          } else if (fullOutput.includes("the restore operation completed successfully") || fullOutput.includes("no component store corruption detected")) {
+            resultText = "\n\u2713 Windows image is healthy \u2014 no repairs were needed.";
+            resultType = "success";
+          } else if (fullOutput.includes("operation completed successfully")) {
+            resultText = "\n\u2713 DISM completed successfully.";
+            resultType = "success";
+          } else {
+            resultText = "\n\u2713 DISM Repair complete.";
+            resultType = "success";
+          }
+        } else {
+          resultText = `\n\u2713 ${title} completed successfully.`;
+          resultType = "success";
+        }
+
+        setTermOutput((prev) => [...prev, { type: resultType, text: resultText }]);
         termCleanupRef.current?.();
         termCleanupRef.current = null;
       } else if (data.text) {
+        collectedOutput.push(data.text);
         setTermOutput((prev) => [...prev, { type: data.type, text: data.text! }]);
       }
     });
@@ -1199,7 +1294,7 @@ export default function Utilities() {
             size="sm"
             data-testid="button-utility-sfc"
             disabled={termRunning}
-            onClick={() => launchInTerminal("SFC Scan", `chcp 65001 | Out-Null\n[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n$OutputEncoding = [System.Text.Encoding]::UTF8\n$ErrorActionPreference = 'SilentlyContinue'\nsfc /scannow\nWrite-Output ""`)}
+            onClick={() => launchInTerminal("SFC Scan", SFC_COMMAND)}
             className="w-full h-7 text-xs font-medium justify-start gap-2 bg-transparent hover:bg-primary/8 text-foreground/70 hover:text-primary border border-border/40 hover:border-primary/25 transition-all duration-150"
           >
             {termRunning && termTitle === "SFC Scan" ? <Loader2 className="h-3 w-3 animate-spin shrink-0" /> : <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />}
@@ -1223,7 +1318,7 @@ export default function Utilities() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel className="border-border hover:bg-secondary text-sm">Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => launchInTerminal("DISM Repair", `$ErrorActionPreference = 'SilentlyContinue'\nDISM /Online /Cleanup-Image /RestoreHealth\nWrite-Output ""`)} className="bg-primary text-white text-sm">Run DISM</AlertDialogAction>
+                  <AlertDialogAction onClick={() => launchInTerminal("DISM Repair", DISM_COMMAND)} className="bg-primary text-white text-sm">Run DISM</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
