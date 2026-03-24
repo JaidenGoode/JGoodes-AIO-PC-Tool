@@ -198,14 +198,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
 
   // ── SYSTEM ───────────────────────────────────────────────────────────────────
   {
-    title: "Prefer IPv4 over IPv6",
-    description: "Configures Windows to prefer IPv4 connections over IPv6 when both are available by adjusting the IPv6 prefix policy table. Keeps IPv6 fully functional as a fallback, which can resolve connectivity issues on some networks without breaking IPv6 entirely.",
-    category: "system",
-    isActive: false,
-    warning: null,
-    featureBreaks: "Minimal. IPv6 still works but is deprioritized. Recommended over fully disabling IPv6."
-  },
-  {
     title: "Disable Web Search in Windows Search",
     description: "Removes Bing web search results from the Windows Start menu and taskbar search. Search only shows local files, apps, and settings — eliminating the delay caused by waiting for web results.",
     category: "system",

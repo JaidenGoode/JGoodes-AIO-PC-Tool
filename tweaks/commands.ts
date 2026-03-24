@@ -222,14 +222,6 @@ Remove-Item -Path "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image
 }`,
   },
 
-  "Prefer IPv4 over IPv6": {
-    requiresAdmin: true,
-    enable: `netsh interface ipv6 delete prefixpolicy ::ffff:0:0/96 store=persistent 2>$null
-netsh interface ipv6 add prefixpolicy ::ffff:0:0/96 60 4 store=persistent 2>$null`,
-    disable: `netsh interface ipv6 delete prefixpolicy ::ffff:0:0/96 store=persistent 2>$null
-netsh interface ipv6 add prefixpolicy ::ffff:0:0/96 35 4 store=persistent 2>$null`,
-  },
-
   "Disable Web Search in Windows Search": {
     requiresAdmin: true,
     enable: `reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Search" /v BingSearchEnabled /t REG_DWORD /d 0 /f

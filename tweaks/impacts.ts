@@ -54,7 +54,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Auto-Restart After Windows Updates":    "Medium",
 
   // Low — subtle, background improvements
-  "Prefer IPv4 over IPv6":                         "Low",
   "Disable Phone Link & Mobile Sync":              "Low",
   "Disable 8.3 Short File Names":                  "Low",
   "Disable Taskbar & Menu Animations":             "Low",
