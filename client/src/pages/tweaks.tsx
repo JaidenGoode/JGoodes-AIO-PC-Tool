@@ -424,7 +424,7 @@ export default function Tweaks() {
     }
     setRepairStatus("running");
     const script = [
-      `$cmd = "iwr 'https://raw.githubusercontent.com/zoicware/RepairBadTweaks/main/RepairTweaks.ps1' | iex"`,
+      `$cmd = "Set-ExecutionPolicy Unrestricted -Force; iwr 'https://raw.githubusercontent.com/zoicware/RepairBadTweaks/main/RepairTweaks.ps1' | iex"`,
       `$enc = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($cmd))`,
       `Start-Process powershell.exe -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $enc -Verb RunAs`,
     ].join("\r\n");
