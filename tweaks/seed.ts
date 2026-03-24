@@ -337,16 +337,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "QoS bandwidth reservation removed. All bandwidth available to applications. Minimal impact on system network traffic."
   },
 
-  // ── NETWORK ───────────────────────────────────────────────────────────────
-  {
-    title: "Network Optimization",
-    description: "Applies a comprehensive set of network optimizations in one click: sets Cloudflare DNS (1.1.1.1) on Wi-Fi and Ethernet, enables DNS over HTTPS, configures RSS CPU queues to match your hardware, disables Nagle's Algorithm for lower gaming latency, applies ~50 NIC driver-level performance parameters, and enables MSI (Message Signaled Interrupts) for your NIC. All changes are fully reversible.",
-    category: "network",
-    isActive: false,
-    warning: "DNS will be set to Cloudflare (1.1.1.1 / 1.0.0.1) on adapters named 'Wi-Fi' and 'Ethernet'. If your adapter has a different name, DNS settings may not apply to it. A restart is recommended after applying.",
-    featureBreaks: "Restart recommended. DNS is set to Cloudflare on standard adapter names. Nagle's Algorithm disabled (packets sent instantly, minor bandwidth increase). MSI enabled for NIC (improves interrupt handling). All changes revert cleanly."
-  },
-
   // ── GAMING (USB / Timing) ─────────────────────────────────────────────────
   {
     title: "Disable USB Selective Suspend",

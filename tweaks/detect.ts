@@ -79,9 +79,6 @@ $d['Disable Notification Center']=creg 'HKCU:\Software\Microsoft\Windows\Current
 $d['Reduce Keyboard Input Delay']=creg 'HKCU:\Control Panel\Keyboard' 'KeyboardDelay' '0'
 $d['Unlock Reserved Network Bandwidth']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched' 'NonBestEffortLimit' 0
 
-# Network
-try{$doh=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' 'EnableAutoDoh' -EA Stop).EnableAutoDoh;$d['Network Optimization']=if($doh -eq 2){1}else{0}}catch{$d['Network Optimization']=0}
-
 # Gaming (USB / Timing)
 try{
   $usbGuid="2a737441-1930-4402-8d77-b2bebba308a3"

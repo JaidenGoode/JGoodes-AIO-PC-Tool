@@ -39,7 +39,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Svchost Process Isolation":                     "Medium",
   "Optimize Boot Configuration":                   "Medium",
   "Disable Notification Center":                   "Medium",
-  "Network Optimization":                          "High",
   "Disable USB Selective Suspend":                 "Medium",
   "Disable Windows Error Reporting":               "Medium",
   "Disable Application Compatibility Telemetry":   "Medium",
