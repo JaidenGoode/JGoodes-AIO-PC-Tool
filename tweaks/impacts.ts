@@ -12,7 +12,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Optimize Visual Effects for Performance":       "High",
   "Disable Power Throttling":                      "High",
   "Keep Kernel & Drivers in RAM":                  "High",
-  "Disable Memory Compression":                    "High",
   "Disable Connected Telemetry (DiagTrack)":       "High",
   "Unlock Reserved Network Bandwidth":             "High",
   "Disable Virtualization-Based Security (VBS)":   "High",

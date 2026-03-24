@@ -68,7 +68,6 @@ $d['Disable Phone Link & Mobile Sync']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\W
 $d['Auto-End Unresponsive Programs']=creg 'HKCU:\Control Panel\Desktop' 'AutoEndTasks' '1'
 try{$dfTask=schtasks /Query /TN "Microsoft\Windows\Defrag\ScheduledDefrag" /FO CSV 2>$null;$d['Disable Scheduled Disk Defragmentation']=if($dfTask -match 'Disabled'){1}else{0}}catch{$d['Disable Scheduled Disk Defragmentation']=0}
 $d['Keep Kernel & Drivers in RAM']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'DisablePagingExecutive' 1
-try{$mc=(Get-MMAgent -EA Stop).MemoryCompression;$d['Disable Memory Compression']=if($mc -eq $false){1}else{0}}catch{$d['Disable Memory Compression']=0}
 try{$svch=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' -EA Stop).SvcHostSplitThresholdInKB;$d['Svchost Process Isolation']=if($svch -gt 1000000){1}else{0}}catch{$d['Svchost Process Isolation']=0}
 $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsDisable8dot3NameCreation' 1
 try{$bcd=(bcdedit /enum '{current}' 2>$null) -join ' ';$d['Optimize Boot Configuration']=if($bcd -match 'quietboot\s+Yes'){1}else{0}}catch{$d['Optimize Boot Configuration']=0}

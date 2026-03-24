@@ -272,14 +272,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Slightly higher base RAM usage. Kernel and drivers never swapped to disk."
   },
   {
-    title: "Disable Memory Compression",
-    description: "Disables the Windows Memory Compression feature which compresses inactive pages in RAM instead of writing them to the page file. While this saves disk I/O, the compression/decompression uses CPU cycles. Disabling it on systems with plenty of RAM (16GB+) frees CPU resources.",
-    category: "performance",
-    isActive: false,
-    warning: "Only recommended for systems with 16GB+ RAM. On systems with limited RAM, memory compression helps avoid excessive paging to disk which would be slower.",
-    featureBreaks: "Windows will page to disk instead of compressing memory. May increase page file usage on low-RAM systems."
-  },
-  {
     title: "Svchost Process Isolation",
     description: "Lowers the memory threshold at which Windows splits services into individual svchost.exe processes rather than grouping them. Improves system stability by isolating services — if one service crashes, it won't take down other services running in the same process.",
     category: "performance",

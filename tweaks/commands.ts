@@ -289,13 +289,6 @@ reg add "HKCU\\Control Panel\\Desktop" /v WaitToKillAppTimeout /t REG_SZ /d "200
     disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" /v DisablePagingExecutive /t REG_DWORD /d 0 /f`,
   },
 
-  "Disable Memory Compression": {
-    requiresAdmin: true,
-    requiresRestart: true,
-    enable: `Disable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue`,
-    disable: `Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue`,
-  },
-
   "Svchost Process Isolation": {
     requiresAdmin: true,
     requiresRestart: true,
@@ -319,19 +312,13 @@ bcdedit /set '{current}' quietboot yes 2>$null
 bcdedit /set '{current}' bootuxdisabled on 2>$null
 
 # Enable Fast Startup
-Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 1
-
-# Disable Memory Compression
-Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" -Name "Compression" -Value 0`,
+Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 1`,
     disable: `# Re-enable GUI Boot
 bcdedit /set '{current}' quietboot no 2>$null
 bcdedit /set '{current}' bootuxdisabled off 2>$null
 
 # Disable Fast Startup
-Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 0
-
-# Re-enable Memory Compression
-Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management" -Name "Compression" -Value 1`,
+Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 0`,
   },
 
   "Disable Taskbar & Menu Animations": {

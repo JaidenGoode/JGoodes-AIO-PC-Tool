@@ -14,10 +14,6 @@ export const TWEAK_CONFLICTS: Record<string, string> = {
   "Optimize Boot Configuration":   "Disable Hibernation",
   "Disable Hibernation":           "Optimize Boot Configuration",
 
-  // Optimize Boot Configuration now also sets Compression=0.
-  // Disable Memory Compression writes the same key — redundant if both are active.
-  "Disable Memory Compression":    "Optimize Boot Configuration",
-
 };
 
 export function getConflict(title: string): string | null {
