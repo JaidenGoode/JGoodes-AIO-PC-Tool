@@ -57,7 +57,7 @@ $d['Fortnite Process High Priority']=creg 'HKLM:\SOFTWARE\Microsoft\Windows NT\C
 $d['Disable Xbox Core Services']=csvc 'XboxGipSvc'
 
 # System / Network
-try{$pfx=(netsh interface ipv6 show prefixpolicies store=persistent 2>$null) -join ' ';$d['Prefer IPv4 over IPv6']=if($pfx -match '(?<!\d)60\s+\d+\s+::ffff:0:0/96'){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
+try{$pfx=(netsh interface ipv6 show prefixpolicies store=persistent 2>$null) -join ' ';$d['Prefer IPv4 over IPv6']=if($pfx -match '::ffff:0:0/96\s+60\b'){1}else{0}}catch{$d['Prefer IPv4 over IPv6']=0}
 $d['Disable Web Search in Windows Search']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'BingSearchEnabled' 0
 try{$tcp=(netsh int tcp show global 2>$null) -join ' ';$d['Disable Windows TCP Auto-Tuning']=if($tcp -match 'Receive Window Auto-Tuning Level\s*:\s*disabled'){1}else{0}}catch{$d['Disable Windows TCP Auto-Tuning']=0}
 $d['Disable Startup Program Delay']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0
