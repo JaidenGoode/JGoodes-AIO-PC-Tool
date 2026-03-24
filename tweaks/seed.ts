@@ -447,14 +447,6 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "HVCI and Credential Guard security isolation features are disabled after restart. WSL2 and standard Hyper-V virtual machines continue to work normally. A full system restart is required before any performance change is felt."
   },
   {
-    title: "Raise System Timer IRQ Priority",
-    description: "Enables GlobalTimerResolutionRequests to stabilize high-resolution timer callbacks, disables dynamic tick to prevent the CPU from dropping to lower timer frequencies, and sets TSC sync to Enhanced mode for consistent cross-core timing. Together these three changes reduce timer jitter and improve frame time consistency — especially noticeable at 144Hz and above.",
-    category: "gaming",
-    isActive: false,
-    warning: "Restart required. Disabling dynamic tick means Windows always ticks at the timer resolution requested by applications — this slightly increases CPU idle power usage. Recommended for gaming desktops; test on laptops.",
-    featureBreaks: "Restart required. Slight increase in idle CPU power due to constant tick. Improves frame time consistency and reduces micro-stutters at high refresh rates."
-  },
-  {
     title: "Foreground Application Priority Lock Timeout",
     description: "Sets ForegroundLockTimeout to 0ms so the foreground application priority boost activates instantly when you switch to a window. The default 200ms delay means your game can experience a brief priority drop whenever you alt-tab in or out. Setting to 0 eliminates this delay entirely.",
     category: "gaming",

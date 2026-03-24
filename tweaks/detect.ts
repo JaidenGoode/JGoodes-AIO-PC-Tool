@@ -106,7 +106,6 @@ $d['Disable Clipboard History Collection']=creg 'HKLM:\SOFTWARE\Policies\Microso
 
 # Gaming (VBS / Timer)
 $d['Disable Virtualization-Based Security (VBS)']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard' 'EnableVirtualizationBasedSecurity' 0
-$d['Raise System Timer IRQ Priority']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Kernel' 'GlobalTimerResolutionRequests' 1
 $d['Foreground Application Priority Lock Timeout']=creg 'HKCU:\Control Panel\Desktop' 'ForegroundLockTimeout' 0
 $d['Disable Print Spooler']=csvc 'spooler'
 $d['Disable Windows Copilot AI Sidebar']=creg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1

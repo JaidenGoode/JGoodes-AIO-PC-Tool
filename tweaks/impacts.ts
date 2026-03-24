@@ -46,7 +46,6 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Disable Application Compatibility Telemetry":   "Medium",
   "Disable Windows Activity History":              "Medium",
   "Disable Windows Content Delivery Manager":      "Medium",
-  "Raise System Timer IRQ Priority":               "Medium",
   "Foreground Application Priority Lock Timeout":  "Low",
   "Disable Print Spooler":                         "Medium",
   "Disable Windows Copilot AI Sidebar":            "Medium",

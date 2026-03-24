@@ -509,19 +509,6 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v RequirePlatfo
 reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard" /v HypervisorEnforcedCodeIntegrity /t REG_DWORD /d 0 /f`,
   },
 
-  "Raise System Timer IRQ Priority": {
-    requiresAdmin: true,
-    requiresRestart: true,
-    // Sets GlobalTimerResolutionRequests=1, disables dynamic tick, and sets TSC sync to Enhanced
-    enable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /d 1 /f
-bcdedit /set disabledynamictick yes 2>$null
-bcdedit /set tscsyncpolicy Enhanced 2>$null`,
-    // Revert: delete GlobalTimerResolutionRequests (doesn't exist by default), restore dynamic tick, remove tscsyncpolicy
-    disable: `Remove-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Kernel" -Name GlobalTimerResolutionRequests -Force -ErrorAction SilentlyContinue
-bcdedit /deletevalue disabledynamictick 2>$null
-bcdedit /deletevalue tscsyncpolicy 2>$null`,
-  },
-
   "Foreground Application Priority Lock Timeout": {
     requiresAdmin: false,
     enable: `reg add "HKCU\\Control Panel\\Desktop" /v ForegroundLockTimeout /t REG_DWORD /d 0 /f`,
