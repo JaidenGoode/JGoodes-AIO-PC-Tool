@@ -318,8 +318,8 @@ function BulkBar({
 }) {
   return (
     <div
-      className="flex items-center gap-2 px-5 py-2 border-b border-border/30 shrink-0"
-      style={{ background: "hsl(var(--card) / 0.6)" }}
+      className="flex items-center gap-2 px-5 py-2 border-b border-border/40 shrink-0"
+      style={{ background: "hsl(var(--card) / 0.7)" }}
     >
       {/* Selection toggle */}
       <div
@@ -336,24 +336,24 @@ function BulkBar({
             {totalSelected} selected
           </span>
         ) : (
-          <span className="text-[11px] font-semibold text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors">
+          <span className="text-[11px] font-semibold text-muted-foreground/60 group-hover:text-foreground/80 transition-colors">
             Select All
           </span>
         )}
       </div>
 
-      <div className="w-px h-3.5 bg-border/30 mx-1" />
+      <div className="w-px h-3.5 bg-border/40 mx-1" />
 
       <div className="flex items-center gap-0.5">
         <button
           onClick={onSelectInstalled}
-          className="px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide text-muted-foreground/40 hover:text-foreground/80 hover:bg-secondary/25 transition-all duration-100 select-none"
+          className="px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide text-muted-foreground/60 hover:text-foreground/85 hover:bg-secondary/30 transition-all duration-100 select-none"
         >
           Installed
         </button>
         <button
           onClick={onSelectNotInstalled}
-          className="px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide text-muted-foreground/40 hover:text-foreground/80 hover:bg-secondary/25 transition-all duration-100 select-none"
+          className="px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide text-muted-foreground/60 hover:text-foreground/85 hover:bg-secondary/30 transition-all duration-100 select-none"
         >
           Not Installed
         </button>
@@ -475,23 +475,23 @@ function WinAppsTab() {
       <div
         key={key}
         onClick={() => toggle(key)}
-        className="relative flex items-center gap-2 px-3 py-[7px] cursor-pointer group transition-all duration-100"
+        className="relative flex items-center gap-2 px-3 py-[7px] cursor-pointer group transition-all duration-100 hover:bg-secondary/20 rounded-md"
         style={{
-          borderLeft: `3px solid ${isSel ? "hsl(var(--primary))" : installed ? "hsl(142 70% 38% / 0.55)" : "hsl(var(--border) / 0.15)"}`,
-          background: isSel ? "hsl(var(--primary) / 0.07)" : "transparent",
+          borderLeft: `3px solid ${isSel ? "hsl(var(--primary))" : installed ? "hsl(142 70% 38% / 0.65)" : "hsl(var(--border) / 0.35)"}`,
+          background: isSel ? "hsl(var(--primary) / 0.08)" : "transparent",
           borderRadius: "0 6px 6px 0",
         }}
       >
         <ItemCB checked={isSel} onChange={() => toggle(key)} />
         <span
           className="text-[11.5px] font-medium flex-1 truncate select-none"
-          style={{ color: installed ? "hsl(var(--foreground) / 0.87)" : "hsl(var(--muted-foreground) / 0.38)" }}
+          style={{ color: installed ? "hsl(var(--foreground) / 0.92)" : "hsl(var(--foreground) / 0.55)" }}
         >
           {name}
         </span>
         <span
-          className="text-[9px] font-black tracking-widest shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ color: installed ? "hsl(142 70% 42%)" : "hsl(var(--muted-foreground) / 0.25)" }}
+          className="text-[9px] font-black tracking-widest shrink-0 transition-opacity"
+          style={{ color: installed ? "hsl(142 70% 50%)" : "hsl(var(--muted-foreground) / 0.45)" }}
         >
           {installed === null ? "···" : installed ? "ON" : "—"}
         </span>
@@ -510,14 +510,14 @@ function WinAppsTab() {
       />
 
       {/* Search */}
-      <div className="px-5 py-2 border-b border-border/20" style={{ background: "hsl(var(--card) / 0.25)" }}>
+      <div className="px-5 py-2 border-b border-border/35" style={{ background: "hsl(var(--card) / 0.4)" }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/25 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search apps, capabilities, features..."
-            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/10 border border-border/20 focus:border-primary/35 focus:outline-none placeholder:text-muted-foreground/20 text-foreground/80"
+            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/15 border border-border/35 focus:border-primary/50 focus:outline-none placeholder:text-muted-foreground/45 text-foreground/90"
             data-testid="input-winapps-search"
           />
           {search && (
@@ -540,7 +540,7 @@ function WinAppsTab() {
               >
                 <Store className="h-3 w-3" style={{ color: "hsl(var(--primary))" }} />
               </div>
-              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/70">Windows Apps</span>
+              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/85">Windows Apps</span>
               <div className="flex-1 h-px bg-gradient-to-r from-border/30 to-transparent" />
               {!scanLoading && (
                 <span
@@ -567,7 +567,7 @@ function WinAppsTab() {
               >
                 <Wrench className="h-3 w-3" style={{ color: "hsl(var(--primary))" }} />
               </div>
-              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/70">Capabilities</span>
+              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/85">Capabilities</span>
               <div className="flex-1 h-px bg-gradient-to-r from-border/30 to-transparent" />
               {!scanLoading && (
                 <span
@@ -594,7 +594,7 @@ function WinAppsTab() {
               >
                 <Box className="h-3 w-3" style={{ color: "hsl(var(--primary))" }} />
               </div>
-              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/70">Optional Features</span>
+              <span className="text-[11px] font-black tracking-widest uppercase text-foreground/85">Optional Features</span>
               <div className="flex-1 h-px bg-gradient-to-r from-border/30 to-transparent" />
               {!scanLoading && (
                 <span
@@ -766,14 +766,14 @@ function ExternalTab() {
       />
 
       {/* Search */}
-      <div className="px-5 py-2 border-b border-border/20" style={{ background: "hsl(var(--card) / 0.25)" }}>
+      <div className="px-5 py-2 border-b border-border/35" style={{ background: "hsl(var(--card) / 0.4)" }}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/25 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search software by name or category..."
-            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/10 border border-border/20 focus:border-primary/35 focus:outline-none placeholder:text-muted-foreground/20 text-foreground/80"
+            className="w-full pl-9 pr-8 py-1.5 text-[12px] rounded-lg bg-secondary/15 border border-border/35 focus:border-primary/50 focus:outline-none placeholder:text-muted-foreground/45 text-foreground/90"
             data-testid="input-ext-search"
           />
           {search && (
@@ -817,7 +817,7 @@ function ExternalTab() {
                 >
                   <Icon className="h-3 w-3 shrink-0" style={{ color: "hsl(var(--primary) / 0.85)" }} />
                 </div>
-                <span className="font-black text-[11px] tracking-widest uppercase text-foreground/75 flex-1 text-left">
+                <span className="font-black text-[11px] tracking-widest uppercase text-foreground/88 flex-1 text-left">
                   {cat.category}
                 </span>
                 {!extLoading && (
@@ -858,17 +858,17 @@ function ExternalTab() {
                           <div
                             key={app.id}
                             onClick={() => toggle(app.id)}
-                            className="relative flex items-center gap-2 px-2.5 py-[6px] cursor-pointer group transition-all duration-100"
+                            className="relative flex items-center gap-2 px-2.5 py-[6px] cursor-pointer group transition-all duration-100 hover:bg-secondary/20"
                             style={{
-                              borderLeft: `2.5px solid ${isSel ? "hsl(var(--primary))" : installed ? "hsl(142 70% 38% / 0.5)" : "hsl(var(--border) / 0.12)"}`,
-                              background: isSel ? "hsl(var(--primary) / 0.06)" : "transparent",
+                              borderLeft: `2.5px solid ${isSel ? "hsl(var(--primary))" : installed ? "hsl(142 70% 38% / 0.65)" : "hsl(var(--border) / 0.35)"}`,
+                              background: isSel ? "hsl(var(--primary) / 0.07)" : "transparent",
                               borderRadius: "0 6px 6px 0",
                             }}
                           >
                             <ItemCB checked={isSel} onChange={() => toggle(app.id)} />
                             <span
                               className="text-[11.5px] font-medium flex-1 truncate select-none min-w-0"
-                              style={{ color: installed ? "hsl(var(--foreground) / 0.87)" : "hsl(var(--muted-foreground) / 0.38)" }}
+                              style={{ color: installed ? "hsl(var(--foreground) / 0.92)" : "hsl(var(--foreground) / 0.58)" }}
                             >
                               {app.name}
                             </span>
@@ -1002,16 +1002,16 @@ function AllProgramsTab() {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Search + controls */}
-      <div className="shrink-0 px-5 py-3 border-b border-border/40" style={{ background: "hsl(var(--card) / 0.5)" }}>
+      <div className="shrink-0 px-5 py-3 border-b border-border/50" style={{ background: "hsl(var(--card) / 0.6)" }}>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/35 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/55 pointer-events-none" />
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search programs or publishers..."
               data-testid="input-programs-search"
-              className="pl-9 pr-8 h-9 text-[12px] bg-secondary/15 border-border/40 focus:border-primary/40 placeholder:text-muted-foreground/25"
+              className="pl-9 pr-8 h-9 text-[12px] bg-secondary/20 border-border/50 focus:border-primary/50 placeholder:text-muted-foreground/45"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
@@ -1043,7 +1043,7 @@ function AllProgramsTab() {
           </Select>
         </div>
         {!isLoading && data && (
-          <div className="flex items-center gap-3 mt-2 text-[10px] font-mono text-muted-foreground/35">
+          <div className="flex items-center gap-3 mt-2 text-[10px] font-mono text-muted-foreground/60">
             <span>{data.programs.filter(p => !p.isAppx).length} Win32</span>
             <span>·</span>
             <span>{data.programs.filter(p => p.isAppx).length} Store</span>
@@ -1096,7 +1096,7 @@ function AllProgramsTab() {
               return (
                 <div
                   key={prog.name + prog.version}
-                  className="flex flex-col rounded-xl border border-border/60 bg-card overflow-hidden group relative transition-all duration-200"
+                  className="flex flex-col rounded-xl border border-border/70 bg-card overflow-hidden group relative transition-all duration-200"
                   style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
                     onMouseEnter={e => {
                       (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px hsl(var(--primary) / 0.08), 0 4px 16px rgba(0,0,0,0.35)";
@@ -1130,20 +1130,20 @@ function AllProgramsTab() {
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground/40 mt-0.5 truncate">{prog.publisher || "Unknown publisher"}</p>
+                        <p className="text-[10px] text-muted-foreground/65 mt-0.5 truncate">{prog.publisher || "Unknown publisher"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 px-4 pb-2">
                       {prog.version && (
-                        <span className="text-[9px] font-mono font-semibold text-primary/60 bg-primary/8 border border-primary/12 px-1.5 py-0.5 rounded">
+                        <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded" style={{ color: "hsl(var(--primary) / 0.85)", background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.25)" }}>
                           v{prog.version}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-[9.5px] text-muted-foreground/35">
+                      <span className="flex items-center gap-1 text-[9.5px] text-muted-foreground/60">
                         <HardDrive className="h-2.5 w-2.5" />{fmtSize(prog.sizeMB)}
                       </span>
                       {prog.installDate && (
-                        <span className="flex items-center gap-1 text-[9.5px] text-muted-foreground/35">
+                        <span className="flex items-center gap-1 text-[9.5px] text-muted-foreground/60">
                           <Calendar className="h-2.5 w-2.5" />{fmtDate(prog.installDate)}
                         </span>
                       )}
@@ -1155,7 +1155,7 @@ function AllProgramsTab() {
                         disabled={uninstalling}
                         onClick={() => setConfirmProg(prog)}
                         data-testid={`button-uninstall-${prog.name}`}
-                        className="w-full h-7 text-[11px] font-bold gap-1.5 bg-red-950/20 hover:bg-red-900/30 text-red-400/60 hover:text-red-300 border border-red-900/25 hover:border-red-800/40 transition-all"
+                        className="w-full h-7 text-[11px] font-bold gap-1.5 bg-red-950/35 hover:bg-red-900/50 text-red-400 hover:text-red-300 border border-red-900/50 hover:border-red-700/60 transition-all"
                       >
                         {uninstalling ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
                         {uninstalling ? "Removing..." : "Uninstall"}
