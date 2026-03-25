@@ -278,7 +278,7 @@ function getCleanCategories(): CleanCategory[] {
       description: "Downloaded Windows Update packages — safe to clear after updates finish installing",
       paths: [],
       psScan: `$p='C:\\Windows\\SoftwareDistribution\\Download';$t=0L;$c=0;if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};$c=($items|Where-Object{-not $_.PSIsContainer}).Count};Write-Output "$t $c"`,
-      psClean: `$p='C:\\Windows\\SoftwareDistribution\\Download';$t=0L;Stop-Service wuauserv -Force -EA SilentlyContinue;Stop-Service bits -Force -EA SilentlyContinue;if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service wuauserv -EA SilentlyContinue;Start-Service bits -EA SilentlyContinue;Write-Output $t`,
+      psClean: `$p='C:\\Windows\\SoftwareDistribution\\Download';$t=0L;Stop-Service wuauserv -Force -EA SilentlyContinue;Stop-Service bits -Force -EA SilentlyContinue;Start-Sleep -Milliseconds 600;if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue};Start-Service wuauserv -EA SilentlyContinue;Start-Service bits -EA SilentlyContinue;Write-Output $t`,
     },
     {
       id: "deliveryopt",
@@ -383,8 +383,8 @@ function getCleanCategories(): CleanCategory[] {
     {
       id: "cert_cache",
       group: "system",
-      name: "Windows Certificate Cache",
-      description: "Cached certification files and SoftwareDistribution DataStore logs — safe to clear, rebuilt automatically",
+      name: "Update & WMI Logs",
+      description: "Windows Update DataStore transaction logs and WMI activity trace logs — safe to clear, rebuilt automatically by Windows",
       paths: [],
       psScan: `$t=0L;$c=0;foreach($p in @("$env:WINDIR\\SoftwareDistribution\\DataStore\\Logs","$env:WINDIR\\System32\\LogFiles\\WMI")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -File -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=$items.Count}};Write-Output "$t $c"`,
       psClean: `$t=0L;foreach($p in @("$env:WINDIR\\SoftwareDistribution\\DataStore\\Logs","$env:WINDIR\\System32\\LogFiles\\WMI")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -File -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
@@ -546,7 +546,7 @@ function getCleanCategories(): CleanCategory[] {
         path.join(local, "NVIDIA Corporation"),
       ],
       paths: [],
-      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvApp","$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log","$env:LOCALAPPDATA\\NVIDIA Corporation\\Drs","$env:PROGRAMDATA\\NVIDIA Corporation\\Downloader","$env:LOCALAPPDATA\\NVIDIA\\NvApp\\WebCache")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
+      psScan: `$t=0L;$c=0;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvApp\\WebCache","$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log","$env:PROGRAMDATA\\NVIDIA Corporation\\Downloader")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$items=Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
       psClean: `$t=0L;foreach($p in @("$env:LOCALAPPDATA\\NVIDIA\\NvApp\\WebCache","$env:LOCALAPPDATA\\NVIDIA\\NvBackend\\CEF\\Cache","$env:LOCALAPPDATA\\NVIDIA Corporation\\NvContainer\\log","$env:PROGRAMDATA\\NVIDIA Corporation\\Downloader")){if(Test-Path -LiteralPath $p -EA SilentlyContinue){$s=(Get-ChildItem -LiteralPath $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem -LiteralPath $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
     {
@@ -557,7 +557,7 @@ function getCleanCategories(): CleanCategory[] {
       installCheck: [path.join(roaming, "Adobe"), path.join(local, "Adobe")],
       paths: [],
       psScan: `$t=0L;$c=0;foreach($p in @("$env:APPDATA\\Adobe\\Common\\Media Cache Files","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache Files","$env:APPDATA\\Adobe\\Common\\Media Cache","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache","$env:APPDATA\\Adobe\\Adobe Creative Cloud\\Logs","$env:LOCALAPPDATA\\Adobe\\Adobe Creative Cloud\\Logs")){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
-      psClean: `$t=0L;foreach($p in @("$env:APPDATA\\Adobe\\Common\\Media Cache Files","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache Files","$env:APPDATA\\Adobe\\Common\\Media Cache","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
+      psClean: `$t=0L;foreach($p in @("$env:APPDATA\\Adobe\\Common\\Media Cache Files","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache Files","$env:APPDATA\\Adobe\\Common\\Media Cache","$env:LOCALAPPDATA\\Adobe\\Common\\Media Cache","$env:APPDATA\\Adobe\\Adobe Creative Cloud\\Logs","$env:LOCALAPPDATA\\Adobe\\Adobe Creative Cloud\\Logs")){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};Get-ChildItem $p -Force -EA SilentlyContinue|Remove-Item -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
 
     // ── GAME JUNK ──────────────────────────────────────────────────────────────
@@ -915,11 +915,7 @@ function getCleanCategories(): CleanCategory[] {
       group: "backup",
       name: "Old Restore Files",
       description: "Windows error recovery info, old BCD backup files, and leftover setup rollback data",
-      paths: [
-        "C:\\$WINDOWS.~BT",
-        "C:\\$WinREAgent",
-        path.join(local, "Microsoft", "Windows", "WinX"),
-      ],
+      paths: [],
       psScan: `$t=0L;$c=0;foreach($p in @('C:\\$WINDOWS.~BT','C:\\$WinREAgent','C:\\$WINDOWS.~WS')){if(Test-Path $p){$items=Get-ChildItem $p -Recurse -Force -EA SilentlyContinue;$s=($items|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};$c+=($items|Where-Object{-not $_.PSIsContainer}).Count}};Write-Output "$t $c"`,
       psClean: `$t=0L;foreach($p in @('C:\\$WINDOWS.~BT','C:\\$WinREAgent','C:\\$WINDOWS.~WS')){if(Test-Path $p){$s=(Get-ChildItem $p -Recurse -Force -EA SilentlyContinue|Measure-Object Length -Sum -EA SilentlyContinue).Sum;if($s){$t+=[long]$s};takeown /F $p /R /D Y 2>$null|Out-Null;Remove-Item $p -Recurse -Force -EA SilentlyContinue}};Write-Output $t`,
     },
