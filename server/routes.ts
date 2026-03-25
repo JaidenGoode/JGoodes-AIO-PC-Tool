@@ -1575,40 +1575,21 @@ try {
         .object({ ids: z.array(z.string()).min(1) })
         .parse(req.body);
 
-      let totalFreed = 0;
-      const cleaned: string[] = [];
+      const isWin = process.platform === "win32";
 
-      for (const id of ids) {
+      async function cleanOne(id: string): Promise<{ freed: number; name: string | null }> {
         const cat = CLEAN_CATEGORIES.find((c) => c.id === id);
-        if (!cat) continue;
+        if (!cat) return { freed: 0, name: null };
         let freed = 0;
 
-        const isWin          = process.platform === "win32";
-        const isWupdate      = id === "wupdate"      && isWin;
-        const isRecycle      = id === "recycle"      && isWin;
-        const isPrefetch     = id === "prefetch"     && isWin;
-        const isThumbnails   = id === "thumbnails"   && isWin;
-        const isDeliveryOpt  = id === "deliveryopt"  && isWin;
-
-        if (isWupdate) {
-          // Stop only wuauserv and bits — minimal disruption
-          await runCmd("net stop wuauserv 2>nul & net stop bits 2>nul", 12000).catch(() => {});
-        }
-
-        if (isPrefetch) {
-          // Stop SysMain (SuperFetch) to release locks on prefetch files
-          await runCmd("net stop SysMain 2>nul", 8000).catch(() => {});
-        }
-
         if (cat.psClean) {
-          // Custom PowerShell clean script — outputs freed BYTES
-          const result = await runPowerShell(cat.psClean, 20000).catch(() => "0");
+          // psClean scripts self-manage any required service stops/starts internally
+          const result = await runPowerShell(cat.psClean, 30000).catch(() => "0");
           freed += Math.max(0, parseInt(result.trim().split(/\s+/)[0]) || 0);
-        } else if (isRecycle) {
-          // Measure size using $I* metadata files (same method as scan), then clear
+        } else if (id === "recycle" && isWin) {
           const psRecycleClean = `
 try {
-  $tot=0L; $cnt=0
+  $tot=0L
   Get-PSDrive -PSProvider FileSystem -EA SilentlyContinue | ForEach-Object {
     try {
       $rb = Join-Path $_.Root '$RECYCLE.BIN'
@@ -1619,7 +1600,7 @@ try {
               $b = [System.IO.File]::ReadAllBytes($_.FullName)
               if ($b.Length -ge 24) {
                 $s = [System.BitConverter]::ToInt64($b, 8)
-                if ($s -gt 0) { $tot += $s; $cnt++ }
+                if ($s -gt 0) { $tot += $s }
               }
             } catch {}
           }
@@ -1632,36 +1613,16 @@ try {
           const sizeRaw = await runPowerShell(psRecycleClean, 10000).catch(() => "0");
           freed += Math.max(0, parseInt(sizeRaw.trim()) || 0);
           await runPowerShell(`Clear-RecycleBin -Force -ErrorAction SilentlyContinue`, 10000).catch(() => {});
-        } else if (isDeliveryOpt) {
-          // Measure entire DO folder, stop service, delete contents (not the folder itself), restart service
-          const psDoClean = `
-try {
-  $root = Join-Path $env:SystemRoot 'SoftwareDistribution\\DeliveryOptimization'
-  $tot=0L
-  if (Test-Path -LiteralPath $root -EA SilentlyContinue) {
-    $s = (Get-ChildItem -LiteralPath $root -Recurse -Force -EA SilentlyContinue | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
-    if ($s) { $tot = [long]$s }
-  }
-  Stop-Service DoSvc -Force -EA SilentlyContinue
-  if (Test-Path -LiteralPath $root -EA SilentlyContinue) {
-    Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue | Remove-Item -Recurse -Force -EA SilentlyContinue
-  }
-  Start-Service DoSvc -EA SilentlyContinue
-  Write-Output $tot
-} catch { Write-Output 0 }`.trim();
-          const result = await runPowerShell(psDoClean, 20000).catch(() => "0");
-          freed += Math.max(0, parseInt(result.trim()) || 0);
-        } else if (isThumbnails) {
-          // thumbcache_*.db files are locked by Explorer.exe — stop Explorer, delete, restart
+        } else if (id === "thumbnails" && isWin) {
           const psScript = `
 $dir = "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer"
-$files = @(Get-ChildItem $dir -Filter 'thumbcache_*.db' -File -ErrorAction SilentlyContinue)
-$total = ($files | Measure-Object -Property Length -Sum -ErrorAction SilentlyContinue).Sum
+$files = @(Get-ChildItem $dir -Filter 'thumbcache_*.db' -File -EA SilentlyContinue)
+$total = ($files | Measure-Object -Property Length -Sum -EA SilentlyContinue).Sum
 if (-not $total) { $total = 0 }
 if ($files.Count -gt 0) {
-    Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name explorer -Force -EA SilentlyContinue
     Start-Sleep -Milliseconds 800
-    foreach ($f in $files) { Remove-Item $f.FullName -Force -ErrorAction SilentlyContinue }
+    foreach ($f in $files) { Remove-Item $f.FullName -Force -EA SilentlyContinue }
     Start-Sleep -Milliseconds 300
     Start-Process explorer
 }
@@ -1670,7 +1631,6 @@ if ($files.Count -gt 0) {
           const lines = result.trim().split(/\r?\n/);
           freed += Math.max(0, parseInt(lines[lines.length - 1] || "0") || 0);
         } else if (cat.globDir && cat.globPattern) {
-          // Glob-pattern clean (e.g. thumbcache_*.db files)
           try {
             await fs.promises.access(cat.globDir);
             const entries = await fs.promises.readdir(cat.globDir);
@@ -1683,7 +1643,6 @@ if ($files.Count -gt 0) {
                   if (stat.isFile()) {
                     const sz = stat.size;
                     await fs.promises.rm(full, { force: true });
-                    // Verify gone before counting
                     try { await fs.promises.access(full); } catch { freed += sz; }
                   }
                 } catch {}
@@ -1691,39 +1650,34 @@ if ($files.Count -gt 0) {
             }
           } catch {}
         } else {
-          // subDirScan paths (browser profiles, etc.)
           if (cat.subDirScan && cat.subDirScan.length > 0) {
             const expandedPaths = await expandSubDirScan(cat.subDirScan);
             for (const p of expandedPaths) {
-              try {
-                await fs.promises.access(p);
-                freed += await deleteContents(p);
-              } catch {}
+              try { await fs.promises.access(p); freed += await deleteContents(p); } catch {}
             }
           }
-          // Explicit paths
           for (const p of cat.paths) {
             const expanded = expandPath(p);
-            try {
-              await fs.promises.access(expanded);
-              freed += await deleteContents(expanded);
-            } catch {}
+            try { await fs.promises.access(expanded); freed += await deleteContents(expanded); } catch {}
           }
         }
 
-        if (isWupdate) {
-          // Restart in same order as stop: wuauserv first, then bits
-          await runCmd("net start wuauserv 2>nul & net start bits 2>nul", 12000).catch(() => {});
-        }
-
-        if (isPrefetch) {
-          // Restart SysMain (SuperFetch) after prefetch clean
-          await runCmd("net start SysMain 2>nul", 5000).catch(() => {});
-        }
-
-        totalFreed += freed;
-        if (freed > 0) cleaned.push(cat.name);
+        return { freed, name: freed > 0 ? cat.name : null };
       }
+
+      // Explorer-killing categories (thumbnails, iconcache) must run sequentially
+      // after all others to avoid simultaneous explorer.exe kill/restart races
+      const EXPLORER_KILLERS = new Set(["thumbnails", "iconcache"]);
+      const parallelIds  = ids.filter((id) => !EXPLORER_KILLERS.has(id));
+      const sequentialIds = ids.filter((id) => EXPLORER_KILLERS.has(id));
+
+      const parallelResults = await mapWithConcurrency(parallelIds, 4, cleanOne);
+      const sequentialResults: { freed: number; name: string | null }[] = [];
+      for (const id of sequentialIds) sequentialResults.push(await cleanOne(id));
+
+      const allResults  = [...parallelResults, ...sequentialResults];
+      const totalFreed  = allResults.reduce((s, r) => s + r.freed, 0);
+      const cleaned     = allResults.filter((r) => r.name !== null).map((r) => r.name as string);
 
       if (totalFreed > 0) {
         await storage.addCleaningHistory({
@@ -1734,12 +1688,7 @@ if ($files.Count -gt 0) {
         });
       }
 
-      res.json({
-        success: true,
-        freed: totalFreed,
-        freedHuman: fmtSize(totalFreed),
-        cleaned,
-      });
+      res.json({ success: true, freed: totalFreed, freedHuman: fmtSize(totalFreed), cleaned });
     } catch (err) {
       if (err instanceof z.ZodError)
         return res.status(400).json({ message: err.errors[0].message });
@@ -1771,6 +1720,67 @@ if ($files.Count -gt 0) {
       if (err instanceof z.ZodError)
         return res.status(400).json({ message: err.errors[0].message });
       res.status(500).json({ message: "Failed to add history" });
+    }
+  });
+
+  // ── Debloat: Launch Winaero Tweaker ────────────────────────────────────────
+  app.post("/api/debloat/launch-winaero", async (_req, res) => {
+    if (process.platform !== "win32")
+      return res.json({ success: false, message: "Windows only." });
+
+    const exesDir = process.env.ELECTRON_RESOURCES_PATH
+      ? path.join(process.env.ELECTRON_RESOURCES_PATH, "server", "executables")
+      : path.join(process.cwd(), "server", "executables");
+    const bundledSetup = path.join(exesDir, "WinaeroTweakerSetup.exe");
+
+    const psScript = [
+      `$ErrorActionPreference = 'SilentlyContinue'`,
+      `$exePath = $null`,
+      `$installCandidates = @(`,
+      `  "$env:ProgramFiles\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "\${env:ProgramFiles(x86)}\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "$env:LOCALAPPDATA\\Programs\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "$env:LOCALAPPDATA\\Winaero Tweaker\\WinaeroTweaker.exe",`,
+      `  "$env:ProgramData\\Winaero Tweaker\\WinaeroTweaker.exe"`,
+      `)`,
+      `foreach ($rp in @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe')) {`,
+      `  if (Test-Path $rp) { $val = (Get-ItemProperty $rp -EA SilentlyContinue).'(default)'; if ($val -and (Test-Path $val)) { $exePath = $val; break } }`,
+      `}`,
+      `if (-not $exePath) { foreach ($c in $installCandidates) { if (Test-Path $c) { $exePath = $c; break } } }`,
+      `if (-not $exePath) {`,
+      `  $uninstKeys = @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall','HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall')`,
+      `  foreach ($uk in $uninstKeys) {`,
+      `    if (Test-Path $uk) {`,
+      `      $match = Get-ChildItem $uk -EA SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -EA SilentlyContinue).DisplayName -like '*Winaero*' } | Select-Object -First 1`,
+      `      if ($match) {`,
+      `        $icon = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).DisplayIcon`,
+      `        if ($icon) { $icon = $icon -replace ',\\d+$',''; if (Test-Path $icon) { $exePath = $icon; break } }`,
+      `        $loc = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).InstallLocation`,
+      `        if ($loc) { $t = Join-Path $loc 'WinaeroTweaker.exe'; if (Test-Path $t) { $exePath = $t; break } }`,
+      `      }`,
+      `    }`,
+      `  }`,
+      `}`,
+      `if (-not $exePath) {`,
+      `  $setup = '${bundledSetup.replace(/\\/g, "\\\\")}'`,
+      `  if (Test-Path $setup) {`,
+      `    Start-Process -FilePath $setup -ArgumentList '/SP-', '/VERYSILENT' -Wait`,
+      `    Start-Sleep -Seconds 2`,
+      `    foreach ($c in $installCandidates) { if (Test-Path $c) { $exePath = $c; break } }`,
+      `  }`,
+      `}`,
+      `if ($exePath) { Start-Process -FilePath $exePath -WindowStyle Normal; Write-Output "OK" } else { Write-Output "NOTFOUND" }`,
+    ].join("\r\n");
+
+    try {
+      const out = (await runPowerShell(psScript, 40000)).trim();
+      if (out === "OK") {
+        res.json({ success: true });
+      } else {
+        res.json({ success: false, message: "Winaero Tweaker not found and bundled installer unavailable." });
+      }
+    } catch (err) {
+      res.status(500).json({ success: false, message: String(err) });
     }
   });
 

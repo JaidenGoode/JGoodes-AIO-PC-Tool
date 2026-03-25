@@ -294,91 +294,20 @@ export default function Debloat() {
   };
 
   const launchWinaerot = async () => {
-    if (!window.electronAPI?.runScript) {
-      toast({ title: "Desktop app required", description: "Winaero Tweaker can only launch from the installed desktop app.", variant: "destructive" });
-      return;
-    }
     setWinaerotStatus("launching");
-    const script = [
-      `$ErrorActionPreference = 'SilentlyContinue'`,
-      `$exePath = $null`,
-      `$installCandidates = @(`,
-      `  "$env:ProgramFiles\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `  "\${env:ProgramFiles(x86)}\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `  "$env:LOCALAPPDATA\\Programs\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `  "$env:LOCALAPPDATA\\Winaero Tweaker\\WinaeroTweaker.exe",`,
-      `  "$env:ProgramData\\Winaero Tweaker\\WinaeroTweaker.exe"`,
-      `)`,
-      ``,
-      `# 1. Check registry App Paths`,
-      `foreach ($rp in @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\WinaeroTweaker.exe')) {`,
-      `  if (Test-Path $rp) {`,
-      `    $val = (Get-ItemProperty $rp -EA SilentlyContinue).'(default)'`,
-      `    if ($val -and (Test-Path $val)) { $exePath = $val; break }`,
-      `  }`,
-      `}`,
-      ``,
-      `# 2. Check common install directories`,
-      `if (-not $exePath) {`,
-      `  foreach ($c in $installCandidates) { if (Test-Path $c) { $exePath = $c; break } }`,
-      `}`,
-      ``,
-      `# 3. Check uninstall registry`,
-      `if (-not $exePath) {`,
-      `  $uninstKeys = @('HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall','HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall','HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall')`,
-      `  foreach ($uk in $uninstKeys) {`,
-      `    if (Test-Path $uk) {`,
-      `      $match = Get-ChildItem $uk -EA SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -EA SilentlyContinue).DisplayName -like '*Winaero*' } | Select-Object -First 1`,
-      `      if ($match) {`,
-      `        $icon = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).DisplayIcon`,
-      `        if ($icon) { $icon = $icon -replace ',\\d+$',''; if (Test-Path $icon) { $exePath = $icon; break } }`,
-      `        $loc = (Get-ItemProperty $match.PSPath -EA SilentlyContinue).InstallLocation`,
-      `        if ($loc) { $t = Join-Path $loc 'WinaeroTweaker.exe'; if (Test-Path $t) { $exePath = $t; break } }`,
-      `      }`,
-      `    }`,
-      `  }`,
-      `}`,
-      ``,
-      `# 4. Silent install from bundled setup`,
-      `if (-not $exePath -and $env:ELECTRON_RESOURCES_PATH) {`,
-      `  $setup = Join-Path $env:ELECTRON_RESOURCES_PATH 'executables\\WinaeroTweakerSetup.exe'`,
-      `  if (Test-Path $setup) {`,
-      `    Start-Process -FilePath $setup -ArgumentList '/SP-', '/VERYSILENT' -Wait`,
-      `    Start-Sleep -Seconds 2`,
-      `    foreach ($c in $installCandidates) { if (Test-Path $c) { $exePath = $c; break } }`,
-      `  }`,
-      `}`,
-      ``,
-      `# 5. Download portable copy as last resort`,
-      `if (-not $exePath) {`,
-      `  $ErrorActionPreference = 'Stop'`,
-      `  $destDir = Join-Path $env:TEMP "WinaeroTweaker"`,
-      `  $zip = Join-Path $env:TEMP "WinaeroTweaker.zip"`,
-      `  try {`,
-      `    $wc = New-Object System.Net.WebClient`,
-      `    $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")`,
-      `    $wc.DownloadFile("https://winaerotweaker.com/download/winaerotweaker.zip", $zip)`,
-      `    if (Test-Path $destDir) { Remove-Item $destDir -Recurse -Force }`,
-      `    Expand-Archive -Path $zip -DestinationPath $destDir -Force`,
-      `    $found = Get-ChildItem $destDir -Filter "WinaeroTweaker.exe" -Recurse -EA SilentlyContinue | Select-Object -First 1`,
-      `    if ($found) { $exePath = $found.FullName } else { Write-Error "WinaeroTweaker.exe not found after extraction"; exit 1 }`,
-      `  } catch { Write-Error "Download failed: $_"; exit 1 }`,
-      `}`,
-      ``,
-      `Start-Process -FilePath $exePath -WindowStyle Normal`,
-    ].join("\r\n");
     try {
-      const result = await window.electronAPI.runScript(script);
-      if (result.success) {
+      const res = await fetch("/api/debloat/launch-winaero", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
         setWinaerotStatus("done");
         toast({ title: "Winaero Tweaker launched", description: "The app window should appear momentarily." });
       } else {
         setWinaerotStatus("error");
-        toast({ title: "Launch failed", description: "Could not find or launch Winaero Tweaker.", variant: "destructive" });
+        toast({ title: "Launch failed", description: data.message || "Could not find or launch Winaero Tweaker.", variant: "destructive" });
       }
     } catch {
       setWinaerotStatus("error");
-      toast({ title: "Launch failed", description: "Script execution error.", variant: "destructive" });
+      toast({ title: "Launch failed", description: "Network error contacting the app server.", variant: "destructive" });
     }
     setTimeout(() => setWinaerotStatus("idle"), 4000);
   };

@@ -301,10 +301,12 @@ export default function CleanerPage() {
       setCleanProgress(0);
       const interval = setInterval(() => {
         setCleanProgress((p) => {
-          if (p >= 85) { clearInterval(interval); return 85; }
-          return p + Math.random() * 8;
+          if (p >= 93) { clearInterval(interval); return 93; }
+          // Fast early advance, slows down as it approaches the cap
+          const step = p < 50 ? Math.random() * 12 : p < 75 ? Math.random() * 6 : Math.random() * 2;
+          return Math.min(93, p + step);
         });
-      }, 150);
+      }, 120);
       const result = await cleanCategories(ids);
       clearInterval(interval);
       setCleanProgress(100);
