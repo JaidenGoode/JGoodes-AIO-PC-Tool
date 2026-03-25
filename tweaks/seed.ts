@@ -240,12 +240,12 @@ export const TWEAKS_SEED: TweakSeed[] = [
     featureBreaks: "Very old 16-bit DOS programs that require 8.3 filenames will not work. No effect on modern applications."
   },
   {
-    title: "Optimize Boot Configuration",
-    description: "Enables fast startup (hybrid boot), reduces the boot menu timeout to 3 seconds, and configures Windows to use the CPU's own TSC clock instead of the platform clock — resulting in faster boot times and more consistent system timer resolution.",
+    title: "Disable SysMain / SuperFetch",
+    description: "Stops and permanently disables the SysMain service (formerly SuperFetch). SysMain pre-loads frequently used applications into RAM to reduce launch times, but on modern SSDs this background activity adds unnecessary disk and CPU overhead. Disabling it frees up RAM for actual running programs and reduces background I/O — particularly beneficial on systems with SSDs or limited RAM.",
     category: "performance",
     isActive: false,
-    warning: "Restart required. Note: Enabling fast startup may conflict with the Hibernation tweak — apply one or the other, not both.",
-    featureBreaks: "Restart required. Fast startup enabled (hybrid shutdown). Boot menu shows for 3 seconds instead of 30. Platform clock replaced with TSC for timer resolution."
+    warning: null,
+    featureBreaks: "Windows will no longer pre-load apps into RAM. Application launch times may be slightly slower the first time after reboot. Prefetch data will not be updated."
   },
   // ── SYSTEM (Desktop / Misc) ────────────────────────────────────────────────
   {

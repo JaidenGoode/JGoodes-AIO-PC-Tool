@@ -253,21 +253,13 @@ reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control" /v SvcHostSplitThresholdInKB 
     disable: `reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem" /v NtfsDisable8dot3NameCreation /t REG_DWORD /d 0 /f`,
   },
 
-  "Optimize Boot Configuration": {
+  "Disable SysMain / SuperFetch": {
     requiresAdmin: true,
-    requiresRestart: true,
-    enable: `# Disable GUI Boot (No GUI at startup)
-bcdedit /set '{current}' quietboot yes 2>$null
-bcdedit /set '{current}' bootuxdisabled on 2>$null
-
-# Enable Fast Startup
-Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 1`,
-    disable: `# Re-enable GUI Boot
-bcdedit /set '{current}' quietboot no 2>$null
-bcdedit /set '{current}' bootuxdisabled off 2>$null
-
-# Disable Fast Startup
-Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power" -Name "HiberbootEnabled" -Value 0`,
+    requiresRestart: false,
+    enable: `Stop-Service -Name "SysMain" -Force
+Set-Service -Name "SysMain" -StartupType Disabled`,
+    disable: `Set-Service -Name "SysMain" -StartupType Automatic
+Start-Service -Name "SysMain"`,
   },
 
   "Disable Taskbar & Menu Animations": {

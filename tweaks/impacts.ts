@@ -33,7 +33,7 @@ export const TWEAK_IMPACTS: Record<string, ImpactLevel> = {
   "Auto-End Unresponsive Programs":                "Medium",
   "Disable Scheduled Disk Defragmentation":        "Medium",
   "Svchost Process Isolation":                     "Medium",
-  "Optimize Boot Configuration":                   "Medium",
+  "Disable SysMain / SuperFetch":                  "Medium",
   "Disable Notification Center":                   "Medium",
   "Disable USB Selective Suspend":                 "Medium",
   "Disable Windows Error Reporting":               "Medium",

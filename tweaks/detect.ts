@@ -66,7 +66,7 @@ $d['Auto-End Unresponsive Programs']=creg 'HKCU:\Control Panel\Desktop' 'AutoEnd
 try{$dfTask=schtasks /Query /TN "Microsoft\Windows\Defrag\ScheduledDefrag" /FO CSV 2>$null;$d['Disable Scheduled Disk Defragmentation']=if($dfTask -match 'Disabled'){1}else{0}}catch{$d['Disable Scheduled Disk Defragmentation']=0}
 try{$svch=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' -EA Stop).SvcHostSplitThresholdInKB;$d['Svchost Process Isolation']=if($svch -gt 1000000){1}else{0}}catch{$d['Svchost Process Isolation']=0}
 $d['Disable 8.3 Short File Names']=creg 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' 'NtfsDisable8dot3NameCreation' 1
-try{$bcd=(bcdedit /enum '{current}' 2>$null) -join ' ';$d['Optimize Boot Configuration']=if($bcd -match 'quietboot\s+Yes'){1}else{0}}catch{$d['Optimize Boot Configuration']=0}
+try{$sm=(Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\SysMain' 'Start' -EA Stop).Start;$d['Disable SysMain / SuperFetch']=if($sm -ge 4){1}else{0}}catch{$d['Disable SysMain / SuperFetch']=0}
 
 # System (Desktop / Misc)
 $d['Disable Taskbar & Menu Animations']=creg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAnimations' 0
